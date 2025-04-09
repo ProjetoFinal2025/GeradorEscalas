@@ -7,6 +7,7 @@ class Militar(models.Model):
     nome = models.CharField(max_length=100)
     posto = models.CharField(max_length=50)
     funcao= models.CharField(max_length=50)
+    servico = models.CharField(max_length=50, default='Não Definido')
     ordem_semana = models.IntegerField()
     ordem_fds = models.IntegerField()
     telefone = models.BigIntegerField()
