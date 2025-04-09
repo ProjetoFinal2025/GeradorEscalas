@@ -58,3 +58,17 @@ class Escala(models.Model):
     def __str__(self):
         return f"Escala de {self.data}"
 
+class Log(models.Model):
+    id = models.AutoField(primary_key=True)
+    nim_admin = models.BigIntegerField(help_text="NIM do administrador que realizou a ação")
+    acao = models.CharField(max_length=255, help_text="Descrição da ação realizada")
+    data = models.DateTimeField(auto_now_add=True, help_text="Data e hora da ação")
+
+    class Meta:
+        verbose_name = "Log"
+        verbose_name_plural = "Logs"
+        ordering = ['-data']  # Ordenar do mais recente para o mais antigo
+
+    def __str__(self):
+        return f"{self.data.strftime('%d/%m/%Y %H:%M:%S')} - {self.acao} (NIM: {str(self.nim_admin).zfill(8)})"
+
