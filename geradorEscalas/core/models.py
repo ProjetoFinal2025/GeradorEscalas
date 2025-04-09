@@ -13,6 +13,9 @@ class Militar(models.Model):
     e_administrador = models.BooleanField(default=False)
     email = models.EmailField()
 
+    # Array com Ids de Escalas
+    escalas = models.JSONField(default=list, blank=True)
+
     def __str__(self):
         return f"{self.posto}{self.nome} (str{self.nim}.zfill(8)"
 
@@ -32,7 +35,7 @@ class Configuracao(models.Model):
     id = models.AutoField(primary_key=True)
     hora_inicio = models.TimeField()
     hora_fim = models.TimeField()
-    feriados = models.JSONField(default=list, help_text="Lista de datas dos feriados no formato YYYY-MM-DD")
+    feriados = models.JSONField(default=list,blank=True,help_text="Lista de datas dos feriados no formato YYYY-MM-DD")
     tem_escala_B = models.BooleanField(default=False)
     n_elementos = models.IntegerField()
     n_dias = models.IntegerField()
@@ -41,22 +44,44 @@ class Configuracao(models.Model):
 class Servico(models.Model):
     id = models.AutoField(primary_key=True)
 
-class Escala(models.Model):
-    id = models.AutoField(primary_key=True)
-    militar = models.ForeignKey(Militar, on_delete=models.CASCADE, related_name='escalas')
-    nim_reserva = models.ForeignKey(Militar, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas')
-    comentario = models.TextField(blank=True)
-    data = models.DateField()
-    configuracao = models.ForeignKey(Configuracao, on_delete=models.PROTECT)
+    nome = models.CharField(max_length=100)
+    local = models.CharField(max_length=100)
+    efetivo_necessario = models.IntegerField()
+    armamento_necessario = models.BooleanField(default=False)
+    prioridade = models.BooleanField(default=False)
 
-    sequencia_semana = models.JSONField(default=list)  # ex: [123, 124]
-    sequencia_fds = models.JSONField(default=list)  # ex: [128, 129]
-
-    class Meta:
-        ordering = ['data']
+    lista_militares = models.JSONField(default=list, blank=True)
 
     def __str__(self):
-        return f"Escala de {self.data}"
+        return f"{self.nome} - {self.local}"
+
+
+class Escala(models.Model):
+    id = models.AutoField(primary_key=True)
+    servico = models.ForeignKey(
+        Servico,
+        on_delete=models.CASCADE,
+        related_name='escalas'
+    )
+    comentario = models.TextField(blank=True)
+    data = models.DateField()
+    configuracao = models.ForeignKey(
+        Configuracao,
+        on_delete=models.PROTECT
+    )
+
+    # Arrays de Nims
+    sequencia_semana = models.JSONField(default=list, blank=True)
+    sequencia_fds = models.JSONField(default=list, blank=True)
+
+    is_secundaria = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_secundaria:
+            return f"Escala B [{self.id}] for Servico {self.servico.nome}"
+        return f"Escala A [{self.id}] for Servico {self.servico.nome}"
+
+
 
 class Log(models.Model):
     id = models.AutoField(primary_key=True)
