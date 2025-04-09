@@ -40,6 +40,18 @@ class Configuracao(models.Model):
 
 class Servico(models.Model):
     id = models.AutoField(primary_key=True)
+    nome = models.CharField(max_length=100, unique=True)
+    descricao = models.TextField(blank=True)
+    n_elementos_dia = models.IntegerField(default=1, help_text="Número de elementos necessários por dia")
+    tem_escala_B = models.BooleanField(default=False, help_text="Indica se o serviço tem escala B")
+    ativo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.nome} ({self.n_elementos_dia} elementos/dia)"
+
+    class Meta:
+        verbose_name = "Serviço"
+        verbose_name_plural = "Serviços"
 
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
