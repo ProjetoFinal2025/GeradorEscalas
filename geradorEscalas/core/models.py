@@ -42,18 +42,21 @@ class Configuracao(models.Model):
 
 
 class Servico(models.Model):
+    # Campos de identificação
     id = models.AutoField(primary_key=True)
-
-    nome = models.CharField(max_length=100)
+    nome = models.CharField(max_length=100, unique=True)
+    descricao = models.TextField(blank=True)
     local = models.CharField(max_length=100)
-    efetivo_necessario = models.IntegerField()
     armamento_necessario = models.BooleanField(default=False)
-    prioridade = models.BooleanField(default=False)
 
+    # Campos para as escalas
+    n_elementos_dia = models.IntegerField(default=1, help_text="Número de militares necessários por dia")
+    tem_escala_B = models.BooleanField(default=False, help_text="Indica se o serviço tem escala B")
     lista_militares = models.JSONField(default=list, blank=True)
+    ativo = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.nome} - {self.local}"
+        return f"{self.nome} ({self.n_elementos_dia} elementos/dia)"
 
 
 class Escala(models.Model):
@@ -73,11 +76,10 @@ class Escala(models.Model):
     # Arrays de Nims
     sequencia_semana = models.JSONField(default=list, blank=True)
     sequencia_fds = models.JSONField(default=list, blank=True)
-
-    is_secundaria = models.BooleanField(default=False)
+    e_escala_b = models.BooleanField(default=False)
 
     def __str__(self):
-        if self.is_secundaria:
+        if self.e_escala_b:
             return f"Escala B [{self.id}] for Servico {self.servico.nome}"
         return f"Escala A [{self.id}] for Servico {self.servico.nome}"
 
