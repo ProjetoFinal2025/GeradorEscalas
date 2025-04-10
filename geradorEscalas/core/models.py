@@ -22,7 +22,7 @@ class Militar(models.Model):
     escalas = models.JSONField(default=list, blank=True)
 
     def __str__(self):
-        return f"{self.posto}{self.nome} (str{self.nim}.zfill(8)"
+        return f"{self.posto} {self.nome} (str{self.nim}.zfill(8)"
 
 class Dispensa(models.Model):
     id = models.AutoField(primary_key = True)
