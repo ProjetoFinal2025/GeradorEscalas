@@ -2,6 +2,10 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from .models import Militar, Servico, Dispensa, Escala, Configuracao, Log
+from django.contrib.auth.models import User
+
+# Debug
+# print("signals.py LOADED")
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
     """Função auxiliar para criar logs"""
@@ -115,3 +119,32 @@ def log_logout(sender, request, user, **kwargs):
             'User',
             'LOGOUT'
         ) 
+
+
+
+#################### User's #################################
+
+# Cria o Respetivo utilizador quando militar é apagado
+@receiver(post_save, sender=Militar)
+def criar_user_para_militar(sender, instance, created, **kwargs):
+    if created and not instance.user:
+        username = str(instance.nim)
+        password = "mel"
+
+        # Evita duplicação
+        if not User.objects.filter(username=username).exists():
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                email=instance.email
+            )
+
+            instance.user = user
+            instance.save()
+
+# Apaga o Respetivo utilizador quando militar é apagado
+@receiver(post_delete, sender=Militar)
+def apagar_user_com_militar(sender, instance, **kwargs):
+    if instance.user:
+        print(f"User{instance.user.username} ligado ao Militar {instance.nim} será eliminado")
+        instance.user.delete()

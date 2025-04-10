@@ -1,18 +1,23 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Models
 
 class Militar(models.Model):
+    # Campos Gerais
     nim = models.IntegerField(primary_key=True)
+    # Liga ao user login
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     nome = models.CharField(max_length=100)
     posto = models.CharField(max_length=50)
     funcao= models.CharField(max_length=50)
-    ordem_semana = models.IntegerField()
-    ordem_fds = models.IntegerField()
-    telefone = models.BigIntegerField()
     e_administrador = models.BooleanField(default=False)
+    telefone = models.BigIntegerField()
     email = models.EmailField()
 
+    # Campos em Relaçao a escalas
+    ordem_semana = models.IntegerField()
+    ordem_fds = models.IntegerField()
     # Array com Ids de Escalas
     escalas = models.JSONField(default=list, blank=True)
 
