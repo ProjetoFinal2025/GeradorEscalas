@@ -22,7 +22,7 @@ class Militar(models.Model):
     escalas = models.JSONField(default=list, blank=True)
 
     def __str__(self):
-        return f"{self.posto} {self.nome} (str{self.nim}.zfill(8)"
+        return f"{self.posto} {self.nome} ({str(self.nim).zfill(8)})"
 
 class Dispensa(models.Model):
     id = models.AutoField(primary_key = True)
@@ -66,6 +66,7 @@ class Servico(models.Model):
 
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
+
     servico = models.ForeignKey(
         Servico,
         on_delete=models.CASCADE,
@@ -73,6 +74,7 @@ class Escala(models.Model):
     )
     comentario = models.TextField(blank=True)
     data = models.DateField()
+
     configuracao = models.ForeignKey(
         Configuracao,
         on_delete=models.PROTECT
@@ -82,11 +84,22 @@ class Escala(models.Model):
     sequencia_semana = models.JSONField(default=list, blank=True)
     sequencia_fds = models.JSONField(default=list, blank=True)
     e_escala_b = models.BooleanField(default=False)
-
     def __str__(self):
         if self.e_escala_b:
             return f"Escala B [{self.id}] for Servico {self.servico.nome}"
         return f"Escala A [{self.id}] for Servico {self.servico.nome}"
+
+    # Retorna a lista de NIMS presentes no service a que a escala corresponde
+    def get_militares_da_escala(self):
+        return Militar.objects.filter(nim__in=self.servico.lista_militares)
+
+    # TEMP? Retorna os nomes dos militares associados
+    def nomes_militares(self):
+        militares = self.get_militares_da_escala()
+        if not militares.exists():
+            return "Nenhum militar associado ao serviço desta Escala."
+        return ", ".join([f"{m.posto} {m.nome} ({m.nim})" for m in militares])
+
 
 
 
