@@ -1,5 +1,5 @@
 """
-ASGI config for geradorEscalas project.
+ASGI config for Projeto project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

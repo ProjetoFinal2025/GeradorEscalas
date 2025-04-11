@@ -1,7 +1,15 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 
 # Models
+class Role(models.Model):
+    nome = models.CharField(max_length=100, unique=True)
+    descricao = models.TextField(blank=True)
+    permissions = models.ManyToManyField(Permission, blank=True)
+
+    def __str__(self):
+        return self.nome
+
 
 class Militar(models.Model):
     # Campos Gerais
@@ -22,7 +30,7 @@ class Militar(models.Model):
 
     # Retorna os serviços em que Militar está inscrito
     def listar_servicos(self):
-        return ", ".join([s.nome for s in self.servicos.all()])
+        return ", ".join([s.nome for s in self.servicos.all()]) or "Nenhum Serviço atribuido."
 
     listar_servicos.short_description = "Serviços"
 
@@ -30,13 +38,13 @@ class Militar(models.Model):
     def listar_escalas(self):
         escalas = Escala.objects.filter(servico__militares=self)
         if not escalas.exists():
-            return "Nenhuma escala atribuída"
+            return "Nenhuma escala atribuída."
         return ", ".join([str(e) for e in escalas])
 
     listar_escalas.short_description = "Escalas"
 
     def listar_dispensas(self):
-        return ", ".join([f"{d.data_inicio} a {d.data_fim}" for d in self.dispensas.all()]) or "-"
+        return ", ".join([f"{d.data_inicio} a {d.data_fim}" for d in self.dispensas.all()]) or "Nenhuma dispensa atribuida."
 
     listar_dispensas.short_description = "Dispensas"
 
@@ -101,10 +109,6 @@ class Escala(models.Model):
         if self.e_escala_b:
             return f"Escala B [{self.id}] - Serviço {self.servico.nome}"
         return f"Escala A [{self.id}] - Serviço {self.servico.nome}"
-
-
-
-
 
 class Log(models.Model):
     id = models.AutoField(primary_key=True)

@@ -1,7 +1,7 @@
 # Default ignored files
 /shelf/
 /workspace.xml
-geradorEscalas/.env
+Projeto/.env
 .idea/
 venv/
 core/__pycache__/

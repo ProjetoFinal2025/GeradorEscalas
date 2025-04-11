@@ -1,11 +1,9 @@
-from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from django.contrib.auth.signals import user_logged_in, user_logged_out
-from .models import Militar, Servico, Dispensa, Escala, Configuracao, Log
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save, post_delete
+from django.contrib.auth.signals import user_logged_in, user_logged_out
+from .models import Militar, Servico, Dispensa, Escala, Configuracao, Log, Role
 
-# Debug
-# print("signals.py LOADED")
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
     """Função auxiliar para criar logs"""
@@ -154,3 +152,30 @@ def apagar_user_com_militar(sender, instance, **kwargs):
     if instance.user:
         print(f"User{instance.user.username} ligado ao Militar {instance.nim} será eliminado")
         instance.user.delete()
+
+# Torna o Muilitar em administrador consoante a respetiva bool
+@receiver(post_save, sender=Militar)
+def atualizar_user_com_base_em_administrador(sender, instance, **kwargs):
+    user = instance.user
+    if not user:
+        return
+
+    try:
+        # Pegamos o Role 'Administrador'
+        role_admin = Role.objects.get(nome__iexact='Administrador')
+    except Role.DoesNotExist:
+        role_admin = None
+
+    if instance.e_administrador and role_admin:
+        # Caso o militar seja admin e exista esse Role
+        user.is_staff = True
+        user.is_superuser = False
+        # Aplica as permissões definidas no Role
+        user.user_permissions.set(role_admin.permissions.all())
+    else:
+        # Não é administrador
+        user.is_staff = False
+        user.is_superuser = False
+        user.user_permissions.clear()
+
+    user.save()

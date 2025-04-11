@@ -1,4 +1,4 @@
-# geradorEscalas/core/forms.py
+# Projeto/core/forms.py
 
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
