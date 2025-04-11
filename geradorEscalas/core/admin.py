@@ -9,7 +9,7 @@ class MilitarAdmin(admin.ModelAdmin):
     form = MilitarForm
     list_display = ('nome', 'posto', 'nim', 'listar_servicos', 'listar_escalas')
     # Remove a habilidade de mudar o Utilizador de um militar
-    readonly_fields = ['user', 'listar_servicos', 'listar_escalas']
+    readonly_fields = ['user', 'listar_servicos', 'listar_escalas','listar_dispensas']
 class ServicoAdmin(admin.ModelAdmin):
     form = ServicoForm
     readonly_fields = ['ver_escalas']

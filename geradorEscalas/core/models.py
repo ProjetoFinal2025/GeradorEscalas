@@ -18,8 +18,7 @@ class Militar(models.Model):
     # Campos em Relaçao a escalas
     ordem_semana = models.IntegerField()
     ordem_fds = models.IntegerField()
-    # Array com Ids de Escalas
-    #escalas = models.JSONField(default=list, blank=True)
+
 
     # Retorna os serviços em que Militar está inscrito
     def listar_servicos(self):
@@ -35,6 +34,11 @@ class Militar(models.Model):
         return ", ".join([str(e) for e in escalas])
 
     listar_escalas.short_description = "Escalas"
+
+    def listar_dispensas(self):
+        return ", ".join([f"{d.data_inicio} a {d.data_fim}" for d in self.dispensas.all()]) or "-"
+
+    listar_dispensas.short_description = "Dispensas"
 
     def __str__(self):
         return f"{self.posto} {self.nome} ({str(self.nim).zfill(8)})"
