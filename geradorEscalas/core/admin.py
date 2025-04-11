@@ -1,15 +1,15 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .forms import MilitarForm, ServicoForm
+from .forms import MilitarForm, ServicoForm, EscalaForm
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log
 
 class MilitarAdmin(admin.ModelAdmin):
     form = MilitarForm
-    # Remove a habilidade de mudar o NIM de um militar
-    readonly_fields = ['user']
-
+    list_display = ('nome', 'posto', 'nim', 'listar_servicos', 'listar_escalas')
+    # Remove a habilidade de mudar o Utilizador de um militar
+    readonly_fields = ['user', 'listar_servicos', 'listar_escalas']
 class ServicoAdmin(admin.ModelAdmin):
     form = ServicoForm
     readonly_fields = ['ver_escalas']
@@ -31,13 +31,23 @@ class ServicoAdmin(admin.ModelAdmin):
 
     ver_escalas.short_description = "Escalas atribuídas"
 
+
 class EscalaAdmin(admin.ModelAdmin):
-    readonly_fields = ['nomes_militares']
-    list_display = ['id', 'data', 'servico', 'e_escala_b', 'nomes_militares']
+    list_display = ['id', 'servico', 'data', 'e_escala_b']
+    readonly_fields = ['ver_militares_do_servico']
+
+
+    def ver_militares_do_servico(self, obj):
+        militares = obj.servico.militares.all()
+        if not militares.exists():
+            return "Nenhum militar atribuído a esta escala"
+        return ", ".join(f"{m.posto} {m.nome} ({str(m.nim).zfill(8)})" for m in militares)
+
+    ver_militares_do_servico.short_description = "Militares na Escala"
 
 admin.site.register(Militar,MilitarAdmin)
 admin.site.register(Dispensa)
-admin.site.register(Escala,EscalaAdmin)
+admin.site.register(Escala, EscalaAdmin)
 admin.site.register(Servico, ServicoAdmin)
 admin.site.register(Configuracao)
 admin.site.register(Log)

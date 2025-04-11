@@ -76,7 +76,9 @@ def log_alteracoes_escala(sender, instance, **kwargs):
             acao = ''
             tipo_acao = 'CREATE'
         else:
-            acao = f"Atualizada escala: {instance.militar.nome} para {instance.data}"
+            # CRIA ERRO POIS VARIAVEL NAO EXISTE
+           #acao = f"Atualizada escala: {instance.militar.nome} para {instance.data}"
+            acao = ''
             tipo_acao = 'UPDATE'
     else:
        # CRIA ERRO POIS VARIAVEL NAO EXISTE

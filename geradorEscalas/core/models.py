@@ -19,7 +19,22 @@ class Militar(models.Model):
     ordem_semana = models.IntegerField()
     ordem_fds = models.IntegerField()
     # Array com Ids de Escalas
-    escalas = models.JSONField(default=list, blank=True)
+    #escalas = models.JSONField(default=list, blank=True)
+
+    # Retorna os serviços em que Militar está inscrito
+    def listar_servicos(self):
+        return ", ".join([s.nome for s in self.servicos.all()])
+
+    listar_servicos.short_description = "Serviços"
+
+    # Retorna as escalas em que Militar está inscrito
+    def listar_escalas(self):
+        escalas = Escala.objects.filter(servico__militares=self)
+        if not escalas.exists():
+            return "Nenhuma escala atribuída"
+        return ", ".join([str(e) for e in escalas])
+
+    listar_escalas.short_description = "Escalas"
 
     def __str__(self):
         return f"{self.posto} {self.nome} ({str(self.nim).zfill(8)})"
@@ -57,7 +72,13 @@ class Servico(models.Model):
     # Campos para as escalas
     n_elementos_dia = models.IntegerField(default=1, help_text="Número de militares necessários por dia")
     tem_escala_B = models.BooleanField(default=False, help_text="Indica se o serviço tem escala B")
-    lista_militares = models.JSONField(default=list, blank=True)
+
+    militares = models.ManyToManyField(
+        'Militar',
+        blank=True,
+        related_name='servicos'
+    )
+
     ativo = models.BooleanField(default=True)
 
     def __str__(self):
@@ -66,39 +87,17 @@ class Servico(models.Model):
 
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
-
-    servico = models.ForeignKey(
-        Servico,
-        on_delete=models.CASCADE,
-        related_name='escalas'
-    )
+    servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='escalas')
     comentario = models.TextField(blank=True)
     data = models.DateField()
-
-    configuracao = models.ForeignKey(
-        Configuracao,
-        on_delete=models.PROTECT
-    )
-
-    # Arrays de Nims
-    sequencia_semana = models.JSONField(default=list, blank=True)
-    sequencia_fds = models.JSONField(default=list, blank=True)
+    configuracao = models.ForeignKey('Configuracao', on_delete=models.PROTECT)
     e_escala_b = models.BooleanField(default=False)
+
     def __str__(self):
         if self.e_escala_b:
-            return f"Escala B [{self.id}] for Servico {self.servico.nome}"
-        return f"Escala A [{self.id}] for Servico {self.servico.nome}"
+            return f"Escala B [{self.id}] - Serviço {self.servico.nome}"
+        return f"Escala A [{self.id}] - Serviço {self.servico.nome}"
 
-    # Retorna a lista de NIMS presentes no service a que a escala corresponde
-    def get_militares_da_escala(self):
-        return Militar.objects.filter(nim__in=self.servico.lista_militares)
-
-    # TEMP? Retorna os nomes dos militares associados
-    def nomes_militares(self):
-        militares = self.get_militares_da_escala()
-        if not militares.exists():
-            return "Nenhum militar associado ao serviço desta Escala."
-        return ", ".join([f"{m.posto} {m.nome} ({m.nim})" for m in militares])
 
 
 
