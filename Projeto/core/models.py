@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User, Permission
+from django.core.exceptions import ValidationError
 
 # Models
 class Role(models.Model):
@@ -50,6 +51,18 @@ class Militar(models.Model):
 
     def __str__(self):
         return f"{self.posto} {self.nome} ({str(self.nim).zfill(8)})"
+
+
+    def clean(self):
+        super().clean()
+        # Verifica se o NIM tem 8 digitos.
+        if not (10000000 <= self.nim <= 99999999):
+            raise ValidationError({'nim': "O NIM deve ter exatamente 8 dígitos."})
+
+        # Verifica se o numero de telefone tem 9 digitos.
+        if not (100000000 <= self.telefone <= 999999999):
+            raise ValidationError({'telefone': "O número de telefone deve conter exatamente 9 dígitos."})
+
 
 class Dispensa(models.Model):
     id = models.AutoField(primary_key = True)
