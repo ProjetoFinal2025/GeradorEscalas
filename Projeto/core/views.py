@@ -13,7 +13,11 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            return redirect('home')  # ou outra página do app
+            # Redireta Para o dashboard necessário
+            if user.is_staff:
+                return redirect('/admin/')
+            else:
+                return redirect('home')
         else:
             messages.error(request, 'NIM ou senha inválidos.')
 
