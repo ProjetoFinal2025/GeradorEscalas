@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Mapa de Dispensas por Serviço</h2>
+    <p class="text-muted">Data atual: {{ data_atual|date:"d/m/Y" }}</p>
+
+    {% for servico, dispensas in mapa_dispensas.items %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>{{ servico }}</h3>
+        </div>
+        <div class="card-body">
+            {% if dispensas %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Militar</th>
+                            <th>Data Início</th>
+                            <th>Data Fim</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dispensa in dispensas %}
+                        <tr>
+                            <td>{{ dispensa.militar }}</td>
+                            <td>{{ dispensa.data_inicio|date:"d/m/Y" }}</td>
+                            <td>{{ dispensa.data_fim|date:"d/m/Y" }}</td>
+                            <td>{{ dispensa.motivo }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">Não há dispensas registadas para este serviço.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

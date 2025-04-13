@@ -1,0 +1,120 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .feriados-grid {
+        margin: 20px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .feriado-row {
+        display: grid;
+        grid-template-columns: 120px 1fr 120px 120px;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .feriado-row:last-child {
+        border-bottom: none;
+    }
+    
+    .feriado-header {
+        background-color: #f8f8f8;
+        font-weight: bold;
+    }
+    
+    .feriado-nacional {
+        background-color: #fff3f3;
+    }
+    
+    .feriado-personalizado {
+        background-color: #f3fff3;
+    }
+    
+    .feriado-movel {
+        font-style: italic;
+    }
+    
+    .actions-bar {
+        margin: 20px 0;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .btn-adicionar {
+        display: inline-block;
+        padding: 8px 15px;
+        background-color: #79aec8;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 4px;
+        margin-right: 10px;
+    }
+    
+    .btn-adicionar:hover {
+        background-color: #417690;
+    }
+    
+    .config-info {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .config-info h3 {
+        margin-top: 0;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="config-info">
+        <h3>Configurações Atuais</h3>
+        <p>
+            <strong>Usar Feriados Nacionais:</strong> 
+            {% if config.usar_feriados_nacionais %}Sim{% else %}Não{% endif %}
+        </p>
+        <p><strong>Ano:</strong> {{ ano_atual }}</p>
+    </div>
+
+    <div class="actions-bar">
+        <a href="{% url 'admin:core_feriado_add' %}" class="btn-adicionar">
+            Adicionar Feriado Personalizado
+        </a>
+    </div>
+
+    <div class="feriados-grid">
+        <div class="feriado-row feriado-header">
+            <div>Data</div>
+            <div>Nome</div>
+            <div>Tipo</div>
+            <div>Origem</div>
+        </div>
+        
+        {% for feriado in feriados %}
+        <div class="feriado-row {% if feriado.personalizado %}feriado-personalizado{% else %}feriado-nacional{% endif %} {% if feriado.tipo == 'MOVEL' %}feriado-movel{% endif %}">
+            <div>{{ feriado.data|date:"d/m/Y" }}</div>
+            <div>{{ feriado.nome }}</div>
+            <div>{{ feriado.tipo }}</div>
+            <div>
+                {% if feriado.personalizado %}
+                Personalizado
+                {% else %}
+                Nacional
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

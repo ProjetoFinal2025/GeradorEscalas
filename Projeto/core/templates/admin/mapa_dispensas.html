@@ -1,0 +1,281 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .dispensa-grid {
+        margin-bottom: 20px;
+        overflow-x: auto;
+        max-width: 100%;
+        background-color: white;
+    }
+    .servico-header {
+        background-color: #f0f0f0;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .servico-header h3 {
+        margin: 0;
+        font-size: 1em;
+    }
+    .filtro-servico {
+        margin-bottom: 20px;
+        background-color: white;
+        padding: 10px;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: 250px repeat({{ dias|length }}, 20px);
+        gap: 0;
+        border: 1px solid #ccc;
+    }
+    .grid-header {
+        background-color: #f0f0f0;
+        border-bottom: 1px solid #ccc;
+        border-right: 1px solid #ccc;
+        padding: 5px;
+        text-align: left;
+        font-weight: normal;
+    }
+    .grid-cell {
+        background-color: white;
+        border-right: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+        height: 20px;
+        font-size: 0.8em;
+    }
+    .dispensado {
+        background-color: yellow;
+    }
+    .month-header {
+        background-color: #f0f0f0;
+        text-align: center;
+        border-bottom: 1px solid #ccc;
+        border-right: 1px solid #ccc;
+        font-weight: normal;
+        padding: 2px;
+        grid-column: span var(--span-days);
+    }
+    .grid-day-header {
+        background-color: #f0f0f0;
+        border-bottom: 1px solid #ccc;
+        border-right: 1px solid #ccc;
+        text-align: center;
+        font-weight: normal;
+        font-size: 0.8em;
+        padding: 2px;
+    }
+    .militar-cell {
+        background-color: white;
+        border-right: 1px solid #ccc;
+        border-bottom: 1px solid #ddd;
+        padding: 2px 5px;
+        text-align: left;
+        font-size: 0.8em;
+        white-space: nowrap;
+    }
+    .militar-nim {
+        color: #666;
+        margin-right: 5px;
+    }
+    .month-group {
+        border-right: 2px solid #999;
+    }
+    .month-label {
+        text-transform: lowercase;
+    }
+    .total-row {
+        background-color: #f0f0f0;
+        border-top: 2px solid #999;
+    }
+    
+    .total-label {
+        background-color: #f0f0f0;
+        border-right: 1px solid #ccc;
+        padding: 2px 5px;
+        text-align: left;
+        font-weight: bold;
+        font-size: 0.8em;
+    }
+    
+    .total-cell {
+        background-color: #f0f0f0;
+        border-right: 1px solid #ddd;
+        text-align: center;
+        font-weight: bold;
+        font-size: 0.8em;
+        padding: 2px;
+    }
+
+    .total-cell.disponiveis {
+        color: green;
+    }
+
+    .total-cell.dispensados {
+        color: red;
+    }
+
+    .total-cell.total {
+        color: #666;
+        border-bottom: 1px solid #999;
+    }
+
+    .voltar-btn {
+        display: inline-block;
+        padding: 8px 15px;
+        background-color: #79aec8;
+        color: #fff !important;
+        text-decoration: none;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        font-weight: bold;
+        border: 1px solid #417690;
+        text-shadow: none;
+    }
+    
+    .voltar-btn:hover {
+        background-color: #417690;
+        color: #fff !important;
+        text-decoration: none;
+    }
+
+    .voltar-btn:visited {
+        color: #fff !important;
+    }
+
+    .actions-bar {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: white;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .grid-cell.fim-semana {
+        background-color: #ffebeb;
+    }
+    
+    .grid-cell.feriado {
+        background-color: #ffebeb;
+    }
+    
+    .grid-day-header.fim-semana {
+        background-color: #ffebeb;
+        font-weight: bold;
+    }
+    
+    .grid-day-header.feriado {
+        background-color: #ffebeb;
+        font-weight: bold;
+    }
+    
+    .grid-cell.dispensado.fim-semana {
+        background-color: #ffffa6;
+    }
+    
+    .grid-cell.dispensado.feriado {
+        background-color: #ffffa6;
+    }
+    
+    .total-cell.fim-semana {
+        background-color: #ffebeb;
+    }
+    
+    .total-cell.feriado {
+        background-color: #ffebeb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="actions-bar">
+    <a href="{% url 'admin:core_dispensa_changelist' %}" class="voltar-btn">
+        ← Voltar para Lista de Dispensas
+    </a>
+    
+    <form method="get" class="filtro-servico" style="margin: 0;">
+        <label for="servico">Filtrar por Serviço:</label>
+        <select name="servico" id="servico" onchange="this.form.submit()">
+            <option value="">Todos os Serviços</option>
+            {% for servico in servicos %}
+            <option value="{{ servico.id }}" {% if servico.id == servico_selecionado %}selected{% endif %}>
+                {{ servico.nome }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if mapa_dispensas %}
+    {% for servico, dados in mapa_dispensas.items %}
+    <div class="dispensa-grid">
+        <div class="grid-container">
+            <!-- Cabeçalho com meses -->
+            <div class="grid-header">Nome</div>
+            {% regroup dias by mes as dias_por_mes %}
+            {% for mes in dias_por_mes %}
+                <div class="month-header" style="--span-days: {{ mes.list|length }}">
+                    {{ mes.grouper }}
+                </div>
+            {% endfor %}
+
+            <!-- Cabeçalho com dias -->
+            <div class="grid-header"></div>
+            {% for dia in dias %}
+                <div class="grid-day-header {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}"
+                     {% if dia.e_feriado %}title="Feriado"{% endif %}>
+                    {{ dia.data|date:"d" }}
+                </div>
+            {% endfor %}
+
+            <!-- Linhas para cada militar -->
+            {% for militar, dispensas in dados.militares.items %}
+                <div class="militar-cell">
+                    <span class="militar-nim">{{ militar.nim|stringformat:"08d" }}</span>
+                    {{ militar.nome }}
+                </div>
+                {% for dia in dias %}
+                    {% with dispensa=dispensas|get_item:dia.data %}
+                        <div class="grid-cell {% if dispensa %}dispensado{% endif %} {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}"
+                             {% if dispensa %}title="{{ dispensa.motivo }}"{% endif %}
+                             {% if dia.e_feriado %}title="Feriado"{% endif %}>
+                        </div>
+                    {% endwith %}
+                {% endfor %}
+            {% endfor %}
+
+            <!-- Linha de totais -->
+            <div class="total-label">N. Total de Elementos</div>
+            {% for dia in dias %}
+                <div class="total-cell total {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                    {{ dados.total_militares }}
+                </div>
+            {% endfor %}
+
+            <div class="total-label">N. Elementos Dispensados</div>
+            {% for dia in dias %}
+                <div class="total-cell dispensados {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                    {{ dados.totais_dispensados|get_item:dia.data }}
+                </div>
+            {% endfor %}
+
+            <div class="total-label">N. Elementos Disponíveis</div>
+            {% for dia in dias %}
+                <div class="total-cell disponiveis {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                    {{ dados.disponiveis|get_item:dia.data }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-dispensas">
+        Não há dispensas ativas para os serviços selecionados.
+    </div>
+{% endif %}
+{% endblock %} 

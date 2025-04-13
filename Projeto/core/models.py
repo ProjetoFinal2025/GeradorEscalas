@@ -1,6 +1,29 @@
 from django.db import models
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
+from datetime import time
+
+# Lista de postos do Exército Português (excluindo oficiais generais)
+POSTOS_CHOICES = [
+    ('COR', 'Coronel'),
+    ('TCOR', 'Tenente-Coronel'),
+    ('MAJ', 'Major'),
+    ('CAP', 'Capitão'),
+    ('TEN', 'Tenente'),
+    ('ALF', 'Alferes'),
+    ('ASP', 'Aspirante'),
+    ('SCH', 'Sargento-Chefe'),
+    ('SAJ', 'Sargento-Ajudante'),
+    ('1SARG', 'Primeiro-Sargento'),
+    ('2SARG', 'Segundo-Sargento'),
+    ('FUR', 'Furriel'),
+    ('2FUR', '2ºFurriel'),    
+    ('CABSEC', 'Cabo de Secção'),
+    ('CADJ', 'Cabo-Ajunto'),
+    ('1CAB', 'Primeiro-Cabo'),
+    ('2CAB', 'Segundo-Cabo'),
+    ('SOL', 'Soldado')
+]
 
 # Models
 class Role(models.Model):
@@ -18,7 +41,7 @@ class Militar(models.Model):
     # Liga ao user login
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     nome = models.CharField(max_length=100)
-    posto = models.CharField(max_length=50)
+    posto = models.CharField(max_length=10, choices=POSTOS_CHOICES)
     funcao= models.CharField(max_length=50)
     e_administrador = models.BooleanField(default=False)
     telefone = models.BigIntegerField()
@@ -27,7 +50,6 @@ class Militar(models.Model):
     # Campos em Relaçao a escalas
     ordem_semana = models.IntegerField()
     ordem_fds = models.IntegerField()
-
 
     # Retorna os serviços em que Militar está inscrito
     def listar_servicos(self):
@@ -76,38 +98,65 @@ class Dispensa(models.Model):
         return f"Dispensa de {self.militar.nome} ({self.data_inicio} - {self.data_fim})"
 
 
-class Configuracao(models.Model):
+class Feriado(models.Model):
     id = models.AutoField(primary_key=True)
-    hora_inicio = models.TimeField()
-    hora_fim = models.TimeField()
-    feriados = models.JSONField(default=list,blank=True,help_text="Lista de datas dos feriados no formato YYYY-MM-DD")
-    tem_escala_B = models.BooleanField(default=False)
-    n_elementos = models.IntegerField()
-    n_dias = models.IntegerField()
+    TIPO_CHOICES = [
+        ('FIXO', 'Feriado Fixo'),
+        ('MOVEL', 'Feriado Móvel'),
+    ]
+
+    nome = models.CharField(max_length=100)
+    data = models.DateField()
+    tipo = models.CharField(
+        max_length=5,
+        choices=TIPO_CHOICES,
+        default='FIXO'
+    )
+    
+    def __str__(self):
+        return f"{self.nome} - {self.data.strftime('%d/%m/%Y')}"
+    
+    class Meta:
+        verbose_name = "Feriado"
+        verbose_name_plural = "Feriados"
+        ordering = ['data']
 
 
 class Servico(models.Model):
-    # Campos de identificação
     id = models.AutoField(primary_key=True)
-    nome = models.CharField(max_length=100, unique=True)
-    descricao = models.TextField(blank=True)
-    local = models.CharField(max_length=100)
-    armamento_necessario = models.BooleanField(default=False)
-
-    # Campos para as escalas
-    n_elementos_dia = models.IntegerField(default=1, help_text="Número de militares necessários por dia")
-    tem_escala_B = models.BooleanField(default=False, help_text="Indica se o serviço tem escala B")
-
-    militares = models.ManyToManyField(
-        'Militar',
-        blank=True,
-        related_name='servicos'
-    )
-
+    nome = models.CharField(max_length=100)
+    militares = models.ManyToManyField('Militar', related_name='servicos')
     ativo = models.BooleanField(default=True)
+    hora_inicio = models.TimeField(default=time(8, 0), help_text="Hora de início do serviço")
+    hora_fim = models.TimeField(default=time(17, 0), help_text="Hora de fim do serviço")
+    n_elementos = models.IntegerField(default=1, help_text="Número de elementos necessários por escala")
+    tem_escala_B = models.BooleanField(default=False, help_text="Se o serviço tem escala B")
+    armamento = models.BooleanField(default=False, help_text="Se o serviço requer armamento")
 
     def __str__(self):
-        return f"{self.nome} ({self.n_elementos_dia} elementos/dia)"
+        return self.nome
+
+
+class Configuracao(models.Model):
+    DIA_SEMANA_CHOICES = [
+        ('SEG', 'Segunda-feira'),
+        ('DOM', 'Domingo'),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    inicio_semana = models.CharField(
+        max_length=3,
+        choices=DIA_SEMANA_CHOICES,
+        default='SEG',
+        help_text="Define se a semana começa na Segunda-feira ou no Domingo"
+    )
+
+    def __str__(self):
+        return f"Configuração {self.id} - Início: {self.get_inicio_semana_display()}"
+
+    class Meta:
+        verbose_name = "Configuração"
+        verbose_name_plural = "Configurações"
 
 
 class Escala(models.Model):
@@ -115,7 +164,6 @@ class Escala(models.Model):
     servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='escalas')
     comentario = models.TextField(blank=True)
     data = models.DateField()
-    configuracao = models.ForeignKey('Configuracao', on_delete=models.PROTECT)
     e_escala_b = models.BooleanField(default=False)
 
     def __str__(self):

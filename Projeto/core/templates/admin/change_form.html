@@ -1,0 +1,52 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block after_field_sets %}
+{{ block.super }}
+
+{% if feriados %}
+<div class="module aligned">
+    <h2>Lista de Feriados - {{ ano_atual }}</h2>
+    <div class="form-row">
+        <table style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th style="padding: 8px; background-color: #f8f8f8; border-bottom: 1px solid #ddd;">Data</th>
+                    <th style="padding: 8px; background-color: #f8f8f8; border-bottom: 1px solid #ddd;">Nome</th>
+                    <th style="padding: 8px; background-color: #f8f8f8; border-bottom: 1px solid #ddd;">Tipo</th>
+                    <th style="padding: 8px; background-color: #f8f8f8; border-bottom: 1px solid #ddd;">Origem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for feriado in feriados %}
+                <tr class="{% if feriado.personalizado %}row-personalizado{% else %}row-nacional{% endif %}">
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ feriado.data|date:"d/m/Y" }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ feriado.nome }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ feriado.tipo }}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                        {% if feriado.personalizado %}
+                        <span style="color: #28a745;">Personalizado</span>
+                        {% else %}
+                        <span style="color: #dc3545;">Nacional</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .row-personalizado {
+        background-color: #f3fff3;
+    }
+    .row-nacional {
+        background-color: #fff3f3;
+    }
+    .row-personalizado:hover, .row-nacional:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endif %}
+{% endblock %} 
