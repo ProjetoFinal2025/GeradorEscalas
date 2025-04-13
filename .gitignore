@@ -7,3 +7,5 @@ Projeto/.env
 venv/
 core/__pycache__/
 *.pyc
+
+ola.txt
