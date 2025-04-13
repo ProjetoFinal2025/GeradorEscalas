@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/escalas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>{{ servico.nome }}</h2>
+            <p class="text-muted">
+                {% if tipo_visualizacao == 'previsao' %}
+                    Previsão de Escalas - 
+                {% else %}
+                    Escalas Atuais - 
+                {% endif %}
+                Período: {{ data_inicio|date:"d/m/Y" }} a {{ data_fim|date:"d/m/Y" }}
+            </p>
+        </div>
+        <div class="col-md-4">
+            <form method="get" class="mb-3">
+                {% if tipo_visualizacao == 'previsao' %}
+                    <input type="hidden" name="tipo" value="previsao">
+                {% endif %}
+                <select name="servico_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">Selecione um serviço...</option>
+                    {% for s in servicos_ativos %}
+                        <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
+                            {{ s.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 100px;">Dia</th>
+                    <th>Efetivo</th>
+                    <th>Observações</th>
+                    <th>Reserva</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for escala in escalas %}
+                <tr {% if escala.falta %}class="table-danger"{% endif %}>
+                    <td class="text-nowrap">{{ escala.data|date:"d-M-y" }}</td>
+                    <td>
+                        {% if escala.militar %}
+                            ({{ escala.militar.posto }}) {{ escala.militar.nim|stringformat:"08d" }} {{ escala.militar.nome|upper }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if escala.prevista %}
+                            <span class="badge bg-info">Prev</span>
+                        {% endif %}
+                        {% if escala.falta %}
+                            <span class="badge bg-danger">F</span>
+                        {% endif %}
+                        {{ escala.observacoes }}
+                    </td>
+                    <td>
+                        {% if escala.militar_reserva %}
+                            ({{ escala.militar_reserva.posto }}) {{ escala.militar_reserva.nim|stringformat:"08d" }} {{ escala.militar_reserva.nome|upper }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">Não existem escalas para este período.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Legenda</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><span class="badge bg-info">Prev</span> - Escala Prevista</li>
+                        <li><span class="badge bg-danger">F</span> - Falta</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %} 

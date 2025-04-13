@@ -162,14 +162,29 @@ class Configuracao(models.Model):
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
     servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='escalas')
+    militar = models.ForeignKey('Militar', on_delete=models.CASCADE, related_name='escalas_atribuidas', null=True)
+    militar_reserva = models.ForeignKey('Militar', on_delete=models.SET_NULL, null=True, blank=True, related_name='escalas_reserva')
     comentario = models.TextField(blank=True)
     data = models.DateField()
-    e_escala_b = models.BooleanField(default=False)
+    e_escala_b = models.BooleanField(default=False, verbose_name="Escala B")
+    prevista = models.BooleanField(default=True, verbose_name="Prevista")
+    falta = models.BooleanField(default=False, verbose_name="Falta")
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
+
+    class Meta:
+        verbose_name = "Escala"
+        verbose_name_plural = "Escalas"
+        ordering = ['data', 'servico']
 
     def __str__(self):
-        if self.e_escala_b:
-            return f"Escala B [{self.id}] - Serviço {self.servico.nome}"
-        return f"Escala A [{self.id}] - Serviço {self.servico.nome}"
+        tipo_escala = "B" if self.e_escala_b else "A"
+        return f"Escala {tipo_escala} - {self.militar} - {self.servico.nome} - {self.data.strftime('%d-%b-%y')}"
+
+    def clean(self):
+        super().clean()
+        if self.militar_reserva and self.militar_reserva == self.militar:
+            raise ValidationError({'militar_reserva': "O militar de reserva não pode ser o mesmo da escala principal."})
+
 
 class Log(models.Model):
     id = models.AutoField(primary_key=True)

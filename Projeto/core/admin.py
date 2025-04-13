@@ -5,11 +5,50 @@ from django.shortcuts import render
 from django.db.models import Q
 from datetime import date, timedelta, time
 from django.template.defaulttags import register
+from django.utils.html import format_html
 
 from .forms import MilitarForm, ServicoForm, EscalaForm
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado
 from .views import obter_feriados
+
+# Configuração do Admin Site
+class GeradorEscalasAdminSite(admin.AdminSite):
+    site_header = 'Gerador de Escalas'
+    site_title = 'Gerador de Escalas'
+    index_title = 'Administração do Sistema'
+
+    def get_app_list(self, request):
+        app_list = super().get_app_list(request)
+        
+        # Encontrar a app 'core'
+        core_app = next((app for app in app_list if app['app_label'] == 'core'), None)
+        
+        if core_app:
+            # Criar nova seção para Previsões
+            previsoes_section = {
+                'name': 'Previsões',
+                'app_label': 'core',
+                'app_url': '/admin/core/',
+                'has_module_perms': True,
+                'models': [
+                    {
+                        'name': 'Previsão de Escalas',
+                        'object_name': 'escala',
+                        'admin_url': '/admin/core/escala/previsao/',
+                        'view_only': False,
+                    }
+                ],
+            }
+            
+            # Adicionar a nova seção após a app 'core'
+            index = app_list.index(core_app)
+            app_list.insert(index + 1, previsoes_section)
+        
+        return app_list
+
+# Criar instância do admin site customizado
+admin_site = GeradorEscalasAdminSite(name='admin')
 
 @register.filter
 def get_item(dictionary, key):
@@ -58,8 +97,101 @@ class ServicoAdmin(admin.ModelAdmin):
     ver_escalas.short_description = "Escalas atribuídas"
 
 class EscalaAdmin(admin.ModelAdmin):
-    list_display = ['id', 'servico', 'data', 'e_escala_b']
+    form = EscalaForm
+    list_display = ['id', 'servico', 'data', 'e_escala_b', 'falta', 'prevista']
+    list_filter = ('servico', 'data', 'e_escala_b', 'falta', 'prevista')
+    search_fields = ('servico__nome', 'data')
+    date_hierarchy = 'data'
     readonly_fields = ['ver_militares_do_servico']
+    change_list_template = 'admin/core/escala/change_list.html'
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('previsao/', self.admin_site.admin_view(self.previsao_view), name='escala_previsao'),
+        ]
+        return custom_urls + urls
+
+    def previsao_view(self, request):
+        # Obter o serviço selecionado ou o primeiro serviço ativo
+        servico_id = request.GET.get('servico')
+        if servico_id:
+            servico = Servico.objects.get(id=servico_id)
+        else:
+            servico = Servico.objects.filter(ativo=True).first()
+
+        # Obter a data final da previsão
+        hoje = date.today()
+        try:
+            data_fim_str = request.GET.get('data_fim')
+            if data_fim_str:
+                data_fim = date.fromisoformat(data_fim_str)
+                # Garantir que a data final não é anterior a hoje
+                if data_fim < hoje:
+                    data_fim = hoje
+            else:
+                # Se não foi especificada data final, usar o último dia do próximo mês
+                if hoje.month == 12:
+                    proximo_mes = date(hoje.year + 1, 1, 1)
+                else:
+                    proximo_mes = date(hoje.year, hoje.month + 1, 1)
+                data_fim = (proximo_mes.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        except ValueError:
+            # Se houver erro ao processar a data, usar o último dia do próximo mês
+            if hoje.month == 12:
+                proximo_mes = date(hoje.year + 1, 1, 1)
+            else:
+                proximo_mes = date(hoje.year, hoje.month + 1, 1)
+            data_fim = (proximo_mes.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+        # Gerar lista de todas as datas no período
+        datas = []
+        data_atual = hoje
+        feriados = obter_feriados(hoje.year)
+        if hoje.year != data_fim.year:
+            feriados.extend(obter_feriados(data_fim.year))
+
+        while data_atual <= data_fim:
+            # Buscar escala existente para esta data
+            escala = Escala.objects.filter(
+                servico=servico,
+                data=data_atual,
+                prevista=True
+            ).first()
+
+            # Verificar se é fim de semana ou feriado
+            e_fim_semana = data_atual.weekday() >= 5
+            e_feriado = data_atual in feriados
+
+            datas.append({
+                'data': data_atual,
+                'escala': escala,
+                'e_fim_semana': e_fim_semana,
+                'e_feriado': e_feriado,
+                'tipo_dia': 'feriado' if e_feriado else ('fim_semana' if e_fim_semana else 'util')
+            })
+            
+            data_atual += timedelta(days=1)
+
+        # Buscar todos os serviços ativos para o seletor
+        servicos = Servico.objects.filter(ativo=True)
+
+        context = {
+            'title': f'Previsão de Escalas - {servico.nome}',
+            'servico': servico,
+            'servicos': servicos,
+            'datas': datas,
+            'hoje': hoje,
+            'data_fim': data_fim,
+            'opts': self.model._meta,
+            'cl': self,
+            'is_popup': False,
+            'has_add_permission': self.has_add_permission(request),
+            'has_change_permission': self.has_change_permission(request),
+            'has_delete_permission': self.has_delete_permission(request),
+        }
+
+        return render(request, 'admin/core/escala/previsao.html', context)
 
     def ver_militares_do_servico(self, obj):
         militares = obj.servico.militares.all()
@@ -98,97 +230,41 @@ class DispensaAdmin(admin.ModelAdmin):
         
         # Obter o dia atual e calcular dias até ao final do ano
         hoje = date.today()
-        ultimo_dia_ano = date(hoje.year, 12, 31)
-        dias = [hoje + timedelta(days=x) for x in range((ultimo_dia_ano - hoje).days + 1)]
+        dias_restantes = (date(hoje.year, 12, 31) - hoje).days
         
-        # Obter feriados
-        feriados = obter_feriados(hoje.year)
+        # Obter todos os serviços ativos
+        servicos = Servico.objects.filter(ativo=True)
         
-        # Dicionário com nomes dos meses em português
-        meses_pt = {
-            1: 'janeiro',
-            2: 'fevereiro',
-            3: 'março',
-            4: 'abril',
-            5: 'maio',
-            6: 'junho',
-            7: 'julho',
-            8: 'agosto',
-            9: 'setembro',
-            10: 'outubro',
-            11: 'novembro',
-            12: 'dezembro'
-        }
-        
-        # Criar dicionário com informações de cada dia
-        dias_info = []
-        for dia in dias:
-            e_feriado = dia in feriados
-            e_fim_semana = dia.weekday() >= 5
-            dias_info.append({
-                'data': dia,
-                'e_feriado': e_feriado,
-                'e_fim_semana': e_fim_semana,
-                'mes': meses_pt[dia.month]
-            })
-        
-        # Obter todas as dispensas que se sobrepõem com o período
-        dispensas = Dispensa.objects.filter(
-            Q(data_inicio__lte=ultimo_dia_ano) & Q(data_fim__gte=hoje)
-        )
-        
-        # Filtrar por serviço se selecionado
+        # Se um serviço foi selecionado, filtrar as dispensas
         if servico_id:
-            dispensas = dispensas.filter(militar__servicos__id=servico_id)
+            servico = Servico.objects.get(id=servico_id)
+            militares = servico.militares.all()
+            dispensas = Dispensa.objects.filter(
+                militar__in=militares,
+                data_inicio__gte=hoje,
+                data_inicio__lte=hoje + timedelta(days=dias_restantes)
+            ).order_by('data_inicio')
+        else:
+            dispensas = Dispensa.objects.filter(
+                data_inicio__gte=hoje,
+                data_inicio__lte=hoje + timedelta(days=dias_restantes)
+            ).order_by('data_inicio')
         
         # Agrupar dispensas por serviço
-        servicos = Servico.objects.filter(ativo=True)
         mapa_dispensas = {}
-        
         for servico in servicos:
-            servico_dispensas = dispensas.filter(militar__servicos=servico)
-            total_militares = servico.militares.count()
-            
-            if servico_dispensas.exists() or total_militares > 0:
-                # Para cada militar do serviço, criar um dicionário de dispensas por dia
-                militares_com_dispensas = {}
-                totais_por_dia = {dia: 0 for dia in dias}
-                
-                for militar in servico.militares.all():
-                    dispensas_militar = {}
-                    for dia in dias:
-                        dispensa = servico_dispensas.filter(
-                            militar=militar,
-                            data_inicio__lte=dia,
-                            data_fim__gte=dia
-                        ).first()
-                        if dispensa:
-                            dispensas_militar[dia] = dispensa
-                            totais_por_dia[dia] += 1
-                    if dispensas_militar:
-                        militares_com_dispensas[militar] = dispensas_militar
-                
-                # Calcular militares disponíveis por dia
-                disponiveis_por_dia = {
-                    dia: total_militares - totais_por_dia[dia]
-                    for dia in dias
-                }
-                
-                mapa_dispensas[servico] = {
-                    'militares': militares_com_dispensas,
-                    'totais_dispensados': totais_por_dia,
-                    'total_militares': total_militares,
-                    'disponiveis': disponiveis_por_dia
-                }
+            militares_servico = servico.militares.all()
+            dispensas_servico = dispensas.filter(militar__in=militares_servico)
+            if dispensas_servico.exists():
+                mapa_dispensas[servico] = dispensas_servico
         
         context = {
             'title': 'Mapa de Dispensas',
             'mapa_dispensas': mapa_dispensas,
             'servicos': servicos,
-            'servico_selecionado': int(servico_id) if servico_id else None,
-            'dias': dias_info,
+            'servico_selecionado': servico_id,
             'hoje': hoje,
-            'meses_pt': meses_pt,
+            'dias_restantes': dias_restantes,
         }
         
         return render(request, 'admin/mapa_dispensas.html', context)
@@ -197,9 +273,8 @@ class ConfiguracaoAdmin(admin.ModelAdmin):
     list_display = ('id', 'inicio_semana')
     
     fieldsets = (
-        ('Configurações de Calendário', {
-            'fields': ('inicio_semana',),
-            'classes': ('wide',)
+        ('Configurações Gerais', {
+            'fields': ('inicio_semana',)
         }),
     )
 
@@ -209,10 +284,11 @@ class FeriadoAdmin(admin.ModelAdmin):
     search_fields = ('nome',)
     date_hierarchy = 'data'
 
-admin.site.register(Militar, MilitarAdmin)
-admin.site.register(Dispensa, DispensaAdmin)
-admin.site.register(Escala, EscalaAdmin)
-admin.site.register(Servico, ServicoAdmin)
-admin.site.register(Configuracao, ConfiguracaoAdmin)
-admin.site.register(Feriado, FeriadoAdmin)
-admin.site.register(Log)
+# Registrar os modelos no admin site customizado
+admin_site.register(Militar, MilitarAdmin)
+admin_site.register(Servico, ServicoAdmin)
+admin_site.register(Escala, EscalaAdmin)
+admin_site.register(Dispensa, DispensaAdmin)
+admin_site.register(Configuracao, ConfiguracaoAdmin)
+admin_site.register(Feriado, FeriadoAdmin)
+admin_site.register(Log)

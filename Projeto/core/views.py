@@ -1,9 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from .models import Servico, Dispensa
+from .models import Servico, Dispensa, Escala
 from datetime import datetime, timedelta, date
 
 
@@ -30,8 +30,76 @@ def login_view(request):
 from django.http import HttpResponse
 
 ## Testar se log in foi executado
+@login_required
 def home_view(request):
-    return HttpResponse("Login realizado com sucesso. Estás a ver Casa")
+    """View da página inicial com visualização das escalas"""
+    # Debug: Imprimir todos os serviços ativos
+    todos_servicos = Servico.objects.filter(ativo=True)
+    print("=== DEBUG ===")
+    print("Serviços ativos encontrados:", [f"{s.id}: {s.nome}" for s in todos_servicos])
+    
+    # Obtém o serviço selecionado ou o primeiro serviço ativo
+    servico_id = request.GET.get('servico_id')
+    print("Serviço ID recebido:", servico_id)
+    
+    if servico_id:
+        servico = get_object_or_404(Servico, pk=servico_id, ativo=True)
+        print("Serviço encontrado por ID:", f"{servico.id}: {servico.nome}")
+    else:
+        servico = Servico.objects.filter(ativo=True).first()
+        print("Primeiro serviço ativo:", f"{servico.id}: {servico.nome}" if servico else "Nenhum")
+        if not servico:
+            messages.warning(request, "Não existem serviços ativos.")
+            return render(request, 'core/home.html')
+
+    # Verifica se é visualização de previsão
+    tipo_visualizacao = request.GET.get('tipo', 'atual')
+    print("Tipo de visualização:", tipo_visualizacao)
+    
+    # Define o período
+    hoje = date.today()
+    if tipo_visualizacao == 'previsao':
+        # Para previsão, mostra o próximo mês
+        if hoje.month == 12:
+            data_inicio = date(hoje.year + 1, 1, 1)
+            data_fim = date(hoje.year + 1, 2, 1) - timedelta(days=1)
+        else:
+            data_inicio = date(hoje.year, hoje.month + 1, 1)
+            data_fim = date(hoje.year, hoje.month + 2, 1) - timedelta(days=1)
+    else:
+        # Para visualização atual, mostra o mês atual
+        data_inicio = date(hoje.year, hoje.month, 1)
+        if hoje.month == 12:
+            data_fim = date(hoje.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            data_fim = date(hoje.year, hoje.month + 1, 1) - timedelta(days=1)
+
+    print("Período:", data_inicio, "a", data_fim)
+
+    # Busca as escalas do período
+    escalas = Escala.objects.filter(
+        servico=servico,
+        data__range=[data_inicio, data_fim]
+    ).order_by('data')
+    print("Escalas encontradas:", escalas.count())
+    for escala in escalas:
+        print(f"Escala: {escala.data} - Militar: {escala.militar.nome if escala.militar else 'Nenhum'}")
+
+    # Lista de serviços ativos para o seletor
+    servicos_ativos = Servico.objects.filter(ativo=True)
+    print("Serviços ativos para o seletor:", [f"{s.id}: {s.nome}" for s in servicos_ativos])
+    print("=== FIM DEBUG ===")
+
+    context = {
+        'servico': servico,
+        'servicos_ativos': servicos_ativos,
+        'escalas': escalas,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+        'tipo_visualizacao': tipo_visualizacao,
+    }
+
+    return render(request, 'core/home.html', context)
 
 @login_required
 def mapa_dispensas_view(request):
@@ -106,3 +174,57 @@ def obter_feriados(ano):
     feriados.extend([f.data for f in feriados_personalizados])
     
     return sorted(list(set(feriados)))  # Remove duplicatas e ordena
+
+@login_required
+def escala_servico_view(request, servico_id=None):
+    """View para exibir a escala de um serviço específico"""
+    
+    # Se não foi especificado um serviço, pega o primeiro serviço ativo
+    if servico_id is None:
+        servico = Servico.objects.filter(ativo=True).first()
+        if not servico:
+            messages.error(request, "Não existem serviços ativos.")
+            return redirect('home')
+    else:
+        servico = get_object_or_404(Servico, pk=servico_id, ativo=True)
+
+    # Verifica se é visualização de previsão
+    tipo_visualizacao = request.GET.get('tipo', 'atual')
+    
+    # Define o período
+    hoje = date.today()
+    if tipo_visualizacao == 'previsao':
+        # Para previsão, mostra o próximo mês
+        if hoje.month == 12:
+            data_inicio = date(hoje.year + 1, 1, 1)
+            data_fim = date(hoje.year + 1, 2, 1) - timedelta(days=1)
+        else:
+            data_inicio = date(hoje.year, hoje.month + 1, 1)
+            data_fim = date(hoje.year, hoje.month + 2, 1) - timedelta(days=1)
+    else:
+        # Para visualização atual, mostra o mês atual
+        data_inicio = date(hoje.year, hoje.month, 1)
+        if hoje.month == 12:
+            data_fim = date(hoje.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            data_fim = date(hoje.year, hoje.month + 1, 1) - timedelta(days=1)
+
+    # Busca as escalas do período
+    escalas = Escala.objects.filter(
+        servico=servico,
+        data__range=[data_inicio, data_fim]
+    ).order_by('data')
+
+    # Lista de serviços ativos para o seletor
+    servicos_ativos = Servico.objects.filter(ativo=True)
+
+    context = {
+        'servico': servico,
+        'servicos_ativos': servicos_ativos,
+        'escalas': escalas,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+        'tipo_visualizacao': tipo_visualizacao,
+    }
+
+    return render(request, 'core/escala_servico.html', context)

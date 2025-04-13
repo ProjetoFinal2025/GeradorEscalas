@@ -41,20 +41,7 @@ class ServicoForm(forms.ModelForm):
 class EscalaForm(forms.ModelForm):
     class Meta:
         model = Escala
-        fields = '__all__'
+        fields = ['servico', 'data', 'e_escala_b', 'falta', 'prevista', 'observacoes']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # So mostar Militares quando correspondem a cervico
-        self.fields['militares'].queryset = Militar.objects.none()
-
-        # Caso escala ser editada ja com um servico selecionado
-        if 'servico' in self.data:
-            try:
-                servico_id = int(self.data.get('servico'))
-                self.fields['militares'].queryset = Militar.objects.filter(servicos__id=servico_id)
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk:
-            self.fields['militares'].queryset = self.instance.servico.militares.all()
