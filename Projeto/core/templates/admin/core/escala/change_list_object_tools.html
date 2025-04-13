@@ -1,0 +1,37 @@
+{% load i18n admin_urls %}
+
+<ul class="object-tools">
+    {% if has_add_permission %}
+        <li>
+            <a href="{% url 'admin:core_escala_add' %}" class="addlink">
+                {% blocktranslate with cl.opts.verbose_name as name %}Add {{ name }}{% endblocktranslate %}
+            </a>
+        </li>
+    {% endif %}
+    <li>
+        <a href="?tipo=atual" class="btn{% if request.GET.tipo != 'previsao' %} selected{% endif %}">
+            Escalas Atuais
+        </a>
+    </li>
+    <li>
+        <a href="?tipo=previsao" class="btn{% if request.GET.tipo == 'previsao' %} selected{% endif %}">
+            Previsão de Escalas
+        </a>
+    </li>
+</ul>
+
+<style>
+    .object-tools .btn {
+        background: #79aec8;
+        padding: 10px 15px;
+        border-radius: 4px;
+        color: #fff;
+        text-decoration: none;
+    }
+    .object-tools .btn:hover {
+        background: #417690;
+    }
+    .object-tools .btn.selected {
+        background: #417690;
+    }
+</style> 

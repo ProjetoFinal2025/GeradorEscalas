@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    <li>
+        <a href="{% url 'admin:core_previsaoescalasproxy_changelist' %}" class="btn">
+            Previsão de Escalas
+        </a>
+    </li>
+{% endblock %} 

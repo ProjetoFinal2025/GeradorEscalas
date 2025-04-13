@@ -27,15 +27,15 @@ class GeradorEscalasAdminSite(admin.AdminSite):
         if core_app:
             # Criar nova seção para Previsões
             previsoes_section = {
-                'name': 'Previsões',
+                'name': 'PREVISÕES',
                 'app_label': 'core',
                 'app_url': '/admin/core/',
                 'has_module_perms': True,
                 'models': [
                     {
                         'name': 'Previsão de Escalas',
-                        'object_name': 'escala',
-                        'admin_url': '/admin/core/escala/previsao/',
+                        'object_name': 'previsaoescalasproxy',
+                        'admin_url': '/admin/core/previsaoescalasproxy/',
                         'view_only': False,
                     }
                 ],
@@ -103,12 +103,31 @@ class EscalaAdmin(admin.ModelAdmin):
     search_fields = ('servico__nome', 'data')
     date_hierarchy = 'data'
     readonly_fields = ['ver_militares_do_servico']
-    change_list_template = 'admin/core/escala/change_list.html'
+
+    def ver_militares_do_servico(self, obj):
+        militares = obj.servico.militares.all()
+        if not militares.exists():
+            return "Nenhum militar atribuído a esta escala"
+        return ", ".join(f"{m.posto} {m.nome} ({str(m.nim).zfill(8)})" for m in militares)
+
+    ver_militares_do_servico.short_description = "Militares na Escala"
+
+class PrevisaoEscalasAdmin(admin.ModelAdmin):
+    change_list_template = 'admin/core/escala/previsao.html'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return True
 
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('previsao/', self.admin_site.admin_view(self.previsao_view), name='escala_previsao'),
+            path('', self.admin_site.admin_view(self.previsao_view), name='core_previsaoescalasproxy_changelist'),
         ]
         return custom_urls + urls
 
@@ -122,34 +141,21 @@ class EscalaAdmin(admin.ModelAdmin):
 
         # Obter a data final da previsão
         hoje = date.today()
-        try:
-            data_fim_str = request.GET.get('data_fim')
-            if data_fim_str:
+        data_fim_str = request.GET.get('data_fim')
+        if data_fim_str:
+            try:
                 data_fim = date.fromisoformat(data_fim_str)
-                # Garantir que a data final não é anterior a hoje
-                if data_fim < hoje:
-                    data_fim = hoje
-            else:
-                # Se não foi especificada data final, usar o último dia do próximo mês
-                if hoje.month == 12:
-                    proximo_mes = date(hoje.year + 1, 1, 1)
-                else:
-                    proximo_mes = date(hoje.year, hoje.month + 1, 1)
-                data_fim = (proximo_mes.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-        except ValueError:
-            # Se houver erro ao processar a data, usar o último dia do próximo mês
-            if hoje.month == 12:
-                proximo_mes = date(hoje.year + 1, 1, 1)
-            else:
-                proximo_mes = date(hoje.year, hoje.month + 1, 1)
-            data_fim = (proximo_mes.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            except ValueError:
+                data_fim = hoje + timedelta(days=30)
+        else:
+            data_fim = hoje + timedelta(days=30)
 
-        # Gerar lista de todas as datas no período
+        # Obter feriados no período
+        feriados = obter_feriados(hoje, data_fim)
+        
+        # Gerar lista de datas com suas escalas
         datas = []
         data_atual = hoje
-        feriados = obter_feriados(hoje.year)
-        if hoje.year != data_fim.year:
-            feriados.extend(obter_feriados(data_fim.year))
 
         while data_atual <= data_fim:
             # Buscar escala existente para esta data
@@ -193,13 +199,9 @@ class EscalaAdmin(admin.ModelAdmin):
 
         return render(request, 'admin/core/escala/previsao.html', context)
 
-    def ver_militares_do_servico(self, obj):
-        militares = obj.servico.militares.all()
-        if not militares.exists():
-            return "Nenhum militar atribuído a esta escala"
-        return ", ".join(f"{m.posto} {m.nome} ({str(m.nim).zfill(8)})" for m in militares)
-
-    ver_militares_do_servico.short_description = "Militares na Escala"
+    class Meta:
+        verbose_name = "Previsão de Escalas"
+        verbose_name_plural = "Previsão de Escalas"
 
 class DispensaAdmin(admin.ModelAdmin):
     list_display = ('militar', 'data_inicio', 'data_fim', 'motivo', 'servico_atual')
@@ -292,3 +294,12 @@ admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Configuracao, ConfiguracaoAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
+
+# Registrar a Previsão de Escalas como um modelo proxy
+class PrevisaoEscalasProxy(Escala):
+    class Meta:
+        proxy = True
+        verbose_name = "Previsão de Escalas"
+        verbose_name_plural = "Previsão de Escalas"
+
+admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
