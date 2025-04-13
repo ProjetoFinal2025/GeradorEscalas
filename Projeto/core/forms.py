@@ -41,7 +41,7 @@ class ServicoForm(forms.ModelForm):
 class EscalaForm(forms.ModelForm):
     class Meta:
         model = Escala
-        fields = ['servico', 'data', 'e_escala_b', 'falta', 'prevista', 'observacoes']
+        fields = ['servico', 'data', 'e_escala_b', 'observacoes']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

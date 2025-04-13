@@ -41,7 +41,7 @@ class Militar(models.Model):
     # Liga ao user login
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     nome = models.CharField(max_length=100)
-    posto = models.CharField(max_length=10, choices=POSTOS_CHOICES)
+    posto = models.CharField(max_length=30, choices=POSTOS_CHOICES)
     funcao= models.CharField(max_length=50)
     e_administrador = models.BooleanField(default=False)
     telefone = models.BigIntegerField()
@@ -167,8 +167,6 @@ class Escala(models.Model):
     comentario = models.TextField(blank=True)
     data = models.DateField()
     e_escala_b = models.BooleanField(default=False, verbose_name="Escala B")
-    prevista = models.BooleanField(default=True, verbose_name="Prevista")
-    falta = models.BooleanField(default=False, verbose_name="Falta")
     observacoes = models.TextField(blank=True, verbose_name="Observações")
 
     class Meta:

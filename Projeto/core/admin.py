@@ -98,8 +98,8 @@ class ServicoAdmin(admin.ModelAdmin):
 
 class EscalaAdmin(admin.ModelAdmin):
     form = EscalaForm
-    list_display = ['id', 'servico', 'data', 'e_escala_b', 'falta', 'prevista']
-    list_filter = ('servico', 'data', 'e_escala_b', 'falta', 'prevista')
+    list_display = ['id', 'servico', 'data', 'e_escala_b']
+    list_filter = ('servico', 'data', 'e_escala_b')
     search_fields = ('servico__nome', 'data')
     date_hierarchy = 'data'
     readonly_fields = ['ver_militares_do_servico']
@@ -162,7 +162,6 @@ class PrevisaoEscalasAdmin(admin.ModelAdmin):
             escala = Escala.objects.filter(
                 servico=servico,
                 data=data_atual,
-                prevista=True
             ).first()
 
             # Verificar se é fim de semana ou feriado
