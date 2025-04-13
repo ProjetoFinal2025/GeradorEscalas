@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='militar',
             name='posto',
-            field=models.CharField(choices=[('OF', 'Oficiais'), ('CF', 'Coronel'), ('TC', 'Tenente-Coronel'), ('MJ', 'Major'), ('CP', 'Capitão'), ('TEN', 'Tenente'), ('AL', 'Alferes'), ('S', 'Sargentos'), ('SM', 'Sargento-Mor'), ('SAJ', 'Sargento-Ajudante'), ('S1', 'Primeiro-Sargento'), ('S2', 'Segundo-Sargento'), ('PRA', 'Praças'), ('FUR', 'Furriel'), ('1CAB', 'Primeiro-Cabo'), ('CAB', 'Cabo'), ('ANS', 'Anspeçada'), ('SOL', 'Soldado')], max_length=10),
+            field=models.CharField(choices=[('OF', 'Oficiais'), ('CF', 'Coronel'), ('TC', 'Tenente-Coronel'), ('MJ', 'Major'), ('CP', 'Capitão'), ('TEN', 'Tenente'), ('AL', 'Alferes'), ('S', 'Sargentos'), ('SM', 'Sargento-Mor'), ('SAJ', 'Sargento-Ajudante'), ('S1', 'Primeiro-Sargento'), ('S2', 'Segundo-Sargento'), ('PRA', 'Praças'), ('FUR', 'Furriel'), ('1CAB', 'Primeiro-Cabo'), ('CAB', 'Cabo'), ('ANS', 'Anspeçada'), ('SOL', 'Soldado')], max_length=30),
         ),
     ]
