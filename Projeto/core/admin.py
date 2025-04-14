@@ -108,7 +108,40 @@ class EscalaAdmin(admin.ModelAdmin):
         militares = obj.servico.militares.all()
         if not militares.exists():
             return "Nenhum militar atribuído a esta escala"
-        return ", ".join(f"{m.posto} {m.nome} ({str(m.nim).zfill(8)})" for m in militares)
+
+        rows = ""
+        for m in militares:
+            rows += f"""
+                <tr>
+                    <td style="padding: 8px;">{m.posto}</td>
+                    <td style="padding: 8px;">{m.nome}</td>
+                    <td style="padding: 8px;">{str(m.nim).zfill(8)}</td>
+                </tr>
+            """
+
+        return format_html(f"""
+            <div style="width: 100%;">
+                <table style="
+                    width: 100%;
+                    border-collapse: collapse;
+                    table-layout: fixed;
+                    text-align: left;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                ">
+                    <thead style="background-color: #f9f9f9;">
+                        <tr>
+                            <th style='padding: 8px; width: 20%;'>Posto</th>
+                            <th style='padding: 8px; width: 50%;'>Nome</th>
+                            <th style='padding: 8px; width: 30%;'>NIM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows}
+                    </tbody>
+                </table>
+            </div>
+        """)
 
     ver_militares_do_servico.short_description = "Militares na Escala"
 
