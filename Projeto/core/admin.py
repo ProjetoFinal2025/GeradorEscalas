@@ -6,11 +6,15 @@ from django.db.models import Q
 from datetime import date, timedelta, time
 from django.template.defaulttags import register
 from django.utils.html import format_html
-
 from .forms import MilitarForm, ServicoForm, EscalaForm
+
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.admin import UserAdmin, GroupAdmin
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado
 from .views import obter_feriados
+
+
 
 # Configuração do Admin Site
 class GeradorEscalasAdminSite(admin.AdminSite):
@@ -20,7 +24,8 @@ class GeradorEscalasAdminSite(admin.AdminSite):
 
     def get_app_list(self, request):
         app_list = super().get_app_list(request)
-        
+
+
         # Encontrar a app 'core'
         core_app = next((app for app in app_list if app['app_label'] == 'core'), None)
         
@@ -49,6 +54,8 @@ class GeradorEscalasAdminSite(admin.AdminSite):
 
 # Criar instância do admin site customizado
 admin_site = GeradorEscalasAdminSite(name='admin')
+admin_site.register(User, UserAdmin)
+admin_site.register(Group, GroupAdmin)
 
 @register.filter
 def get_item(dictionary, key):
