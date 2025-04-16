@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.urls import path
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from datetime import date, timedelta
+from django.utils import timezone
 from django.template.defaulttags import register
 from django.utils.html import format_html
 from .forms import MilitarForm, ServicoForm, EscalaForm
@@ -309,48 +310,98 @@ class DispensaAdmin(admin.ModelAdmin):
 
     def mapa_dispensas_view(self, request):
         # Obter o serviço selecionado do filtro
-        servico_id = request.GET.get('servico', None)
-        
-        # Obter o dia atual e calcular dias até ao final do ano
-        hoje = date.today()
-        dias_restantes = (date(hoje.year, 12, 31) - hoje).days
-        
-        # Obter todos os serviços ativos
+        servico_id = request.GET.get('servico')
+        servico_selecionado = None
         servicos = Servico.objects.filter(ativo=True)
         
-        # Se um serviço foi selecionado, filtrar as dispensas
         if servico_id:
-            servico = Servico.objects.get(id=servico_id)
-            militares = servico.militares.all()
-            dispensas = Dispensa.objects.filter(
-                militar__in=militares,
-                data_inicio__gte=hoje,
-                data_inicio__lte=hoje + timedelta(days=dias_restantes)
-            ).order_by('data_inicio')
-        else:
-            dispensas = Dispensa.objects.filter(
-                data_inicio__gte=hoje,
-                data_inicio__lte=hoje + timedelta(days=dias_restantes)
-            ).order_by('data_inicio')
+            servico_selecionado = get_object_or_404(Servico, id=servico_id, ativo=True)
+            servicos = [servico_selecionado]
         
-        # Agrupar dispensas por serviço
+        hoje = timezone.now().date()
+        # Calcular dias até ao final do ano
+        ultimo_dia_ano = date(hoje.year, 12, 31)
+        dias_restantes = (ultimo_dia_ano - hoje).days
+        
+        # Obter lista de feriados
+        feriados = obter_feriados(hoje, ultimo_dia_ano)
+        
+        # Agrupar dias por mês
+        dias_por_mes = {}
+        dias = []
+        data_atual = hoje
+        
+        while data_atual <= ultimo_dia_ano:
+            mes = data_atual.replace(day=1)
+            if mes not in dias_por_mes:
+                dias_por_mes[mes] = []
+            
+            e_fim_semana = data_atual.weekday() >= 5  # 5 = Sábado, 6 = Domingo
+            e_feriado = data_atual in feriados
+            
+            dia_info = {
+                'data': data_atual, 
+                'dia_semana': data_atual.strftime('%A'),
+                'e_fim_semana': e_fim_semana,
+                'e_feriado': e_feriado
+            }
+            
+            dias_por_mes[mes].append(dia_info)
+            dias.append(dia_info)
+            data_atual += timedelta(days=1)
+        
         mapa_dispensas = {}
         for servico in servicos:
-            militares_servico = servico.militares.all()
-            dispensas_servico = dispensas.filter(militar__in=militares_servico)
-            if dispensas_servico.exists():
-                mapa_dispensas[servico] = dispensas_servico
+            militares = servico.militares.all()
+            dispensas_servico = {}
+            
+            # Initialize summary data
+            resumo = {
+                'dispensados': {},
+                'disponiveis': {},
+                'total': {}
+            }
+            
+            for militar in militares:
+                dispensas = {}
+                for dia in dias:
+                    dispensa = Dispensa.objects.filter(
+                        militar=militar,
+                        data_inicio__lte=dia['data'],
+                        data_fim__gte=dia['data']
+                    ).first()
+                    if dispensa:
+                        dispensas[dia['data']] = dispensa
+                        # Update summary for dispensados
+                        if dia['data'] not in resumo['dispensados']:
+                            resumo['dispensados'][dia['data']] = 0
+                        resumo['dispensados'][dia['data']] += 1
+                    
+                    # Update total
+                    if dia['data'] not in resumo['total']:
+                        resumo['total'][dia['data']] = 0
+                    resumo['total'][dia['data']] += 1
+                
+                dispensas_servico[militar] = dispensas
+            
+            # Calculate disponiveis for each day
+            for dia in dias:
+                total = resumo['total'].get(dia['data'], 0)
+                dispensados = resumo['dispensados'].get(dia['data'], 0)
+                resumo['disponiveis'][dia['data']] = total - dispensados
+            
+            mapa_dispensas[servico] = {
+                'militares': dispensas_servico,
+                'resumo': resumo
+            }
         
-        context = {
-            'title': 'Mapa de Dispensas',
+        return render(request, 'admin/mapa_dispensas_test.html', {
             'mapa_dispensas': mapa_dispensas,
-            'servicos': servicos,
-            'servico_selecionado': servico_id,
-            'hoje': hoje,
-            'dias_restantes': dias_restantes,
-        }
-        
-        return render(request, 'admin/mapa_dispensas.html', context)
+            'dias': dias,
+            'dias_por_mes': dias_por_mes,
+            'servicos': Servico.objects.filter(ativo=True),
+            'servico_selecionado': servico_selecionado
+        })
 
 class ConfiguracaoAdmin(admin.ModelAdmin):
     list_display = ('id', 'inicio_semana')
