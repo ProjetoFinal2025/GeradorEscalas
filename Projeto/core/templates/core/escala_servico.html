@@ -48,15 +48,13 @@
             </thead>
             <tbody>
                 {% for escala in escalas %}
-                <tr {% if escala.falta %}class="table-danger"{% endif %}>
-                    <td class="text-nowrap">{{ escala.data|date:"d-M-y" }}</td>
+                <tr>
+                    <td>{{ escala.data|date:"d/m/Y" }}</td>
+                    <td>{{ escala.militar.posto }} {{ escala.militar.nome }}</td>
                     <td>
-                        {% if escala.militar %}
-                            ({{ escala.militar.posto }}) {{ escala.militar.nim|stringformat:"08d" }} {{ escala.militar.nome|upper }}
+                        {% if escala.e_escala_b %}
+                            <span class="badge bg-primary">B</span>
                         {% endif %}
-                    </td>
-                    <td>
-                        {{ escala.observacoes }}
                     </td>
                     <td>
                         {% if escala.militar_reserva %}
@@ -80,9 +78,8 @@
                     <h5 class="mb-0">Legenda</h5>
                 </div>
                 <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li><span class="badge bg-info">Prev</span> - Escala Prevista</li>
-                        <li><span class="badge bg-danger">F</span> - Falta</li>
+                    <ul class="list-inline">
+                        <li class="list-inline-item"><span class="badge bg-primary">B</span> - Escala B</li>
                     </ul>
                 </div>
             </div>

@@ -64,11 +64,6 @@
       font-style: italic;
       color: #1976d2;
     }
-    .falta-badge {
-      color: #cc0000;
-      font-weight: bold;
-      margin-right: 5px;
-    }
     .actions {
       padding: 10px;
       background: #f8f9fa;
@@ -85,6 +80,21 @@
       margin-right: 20px;
       border: 1px solid #ccc;
       border-radius: 3px;
+    }
+    .prev-badge {
+        background-color: #17a2b8;
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8em;
+    }
+    
+    .escala-badge {
+        background-color: #007bff;
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8em;
     }
   </style>
 {% endblock %}
@@ -135,8 +145,8 @@
                                 {% if item.escala.prevista %}
                                     <span class="prev">Prev</span>
                                 {% endif %}
-                                {% if item.escala.falta %}
-                                    <span class="falta-badge">F</span>
+                                {% if item.escala %}
+                                    <span class="escala-badge">E</span>
                                 {% endif %}
                                 {{ item.escala.observacoes }}
                             </td>

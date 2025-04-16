@@ -137,18 +137,43 @@ class EscalaAdmin(admin.ModelAdmin):
     date_hierarchy = 'data'
 
     def save_model(self, request, obj, form, change):
-        # save  Escala
+        # save Escala
         super().save_model(request, obj, form, change)
 
-      # create a row for each Militar in the related Servico
-        # if the servico is set
+        # create a row for each Militar in the related Servico
         if obj.servico:
             servico_militares = obj.servico.militares.all()
+            
+            # Atribuir militares à escala atual (A ou B)
             for mil in servico_militares:
                 EscalaMilitar.objects.get_or_create(
                     escala=obj,
                     militar=mil,
+                    defaults={
+                        'ordem_semana': EscalaMilitar.objects.filter(escala=obj).count() + 1,
+                        'ordem_fds': EscalaMilitar.objects.filter(escala=obj).count() + 1
+                    }
                 )
+            
+            # Se o serviço tem escala B e esta é uma escala A, criar a escala B correspondente
+            if obj.servico.tem_escala_B and not obj.e_escala_b:
+                # Criar ou atualizar a escala B correspondente
+                escala_b, created = Escala.objects.get_or_create(
+                    servico=obj.servico,
+                    data=obj.data,
+                    e_escala_b=True
+                )
+                
+                # Atribuir militares à escala B
+                for mil in servico_militares:
+                    EscalaMilitar.objects.get_or_create(
+                        escala=escala_b,
+                        militar=mil,
+                        defaults={
+                            'ordem_semana': EscalaMilitar.objects.filter(escala=escala_b).count() + 1,
+                            'ordem_fds': EscalaMilitar.objects.filter(escala=escala_b).count() + 1
+                        }
+                    )
 
     # Allows to reset based on NIM for Escala ordem
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
