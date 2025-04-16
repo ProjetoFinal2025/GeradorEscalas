@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.template.defaulttags import register
 from django.utils.html import format_html
 from .forms import MilitarForm, ServicoForm, EscalaForm
+from .views import gerar_escalas_view
 
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
@@ -194,9 +195,52 @@ class EscalaAdmin(admin.ModelAdmin):
         extra_context["custom_reset_button"] = True
         return super().changeform_view(request, object_id, form_url, extra_context)
 
+    def get_urls(self):
+        urls = super().get_urls()
+        return urls
 
 class PrevisaoEscalasAdmin(admin.ModelAdmin):
     change_list_template = 'admin/core/escala/previsao.html'
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        
+        # Processar geração de escalas
+        if request.method == 'POST' and 'gerar_escalas' in request.POST:
+            servico_id = request.POST.get('servico')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim_geracao')
+
+            try:
+                servico = Servico.objects.get(id=servico_id)
+                data_inicio = date.fromisoformat(data_inicio)
+                data_fim = date.fromisoformat(data_fim)
+
+                from .utils import gerar_escalas_automaticamente
+                if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
+                    messages.success(request, "Escalas geradas com sucesso!")
+                else:
+                    messages.error(request, "Erro ao gerar escalas.")
+            except Exception as e:
+                messages.error(request, f"Erro: {str(e)}")
+
+        # Obter serviço selecionado
+        servico_id = request.GET.get('servico')
+        if servico_id:
+            servico = get_object_or_404(Servico, id=servico_id, ativo=True)
+        else:
+            servico = Servico.objects.filter(ativo=True).first()
+
+        # Preparar contexto
+        extra_context.update({
+            'servico': servico,
+            'servicos': Servico.objects.filter(ativo=True),
+            'hoje': date.today(),
+            'proximo_mes': date.today().replace(day=1) + timedelta(days=32),
+            'request': request,  # Passar o request para o template
+        })
+
+        return super().changelist_view(request, extra_context=extra_context)
 
     def has_add_permission(self, request):
         return False
@@ -232,6 +276,9 @@ class PrevisaoEscalasAdmin(admin.ModelAdmin):
                 data_fim = hoje + timedelta(days=30)
         else:
             data_fim = hoje + timedelta(days=30)
+
+        # Calcular próximo mês
+        proximo_mes = hoje.replace(day=1) + timedelta(days=32)
 
         # Obter feriados no período
         feriados = obter_feriados(hoje, data_fim)
@@ -271,6 +318,7 @@ class PrevisaoEscalasAdmin(admin.ModelAdmin):
             'datas': datas,
             'hoje': hoje,
             'data_fim': data_fim,
+            'proximo_mes': proximo_mes,
             'opts': self.model._meta,
             'cl': self,
             'is_popup': False,

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from .models import Servico, Dispensa, Escala
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 
 
 # view de log in
@@ -103,35 +103,47 @@ def home_view(request):
 
 @login_required
 def mapa_dispensas_view(request):
-    # Obter todos os serviços
+    servico_id = request.GET.get('servico')
+    servico_selecionado = None
     servicos = Servico.objects.filter(ativo=True)
     
-    # Dicionário para armazenar as dispensas por serviço
-    mapa_dispensas = {}
+    if servico_id:
+        servico_selecionado = get_object_or_404(Servico, id=servico_id, ativo=True)
+        servicos = [servico_selecionado]
     
-    # Para cada serviço, obter as dispensas dos militares
+    hoje = timezone.now().date()
+    dias = []
+    for i in range(30):  # Próximos 30 dias
+        dia = hoje + timedelta(days=i)
+        dias.append({'data': dia, 'dia_semana': dia.strftime('%A')})
+    
+    mapa_dispensas = {}
     for servico in servicos:
         militares = servico.militares.all()
-        dispensas_servico = []
+        dispensas_servico = {}
         
         for militar in militares:
-            dispensas = Dispensa.objects.filter(militar=militar)
-            for dispensa in dispensas:
-                dispensas_servico.append({
-                    'militar': f"{militar.posto} {militar.nome}",
-                    'data_inicio': dispensa.data_inicio,
-                    'data_fim': dispensa.data_fim,
-                    'motivo': dispensa.motivo
-                })
+            dispensas = {}
+            for dia in dias:
+                dispensa = Dispensa.objects.filter(
+                    militar=militar,
+                    data_inicio__lte=dia['data'],
+                    data_fim__gte=dia['data'],
+                    ativo=True
+                ).first()
+                if dispensa:
+                    dispensas[dia['data']] = dispensa
+            dispensas_servico[militar] = dispensas
         
-        mapa_dispensas[servico.nome] = sorted(
-            dispensas_servico, 
-            key=lambda x: x['data_inicio']
-        )
+        mapa_dispensas[servico] = {
+            'militares': dispensas_servico
+        }
     
-    return render(request, 'mapa_dispensas.html', {
+    return render(request, 'admin/mapa_dispensas_test.html', {
         'mapa_dispensas': mapa_dispensas,
-        'data_atual': datetime.now().date()
+        'dias': dias,
+        'servicos': Servico.objects.filter(ativo=True),
+        'servico_selecionado': servico_selecionado
     })
 
 def obter_feriados(data_inicio=None, data_fim=None):
@@ -242,3 +254,41 @@ def escala_servico_view(request, servico_id=None):
     }
 
     return render(request, 'core/escala_servico.html', context)
+
+@login_required
+def gerar_escalas_view(request):
+    """
+    View para gerar escalas automaticamente
+    """
+    if request.method == 'POST':
+        servico_id = request.POST.get('servico')
+        data_inicio = request.POST.get('data_inicio')
+        data_fim = request.POST.get('data_fim')
+
+        try:
+            servico = Servico.objects.get(id=servico_id)
+            data_inicio = date.fromisoformat(data_inicio)
+            data_fim = date.fromisoformat(data_fim)
+
+            from .utils import gerar_escalas_automaticamente
+            if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
+                messages.success(request, "Escalas geradas com sucesso!")
+                # Redireciona para a previsão com o serviço selecionado
+                return redirect(f'/admin/core/previsaoescalasproxy/?servico={servico_id}&data_fim={data_fim}')
+            else:
+                messages.error(request, "Erro ao gerar escalas.")
+        except Exception as e:
+            messages.error(request, f"Erro: {str(e)}")
+
+        return redirect('admin:core_previsaoescalasproxy_changelist')
+
+    # Lista de serviços ativos para o seletor
+    servicos = Servico.objects.filter(ativo=True)
+    
+    context = {
+        'servicos': servicos,
+        'hoje': date.today(),
+        'proximo_mes': date.today().replace(day=1) + timedelta(days=32),
+    }
+    
+    return render(request, 'admin/core/escala/gerar_escalas.html', context)

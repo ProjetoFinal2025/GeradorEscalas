@@ -1,2 +1,6 @@
-Django==5.2
-python-decouple==3.8 
+Django==5.0.2
+python-dotenv==1.0.1
+psycopg2-binary==2.9.9
+Pillow==10.2.0
+django-crispy-forms==2.1
+crispy-bootstrap5==2024.2 

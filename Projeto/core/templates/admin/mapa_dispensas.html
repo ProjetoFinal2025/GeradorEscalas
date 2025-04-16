@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n static %}
+{% load i18n static custom_filters %}
 
 {% block extrastyle %}
 {{ block.super }}
@@ -189,10 +189,32 @@
     .total-cell.feriado {
         background-color: #ffebeb;
     }
+
+    .debug-info {
+        background-color: #f8f9fa;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="debug-info">
+    <h4>Informações de Debug:</h4>
+    <p>Data atual: {{ hoje|date:"d/m/Y" }}</p>
+    <p>Dias restantes no ano: {{ dias_restantes }}</p>
+    <p>Número de dias gerados: {{ dias|length }}</p>
+    <p>Número de serviços: {{ servicos|length }}</p>
+    <p>Número de serviços com dispensas: {{ mapa_dispensas|length }}</p>
+    {% if mapa_dispensas %}
+        {% for servico, dados in mapa_dispensas.items %}
+            <p>Serviço: {{ servico.nome }} - Total militares: {{ dados.total_militares }}</p>
+        {% endfor %}
+    {% endif %}
+</div>
+
 <div class="actions-bar">
     <a href="{% url 'admin:core_dispensa_changelist' %}" class="voltar-btn">
         ← Voltar para Lista de Dispensas
@@ -214,6 +236,7 @@
 {% if mapa_dispensas %}
     {% for servico, dados in mapa_dispensas.items %}
     <div class="dispensa-grid">
+        <h3>{{ servico.nome }}</h3>
         <div class="grid-container">
             <!-- Cabeçalho com meses -->
             <div class="grid-header">Nome</div>

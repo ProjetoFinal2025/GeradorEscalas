@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
-from datetime import time
+from datetime import time, date, timedelta
 
 # Lista de postos do Exército Português (excluindo oficiais generais)
 POSTOS_CHOICES = [
@@ -81,6 +81,64 @@ class Militar(models.Model):
         # Verifica se o numero de telefone tem 9 digitos.
         if not (100000000 <= self.telefone <= 999999999):
             raise ValidationError({'telefone': "O número de telefone deve conter exatamente 9 dígitos."})
+
+    def esta_disponivel(self, data):
+        """
+        Verifica se o militar está disponível para serviço em uma determinada data
+        """
+        # Verifica se está de licença
+        if self.licencas.filter(
+            data_inicio__lte=data,
+            data_fim__gte=data
+        ).exists():
+            return False
+
+        # Verifica se está dispensado
+        if self.dispensas.filter(
+            data_inicio__lte=data,
+            data_fim__gte=data
+        ).exists():
+            return False
+
+        # Verifica dia útil antes da entrada de licença
+        dia_anterior = data - timedelta(days=1)
+        if self.licencas.filter(
+            data_inicio=dia_anterior
+        ).exists():
+            return False
+
+        # Verifica dia da apresentação de licença
+        if self.licencas.filter(
+            data_fim=data
+        ).exists():
+            return False
+
+        return True
+
+    def obter_ultimo_servico(self, servico=None):
+        """
+        Obtém a data do último serviço do militar
+        """
+        query = self.escalas_atribuidas.filter(
+            data__lt=date.today()
+        ).order_by('-data')
+
+        if servico:
+            query = query.filter(servico=servico)
+
+        ultimo_servico = query.first()
+        return ultimo_servico.data if ultimo_servico else None
+
+    def calcular_folga(self, data_proposta, servico=None):
+        """
+        Calcula a folga em horas desde o último serviço
+        """
+        ultimo_servico = self.obter_ultimo_servico(servico)
+        if not ultimo_servico:
+            return float('inf')  # Nunca fez serviço, folga infinita
+
+        diferenca = data_proposta - ultimo_servico
+        return diferenca.total_seconds() / 3600  # Converter para horas
 
     class Meta:
         verbose_name = "Militar"
@@ -220,4 +278,26 @@ class Log(models.Model):
 
     def __str__(self):
         return f"{self.data.strftime('%d/%m/%Y %H:%M:%S')} - {self.acao} (NIM: {str(self.nim_admin).zfill(8)})"
+
+
+class RegraNomeacao(models.Model):
+    TIPO_FOLGA_CHOICES = [
+        ('mesma_escala', 'Mesma Escala (A/B)'),
+        ('entre_escalas', 'Entre Escalas (A/B)'),
+    ]
+    
+    servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='regras_nomeacao')
+    tipo_folga = models.CharField(max_length=20, choices=TIPO_FOLGA_CHOICES)
+    horas_minimas = models.IntegerField(help_text="Número mínimo de horas de folga")
+    prioridade_modernos = models.BooleanField(default=True, help_text="Prioridade para militares mais modernos")
+    considerar_ultimo_servico = models.BooleanField(default=True, help_text="Considerar data do último serviço")
+    permitir_trocas = models.BooleanField(default=True, help_text="Permitir trocas de serviço")
+    
+    class Meta:
+        verbose_name = "Regra de Nomeação"
+        verbose_name_plural = "Regras de Nomeação"
+        unique_together = ('servico', 'tipo_folga')
+
+    def __str__(self):
+        return f"{self.servico.nome} - {self.get_tipo_folga_display()}"
 

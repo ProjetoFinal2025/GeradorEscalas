@@ -1,0 +1,48 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static custom_filters %}
+
+{% block content %}
+<h1>Debug do Mapa de Dispensas</h1>
+
+<div style="margin: 20px; padding: 20px; background-color: #f8f9fa; border: 1px solid #ddd;">
+    <h2>Informações Básicas</h2>
+    <p>Data atual: {{ hoje|date:"d/m/Y" }}</p>
+    <p>Dias restantes no ano: {{ dias_restantes }}</p>
+    <p>Número de dias gerados: {{ dias|length }}</p>
+    <p>Número de serviços: {{ servicos|length }}</p>
+    <p>Número de serviços com dispensas: {{ mapa_dispensas|length }}</p>
+</div>
+
+<div style="margin: 20px; padding: 20px; background-color: #fff; border: 1px solid #ddd;">
+    <h2>Detalhes dos Serviços</h2>
+    {% if mapa_dispensas %}
+        {% for servico, dados in mapa_dispensas.items %}
+            <div style="margin-bottom: 20px; padding: 10px; background-color: #f0f0f0;">
+                <h3>{{ servico.nome }}</h3>
+                <p>Total de militares: {{ dados.total_militares }}</p>
+                <p>Militares com dados: {{ dados.militares|length }}</p>
+                
+                <h4>Militares:</h4>
+                <ul>
+                    {% for militar, dispensas in dados.militares.items %}
+                        <li>{{ militar.nome }} (NIM: {{ militar.nim }})</li>
+                    {% endfor %}
+                </ul>
+                
+                <h4>Primeiros 5 dias:</h4>
+                <ul>
+                    {% for dia in dias|slice:":5" %}
+                        <li>
+                            {{ dia.data|date:"d/m/Y" }}:
+                            Dispensados: {{ dados.totais_dispensados|get_item:dia.data }},
+                            Disponíveis: {{ dados.disponiveis|get_item:dia.data }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Não há dados de serviços disponíveis.</p>
+    {% endif %}
+</div>
+{% endblock %} 
