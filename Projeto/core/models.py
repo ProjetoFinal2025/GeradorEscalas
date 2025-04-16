@@ -47,9 +47,6 @@ class Militar(models.Model):
     telefone = models.BigIntegerField()
     email = models.EmailField()
 
-    # Campos em Relaçao a escalas
-    ordem_semana = models.IntegerField()
-    ordem_fds = models.IntegerField()
 
     # Retorna os serviços em que Militar está inscrito
     def listar_servicos(self):
@@ -166,8 +163,6 @@ class Configuracao(models.Model):
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
     servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='escalas')
-    militar = models.ForeignKey('Militar', on_delete=models.CASCADE, related_name='escalas_atribuidas', null=True)
-    militar_reserva = models.ForeignKey('Militar', on_delete=models.SET_NULL, null=True, blank=True, related_name='escalas_reserva')
     comentario = models.TextField(blank=True)
     data = models.DateField()
     e_escala_b = models.BooleanField(default=False, verbose_name="Escala B")
@@ -180,12 +175,28 @@ class Escala(models.Model):
 
     def __str__(self):
         tipo_escala = "B" if self.e_escala_b else "A"
-        return f"Escala {tipo_escala} - {self.militar} - {self.servico.nome} - {self.data.strftime('%d-%b-%y')}"
+        return f"Escala {tipo_escala} - {self.servico.nome} - {self.data.strftime('%d-%b-%y')}"
 
-    def clean(self):
-        super().clean()
-        if self.militar_reserva and self.militar_reserva == self.militar:
-            raise ValidationError({'militar_reserva': "O militar de reserva não pode ser o mesmo da escala principal."})
+
+class EscalaMilitar(models.Model):
+    escala = models.ForeignKey('Escala', on_delete=models.CASCADE, related_name='militares_info')
+    militar = models.ForeignKey('Militar', on_delete=models.CASCADE)
+
+    # Where each Militar fits in for this Escala
+    ordem_semana = models.IntegerField(null=True, blank=True)
+    ordem_fds = models.IntegerField(null=True, blank=True)
+
+    # Is this necessary?
+   # is_reserva = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('escala', 'militar')
+        verbose_name = "Militares Na Escala"
+        verbose_name_plural = "Militares Na Escala"
+
+    def __str__(self):
+        # Return an empty string so the TabularInline won't show the bold text
+        return ''
 
 
 class Log(models.Model):

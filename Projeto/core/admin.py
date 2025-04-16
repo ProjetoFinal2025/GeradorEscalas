@@ -1,9 +1,8 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
-from django.urls import path, reverse
-from django.shortcuts import render
-from django.db.models import Q
-from datetime import date, timedelta, time
+from django.urls import path
+from django.shortcuts import render, redirect
+from datetime import date, timedelta
 from django.template.defaulttags import register
 from django.utils.html import format_html
 from .forms import MilitarForm, ServicoForm, EscalaForm
@@ -11,7 +10,7 @@ from .forms import MilitarForm, ServicoForm, EscalaForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 # Permite alterar os seguintes modelos na admin view
-from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado
+from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar
 from .views import obter_feriados
 
 
@@ -51,11 +50,6 @@ class GeradorEscalasAdminSite(admin.AdminSite):
             app_list.insert(index + 1, previsoes_section)
         
         return app_list
-
-# Criar instância do admin site customizado
-admin_site = GeradorEscalasAdminSite(name='admin')
-admin_site.register(User, UserAdmin)
-admin_site.register(Group, GroupAdmin)
 
 @register.filter
 def get_item(dictionary, key):
@@ -103,54 +97,77 @@ class ServicoAdmin(admin.ModelAdmin):
 
     ver_escalas.short_description = "Escalas atribuídas"
 
+class EscalaMilitarInline(admin.TabularInline):
+    model = EscalaMilitar
+    extra = 0
+    fields = ('display_militar', 'ordem_semana', 'ordem_fds')
+    readonly_fields = ('display_militar',)
+    can_delete = False
+
+    #Removes the ability to add a new Militar in Escala View
+    def has_add_permission(self, request, obj):
+        # Return False => no "Add another" link in the inline
+        return False
+
+    def display_militar(self, obj):
+        if not obj.pk:
+            return "Selecione acima e salve."
+        return f"{obj.militar.posto} {obj.militar.nome} ({str(obj.militar.nim).zfill(8)})"
+
+    display_militar.short_description = "Militar"
+
+@admin.action(description="Reset orders by NIM")
+def reset_orders_by_nim(modeladmin, request, queryset):
+
+    for escala in queryset:
+        esc_mils = EscalaMilitar.objects.filter(escala=escala).select_related('militar').order_by('militar__nim')
+        for i, em in enumerate(esc_mils, start=1):
+            em.ordem_semana = i
+            em.ordem_fds = i
+            em.save()
+
 class EscalaAdmin(admin.ModelAdmin):
+    # Adiciona o Inline na view AdminEscala
+    inlines = [EscalaMilitarInline]
+    actions = [reset_orders_by_nim]
     form = EscalaForm
     list_display = ['id', 'servico', 'data', 'e_escala_b']
     list_filter = ('servico', 'data', 'e_escala_b')
     search_fields = ('servico__nome', 'data')
     date_hierarchy = 'data'
-    readonly_fields = ['ver_militares_do_servico']
 
-    def ver_militares_do_servico(self, obj):
-        militares = obj.servico.militares.all()
-        if not militares.exists():
-            return "Nenhum militar atribuído a esta escala"
+    def save_model(self, request, obj, form, change):
+        # save  Escala
+        super().save_model(request, obj, form, change)
 
-        rows = ""
-        for m in militares:
-            rows += f"""
-                <tr>
-                    <td style="padding: 8px;">{m.posto}</td>
-                    <td style="padding: 8px;">{m.nome}</td>
-                    <td style="padding: 8px;">{str(m.nim).zfill(8)}</td>
-                </tr>
-            """
+      # create a row for each Militar in the related Servico
+        # if the servico is set
+        if obj.servico:
+            servico_militares = obj.servico.militares.all()
+            for mil in servico_militares:
+                EscalaMilitar.objects.get_or_create(
+                    escala=obj,
+                    militar=mil,
+                )
 
-        return format_html(f"""
-            <div style="width: 100%;">
-                <table style="
-                    width: 100%;
-                    border-collapse: collapse;
-                    table-layout: fixed;
-                    text-align: left;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
-                ">
-                    <thead style="background-color: #f9f9f9;">
-                        <tr>
-                            <th style='padding: 8px; width: 20%;'>Posto</th>
-                            <th style='padding: 8px; width: 50%;'>Nome</th>
-                            <th style='padding: 8px; width: 30%;'>NIM</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            </div>
-        """)
+    # Allows to reset based on NIM for Escala ordem
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        if request.method == "POST" and "_reset_ordem" in request.POST:
+            escala = self.get_object(request, object_id)
+            if escala:
+                # Reset ordem by NIM
+                related = escala.militares_info.select_related('militar').order_by('militar__nim')
+                for i, em in enumerate(related, start=1):
+                    em.ordem_semana = i
+                    em.ordem_fds = i
+                    em.save()
+                self.message_user(request, "Ordem redefinida com sucesso.")
+                return redirect(request.path)
 
-    ver_militares_do_servico.short_description = "Militares na Escala"
+        extra_context = extra_context or {}
+        extra_context["custom_reset_button"] = True
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
 
 class PrevisaoEscalasAdmin(admin.ModelAdmin):
     change_list_template = 'admin/core/escala/previsao.html'
@@ -324,6 +341,16 @@ class FeriadoAdmin(admin.ModelAdmin):
     list_filter = ('tipo',)
     search_fields = ('nome',)
     date_hierarchy = 'data'
+class PrevisaoEscalasProxy(Escala):
+    class Meta:
+        proxy = True
+        verbose_name = "Previsão de Escalas"
+        verbose_name_plural = "Previsão de Escalas"
+
+# Criar instância do admin site customizado
+admin_site = GeradorEscalasAdminSite(name='admin')
+admin_site.register(User, UserAdmin)
+admin_site.register(Group, GroupAdmin)
 
 # Registrar os modelos no admin site customizado
 admin_site.register(Militar, MilitarAdmin)
@@ -333,12 +360,7 @@ admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Configuracao, ConfiguracaoAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
+admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
 
 # Registrar a Previsão de Escalas como um modelo proxy
-class PrevisaoEscalasProxy(Escala):
-    class Meta:
-        proxy = True
-        verbose_name = "Previsão de Escalas"
-        verbose_name_plural = "Previsão de Escalas"
 
-admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)

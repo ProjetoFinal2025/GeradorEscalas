@@ -3,7 +3,8 @@
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 
-from .models import Militar, Servico , Escala
+from django.contrib import admin
+from .models import Militar, Servico , Escala, EscalaMilitar
 
 # Modifica a forma como Militar é exposto na view administrador
 class MilitarForm(forms.ModelForm):
@@ -57,3 +58,15 @@ class EscalaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+class EscalaMilitarForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.escala_id:
+            servico_id = self.instance.escala.servico_id
+            # Filter only Militares who are in that Servico
+            self.fields['militar'].queryset = Militar.objects.filter(servicos__id=servico_id)
+
+class EscalaMilitarInline(admin.TabularInline):
+    model = EscalaMilitar
+    form = EscalaMilitarForm
