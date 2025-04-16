@@ -85,6 +85,10 @@ class Militar(models.Model):
         if not (100000000 <= self.telefone <= 999999999):
             raise ValidationError({'telefone': "O número de telefone deve conter exatamente 9 dígitos."})
 
+    class Meta:
+        verbose_name = "Militar"
+        verbose_name_plural = "Militares"
+
 
 class Dispensa(models.Model):
     id = models.AutoField(primary_key = True)
