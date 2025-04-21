@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Permite Backups
+    "reversion",
     # Aplicação com logica core do Gerador de Escalas
     'core',
 ]

@@ -5,16 +5,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from datetime import date, timedelta
 from django.utils import timezone
 from django.template.defaulttags import register
-from django.utils.html import format_html
 from .forms import MilitarForm, ServicoForm, EscalaForm
-from .views import gerar_escalas_view
-
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
+
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar
 from .views import obter_feriados
 
+from reversion.admin import VersionAdmin
 
 
 # Configuração do Admin Site
@@ -57,13 +56,13 @@ class GeradorEscalasAdminSite(admin.AdminSite):
 def get_item(dictionary, key):
     return dictionary.get(key)
 
-class MilitarAdmin(admin.ModelAdmin):
+class MilitarAdmin(VersionAdmin):
     form = MilitarForm
     list_display = ('nome', 'posto', 'nim', 'listar_servicos', 'listar_escalas')
     # Remove a habilidade de mudar o Utilizador de um militar
     readonly_fields = ['user', 'listar_servicos', 'listar_escalas','listar_dispensas']
 
-class ServicoAdmin(admin.ModelAdmin):
+class ServicoAdmin(VersionAdmin):
     form = ServicoForm
     list_display = ('nome', 'hora_inicio', 'hora_fim', 'n_elementos', 'tem_escala_B', 'armamento', 'ativo')
     list_filter = ('ativo', 'tem_escala_B', 'armamento')
@@ -128,7 +127,7 @@ def reset_orders_by_nim(modeladmin, request, queryset):
             em.ordem_fds = i
             em.save()
 
-class EscalaAdmin(admin.ModelAdmin):
+class EscalaAdmin(VersionAdmin):
     # Adiciona o Inline na view AdminEscala
     inlines = [EscalaMilitarInline]
     actions = [reset_orders_by_nim]
@@ -199,7 +198,7 @@ class EscalaAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         return urls
 
-class PrevisaoEscalasAdmin(admin.ModelAdmin):
+class PrevisaoEscalasAdmin(VersionAdmin):
     change_list_template = 'admin/core/escala/previsao.html'
 
     def changelist_view(self, request, extra_context=None):
@@ -333,7 +332,15 @@ class PrevisaoEscalasAdmin(admin.ModelAdmin):
         verbose_name = "Previsão de Escalas"
         verbose_name_plural = "Previsão de Escalas"
 
-class DispensaAdmin(admin.ModelAdmin):
+
+# DO WE NEED THIS?
+class PrevisaoEscalasProxy(Escala):
+    class Meta:
+        proxy = True
+        verbose_name = "Previsão de Escalas"
+        verbose_name_plural = "Previsão de Escalas"
+
+class DispensaAdmin(VersionAdmin):
     list_display = ('militar', 'data_inicio', 'data_fim', 'motivo', 'servico_atual')
     list_filter = ('militar__servicos', 'data_inicio', 'data_fim')
     search_fields = ('militar__nome', 'militar__nim', 'motivo')
@@ -465,11 +472,7 @@ class FeriadoAdmin(admin.ModelAdmin):
     list_filter = ('tipo',)
     search_fields = ('nome',)
     date_hierarchy = 'data'
-class PrevisaoEscalasProxy(Escala):
-    class Meta:
-        proxy = True
-        verbose_name = "Previsão de Escalas"
-        verbose_name_plural = "Previsão de Escalas"
+
 
 # Criar instância do admin site customizado
 admin_site = GeradorEscalasAdminSite(name='admin')
@@ -484,7 +487,8 @@ admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Configuracao, ConfiguracaoAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
-admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
 
 # Registrar a Previsão de Escalas como um modelo proxy
+admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
+
 

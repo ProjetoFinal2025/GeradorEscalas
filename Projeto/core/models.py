@@ -253,7 +253,7 @@ class EscalaMilitar(models.Model):
         verbose_name_plural = "Militares Na Escala"
 
     def __str__(self):
-        # Return an empty string so the TabularInline won't show the bold text
+        # Return an empty string so the TabularInline won't show
         return ''
 
 
