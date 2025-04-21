@@ -6,14 +6,17 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
-        from .models import Escala, Servico, Militar, Dispensa, EscalaMilitar, RegraNomeacao
+        from .models import User, Escala, Servico, Militar, Dispensa, EscalaMilitar, RegraNomeacao
         from . import signals
         from . import initial_setup
 
         #Escolhe que modelos tem backup
 
+        if not reversion.is_registered(User):
+            reversion.register(User)
+
         if not reversion.is_registered(Militar):
-            reversion.register(Militar)
+            reversion.register(Militar, follow=("user"))
 
         if not reversion.is_registered(Dispensa):
             reversion.register(Dispensa, follow=("militar",))
