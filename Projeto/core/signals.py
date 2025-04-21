@@ -1,8 +1,9 @@
 from django.dispatch import receiver
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.contrib.auth.signals import user_logged_in, user_logged_out
-from .models import Militar, Servico, Dispensa, Escala, Configuracao, Log, Role
+from django.dispatch import receiver
+from .models import Militar, Servico, Dispensa, Escala, Configuracao, Log, Role, EscalaMilitar
 
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
@@ -179,3 +180,33 @@ def atualizar_user_com_base_em_administrador(sender, instance, **kwargs):
         user.user_permissions.clear()
 
     user.save()
+
+# Sincs the militares in a Escala When Serviço is updated
+@receiver(m2m_changed, sender=Servico.militares.through)
+def sync_escalas_when_servico_changes(sender, instance, action, **kwargs):
+    if action not in ['post_add', 'post_remove', 'post_clear']:
+        return
+
+    servico = instance
+    militares = list(servico.militares.all().order_by("nim"))
+
+    for escala in servico.escalas.all():
+        existing = EscalaMilitar.objects.filter(escala=escala).select_related("militar")
+        existing_by_mil = {em.militar_id: em for em in existing}
+
+        # Delete those not in the list anymore
+        for em in existing:
+            if em.militar not in militares:
+                em.delete()
+
+        # Add or re-order
+        for idx, mil in enumerate(militares, start=1):
+            em, created = EscalaMilitar.objects.get_or_create(
+                escala=escala,
+                militar=mil,
+                defaults={"ordem_semana": idx, "ordem_fds": idx}
+            )
+            if not created:
+                em.ordem_semana = idx
+                em.ordem_fds = idx
+                em.save()

@@ -144,7 +144,7 @@ class EscalaAdmin(VersionAdmin):
         # create a row for each Militar in the related Servico
         if obj.servico:
             servico_militares = obj.servico.militares.all()
-            
+
             # Atribuir militares à escala atual (A ou B)
             for mil in servico_militares:
                 EscalaMilitar.objects.get_or_create(
@@ -155,7 +155,7 @@ class EscalaAdmin(VersionAdmin):
                         'ordem_fds': EscalaMilitar.objects.filter(escala=obj).count() + 1
                     }
                 )
-            
+
             # Se o serviço tem escala B e esta é uma escala A, criar a escala B correspondente
             if obj.servico.tem_escala_B and not obj.e_escala_b:
                 # Criar ou atualizar a escala B correspondente
@@ -164,7 +164,7 @@ class EscalaAdmin(VersionAdmin):
                     data=obj.data,
                     e_escala_b=True
                 )
-                
+
                 # Atribuir militares à escala B
                 for mil in servico_militares:
                     EscalaMilitar.objects.get_or_create(
@@ -331,7 +331,6 @@ class PrevisaoEscalasAdmin(VersionAdmin):
     class Meta:
         verbose_name = "Previsão de Escalas"
         verbose_name_plural = "Previsão de Escalas"
-
 
 # DO WE NEED THIS?
 class PrevisaoEscalasProxy(Escala):

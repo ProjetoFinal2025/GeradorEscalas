@@ -80,7 +80,7 @@ class Militar(models.Model):
                 raise ValidationError({'nim': "O NIM deve ter exatamente 8 dígitos."})
 
         # Verifica se o numero de telefone tem 9 digitos.
-        if self.telefone  is not None:
+        if self.telefone is not None:
             if not (100000000 <= self.telefone <= 999999999):
                 raise ValidationError({'telefone': "O número de telefone deve conter exatamente 9 dígitos."})
 

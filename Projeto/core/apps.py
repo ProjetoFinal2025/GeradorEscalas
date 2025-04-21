@@ -25,7 +25,10 @@ class CoreConfig(AppConfig):
             reversion.register(Servico, follow=("militares",))
 
         if not reversion.is_registered(Escala):
-            reversion.register(Escala)
+            reversion.register(Escala, follow=("militares_info",))
+
+        if not reversion.is_registered(EscalaMilitar):
+            reversion.register(EscalaMilitar, follow=("militar",))
 
         if not reversion.is_registered(RegraNomeacao):
             reversion.register(RegraNomeacao, follow=("servico",))
