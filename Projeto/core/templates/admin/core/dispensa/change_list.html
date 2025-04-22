@@ -3,11 +3,9 @@
 
 {% block object-tools-items %}
     {{ block.super }}
-    {% if show_mapa_link %}
     <li>
         <a href="{% url 'admin:mapa-dispensas' %}" class="viewlink">
             Ver Mapa de Dispensas
         </a>
     </li>
-    {% endif %}
 {% endblock %} 

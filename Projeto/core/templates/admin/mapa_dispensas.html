@@ -189,32 +189,10 @@
     .total-cell.feriado {
         background-color: #ffebeb;
     }
-
-    .debug-info {
-        background-color: #f8f9fa;
-        padding: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="debug-info">
-    <h4>Informações de Debug:</h4>
-    <p>Data atual: {{ hoje|date:"d/m/Y" }}</p>
-    <p>Dias restantes no ano: {{ dias_restantes }}</p>
-    <p>Número de dias gerados: {{ dias|length }}</p>
-    <p>Número de serviços: {{ servicos|length }}</p>
-    <p>Número de serviços com dispensas: {{ mapa_dispensas|length }}</p>
-    {% if mapa_dispensas %}
-        {% for servico, dados in mapa_dispensas.items %}
-            <p>Serviço: {{ servico.nome }} - Total militares: {{ dados.total_militares }}</p>
-        {% endfor %}
-    {% endif %}
-</div>
-
 <div class="actions-bar">
     <a href="{% url 'admin:core_dispensa_changelist' %}" class="voltar-btn">
         ← Voltar para Lista de Dispensas
@@ -225,7 +203,7 @@
         <select name="servico" id="servico" onchange="this.form.submit()">
             <option value="">Todos os Serviços</option>
             {% for servico in servicos %}
-            <option value="{{ servico.id }}" {% if servico.id == servico_selecionado %}selected{% endif %}>
+            <option value="{{ servico.id }}" {% if servico.id == servico_selecionado.id %}selected{% endif %}>
                 {{ servico.nome }}
             </option>
             {% endfor %}
@@ -243,62 +221,59 @@
             {% regroup dias by mes as dias_por_mes %}
             {% for mes in dias_por_mes %}
                 <div class="month-header" style="--span-days: {{ mes.list|length }}">
-                    {{ mes.grouper }}
+                    {{ mes.grouper|date:"F Y" }}
                 </div>
             {% endfor %}
 
             <!-- Cabeçalho com dias -->
             <div class="grid-header"></div>
             {% for dia in dias %}
-                <div class="grid-day-header {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}"
-                     {% if dia.e_feriado %}title="Feriado"{% endif %}>
+                <div class="grid-day-header {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
                     {{ dia.data|date:"d" }}
                 </div>
             {% endfor %}
 
-            <!-- Linhas para cada militar -->
+            <!-- Linhas de militares -->
             {% for militar, dispensas in dados.militares.items %}
                 <div class="militar-cell">
-                    <span class="militar-nim">{{ militar.nim|stringformat:"08d" }}</span>
-                    {{ militar.nome }}
+                    {{ militar.posto }} {{ militar.nome }} ({{ militar.nim }})
                 </div>
                 {% for dia in dias %}
-                    {% with dispensa=dispensas|get_item:dia.data %}
-                        <div class="grid-cell {% if dispensa %}dispensado{% endif %} {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}"
-                             {% if dispensa %}title="{{ dispensa.motivo }}"{% endif %}
-                             {% if dia.e_feriado %}title="Feriado"{% endif %}>
-                        </div>
-                    {% endwith %}
+                    <div class="grid-cell {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %} {% if dia.data in dispensas %}dispensado{% endif %}">
+                        {% if dia.data in dispensas %}
+                            <span title="{{ dispensas|get_item:dia.data|get_item:'motivo' }}">●</span>
+                        {% endif %}
+                    </div>
                 {% endfor %}
             {% endfor %}
 
             <!-- Linha de totais -->
-            <div class="total-label">N. Total de Elementos</div>
+            <div class="total-label">Total</div>
             {% for dia in dias %}
-                <div class="total-cell total {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
-                    {{ dados.total_militares }}
+                <div class="total-cell total {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                    {{ dados.resumo.total|get_item:dia.data|default:0 }}
                 </div>
             {% endfor %}
 
-            <div class="total-label">N. Elementos Dispensados</div>
+            <div class="total-label">Dispensados</div>
             {% for dia in dias %}
-                <div class="total-cell dispensados {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
-                    {{ dados.totais_dispensados|get_item:dia.data }}
+                <div class="total-cell dispensados {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                    {{ dados.resumo.dispensados|get_item:dia.data|default:0 }}
                 </div>
             {% endfor %}
 
-            <div class="total-label">N. Elementos Disponíveis</div>
+            <div class="total-label">Disponíveis</div>
             {% for dia in dias %}
-                <div class="total-cell disponiveis {% ifchanged dia.mes %}month-group{% endifchanged %} {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
-                    {{ dados.disponiveis|get_item:dia.data }}
+                <div class="total-cell disponiveis {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                    {{ dados.resumo.disponiveis|get_item:dia.data|default:0 }}
                 </div>
             {% endfor %}
         </div>
     </div>
     {% endfor %}
 {% else %}
-    <div class="no-dispensas">
-        Não há dispensas ativas para os serviços selecionados.
+    <div class="alert alert-info">
+        Não há dados de dispensas para exibir.
     </div>
 {% endif %}
 {% endblock %} 

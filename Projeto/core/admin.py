@@ -344,6 +344,7 @@ class DispensaAdmin(VersionAdmin):
     list_filter = ('militar__servicos', 'data_inicio', 'data_fim')
     search_fields = ('militar__nome', 'militar__nim', 'motivo')
     date_hierarchy = 'data_inicio'
+    change_list_template = 'admin/core/dispensa/change_list.html'
     
     def servico_atual(self, obj):
         servicos = obj.militar.servicos.filter(ativo=True)
@@ -395,6 +396,7 @@ class DispensaAdmin(VersionAdmin):
             
             dia_info = {
                 'data': data_atual, 
+                'mes': mes,
                 'dia_semana': data_atual.strftime('%A'),
                 'e_fim_semana': e_fim_semana,
                 'e_feriado': e_feriado
@@ -406,7 +408,8 @@ class DispensaAdmin(VersionAdmin):
         
         mapa_dispensas = {}
         for servico in servicos:
-            militares = servico.militares.all()
+            # Obter todos os militares do serviço, ordenados por posto e NIM, usando select_related para otimizar
+            militares = servico.militares.all().select_related('user').order_by('posto', 'nim')
             dispensas_servico = {}
             
             # Initialize summary data
@@ -418,14 +421,24 @@ class DispensaAdmin(VersionAdmin):
             
             for militar in militares:
                 dispensas = {}
+                # Obter todas as dispensas do militar no período
+                dispensas_periodo = Dispensa.objects.filter(
+                    militar=militar,
+                    data_inicio__lte=ultimo_dia_ano,
+                    data_fim__gte=hoje
+                )
+                
                 for dia in dias:
-                    dispensa = Dispensa.objects.filter(
-                        militar=militar,
-                        data_inicio__lte=dia['data'],
-                        data_fim__gte=dia['data']
-                    ).first()
+                    # Verificar se o militar tem dispensa neste dia
+                    dispensa = next(
+                        (d for d in dispensas_periodo if d.data_inicio <= dia['data'] <= d.data_fim),
+                        None
+                    )
+                    
                     if dispensa:
-                        dispensas[dia['data']] = dispensa
+                        dispensas[dia['data']] = {
+                            'motivo': dispensa.motivo
+                        }
                         # Update summary for dispensados
                         if dia['data'] not in resumo['dispensados']:
                             resumo['dispensados'][dia['data']] = 0
@@ -449,12 +462,14 @@ class DispensaAdmin(VersionAdmin):
                 'resumo': resumo
             }
         
-        return render(request, 'admin/mapa_dispensas_test.html', {
+        return render(request, 'admin/mapa_dispensas.html', {
             'mapa_dispensas': mapa_dispensas,
             'dias': dias,
             'dias_por_mes': dias_por_mes,
             'servicos': Servico.objects.filter(ativo=True),
-            'servico_selecionado': servico_selecionado
+            'servico_selecionado': servico_selecionado,
+            'hoje': hoje,
+            'dias_restantes': dias_restantes
         })
 
 class ConfiguracaoAdmin(admin.ModelAdmin):
