@@ -189,6 +189,27 @@
     .total-cell.feriado {
         background-color: #ffebeb;
     }
+
+    .grid-cell:not(.dispensado) {
+        cursor: pointer;
+    }
+    
+    .grid-cell.selecionado {
+        background-color: #b3e6ff;
+    }
+    
+    .form-dispensa {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border: 1px solid #ccc;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+    }
 </style>
 {% endblock %}
 
@@ -239,7 +260,7 @@
                     {{ militar.posto }} {{ militar.nome }} ({{ militar.nim }})
                 </div>
                 {% for dia in dias %}
-                    <div class="grid-cell {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %} {% if dia.data in dispensas %}dispensado{% endif %}">
+                    <div class="grid-cell {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %} {% if dia.data in dispensas %}dispensado{% endif %}" data-data="{{ dia.data|date:'Y-m-d' }}" data-militar="{{ militar.nim }}">
                         {% if dia.data in dispensas %}
                             <span title="{{ dispensas|get_item:dia.data|get_item:'motivo' }}">●</span>
                         {% endif %}
@@ -276,4 +297,106 @@
         Não há dados de dispensas para exibir.
     </div>
 {% endif %}
+
+<div id="formDispensa" class="form-dispensa">
+    <h3>Nova Dispensa</h3>
+    <form method="POST" action="{% url 'admin:adicionar-dispensa' %}">
+        {% csrf_token %}
+        <input type="hidden" name="militar_nim" id="militar_nim">
+        <input type="hidden" name="data_inicio" id="data_inicio">
+        <input type="hidden" name="data_fim" id="data_fim">
+        <div>
+            <label for="motivo">Motivo:</label>
+            <textarea name="motivo" id="motivo" required></textarea>
+        </div>
+        <div style="margin-top: 10px;">
+            <button type="submit">Salvar</button>
+            <button type="button" onclick="fecharFormulario()">Cancelar</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let primeiraSelecao = null;
+    let militarSelecionado = null;
+    
+    function limparSelecao() {
+        document.querySelectorAll('.grid-cell.selecionado').forEach(cell => {
+            cell.classList.remove('selecionado');
+        });
+        primeiraSelecao = null;
+        militarSelecionado = null;
+    }
+    
+    function selecionarIntervalo(celula1, celula2) {
+        // Obter todas as células do militar
+        const todasCelulas = Array.from(document.querySelectorAll('.grid-cell')).filter(
+            cell => cell.dataset.militar === militarSelecionado
+        );
+        
+        // Encontrar os índices das células selecionadas
+        const index1 = todasCelulas.indexOf(celula1);
+        const index2 = todasCelulas.indexOf(celula2);
+        
+        // Determinar início e fim
+        const inicio = Math.min(index1, index2);
+        const fim = Math.max(index1, index2);
+        
+        // Marcar células no intervalo
+        todasCelulas.forEach((cell, index) => {
+            if (index >= inicio && index <= fim && !cell.classList.contains('dispensado')) {
+                cell.classList.add('selecionado');
+            }
+        });
+        
+        // Obter e formatar as datas
+        const dataInicioStr = todasCelulas[inicio].dataset.data;
+        const dataFimStr = todasCelulas[fim].dataset.data;
+        
+        console.log('Data início:', dataInicioStr);
+        console.log('Data fim:', dataFimStr);
+        
+        // Abrir formulário com datas formatadas
+        document.getElementById('militar_nim').value = militarSelecionado;
+        document.getElementById('data_inicio').value = dataInicioStr;
+        document.getElementById('data_fim').value = dataFimStr;
+        document.getElementById('formDispensa').style.display = 'block';
+    }
+    
+    document.querySelectorAll('.grid-cell').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+            // Ignorar células já dispensadas
+            if (cell.classList.contains('dispensado')) {
+                return;
+            }
+            
+            const militar = cell.dataset.militar;
+            
+            // Nova seleção se pressionar Ctrl/Cmd ou primeiro clique
+            if (e.ctrlKey || e.metaKey || !militarSelecionado) {
+                limparSelecao();
+                militarSelecionado = militar;
+                primeiraSelecao = cell;
+                cell.classList.add('selecionado');
+            } 
+            // Segunda seleção no mesmo militar
+            else if (militar === militarSelecionado) {
+                selecionarIntervalo(primeiraSelecao, cell);
+            }
+        });
+    });
+    
+    function fecharFormulario() {
+        document.getElementById('formDispensa').style.display = 'none';
+        document.getElementById('motivo').value = '';
+        limparSelecao();
+    }
+    
+    // Fechar formulário ao clicar fora
+    document.getElementById('formDispensa').addEventListener('click', function(e) {
+        if (e.target === this) {
+            fecharFormulario();
+        }
+    });
+</script>
 {% endblock %} 

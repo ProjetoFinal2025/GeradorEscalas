@@ -8,6 +8,7 @@ from django.template.defaulttags import register
 from .forms import MilitarForm, ServicoForm, EscalaForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from django.contrib import messages
 
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar
@@ -360,6 +361,7 @@ class DispensaAdmin(VersionAdmin):
         urls = super().get_urls()
         custom_urls = [
             path('mapa-dispensas/', self.admin_site.admin_view(self.mapa_dispensas_view), name='mapa-dispensas'),
+            path('adicionar-dispensa/', self.admin_site.admin_view(self.adicionar_dispensa_view), name='adicionar-dispensa'),
         ]
         return custom_urls + urls
 
@@ -471,6 +473,22 @@ class DispensaAdmin(VersionAdmin):
             'hoje': hoje,
             'dias_restantes': dias_restantes
         })
+
+    def adicionar_dispensa_view(self, request):
+        if request.method == 'POST':
+            try:
+                militar = Militar.objects.get(nim=request.POST.get('militar_nim'))
+                dispensa = Dispensa.objects.create(
+                    militar=militar,
+                    data_inicio=request.POST.get('data_inicio'),
+                    data_fim=request.POST.get('data_fim'),
+                    motivo=request.POST.get('motivo')
+                )
+                messages.success(request, 'Dispensa criada com sucesso.')
+            except Exception as e:
+                messages.error(request, f'Erro ao criar dispensa: {str(e)}')
+        
+        return redirect('admin:mapa-dispensas')
 
 class ConfiguracaoAdmin(admin.ModelAdmin):
     list_display = ('id', 'inicio_semana')
