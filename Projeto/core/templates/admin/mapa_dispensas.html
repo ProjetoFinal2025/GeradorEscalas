@@ -44,6 +44,14 @@
         border-bottom: 1px solid #ddd;
         height: 20px;
         font-size: 0.8em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .grid-cell span {
+        display: block;
+        text-align: center;
+        width: 100%;
     }
     .dispensado {
         background-color: yellow;
@@ -262,7 +270,7 @@
                 {% for dia in dias %}
                     <div class="grid-cell {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %} {% if dia.data in dispensas %}dispensado{% endif %}" data-data="{{ dia.data|date:'Y-m-d' }}" data-militar="{{ militar.nim }}">
                         {% if dia.data in dispensas %}
-                            <span title="{{ dispensas|get_item:dia.data|get_item:'motivo' }}">●</span>
+                            <span title="{{ dispensas|get_item:dia.data|get_item:'motivo' }}">{{ dispensas|get_item:dia.data|get_item:'motivo'|first|upper }}</span>
                         {% endif %}
                     </div>
                 {% endfor %}
