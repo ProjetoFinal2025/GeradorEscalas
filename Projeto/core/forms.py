@@ -40,21 +40,9 @@ class ServicoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
 class EscalaForm(forms.ModelForm):
-    TIPO_ESCALA_CHOICES = [
-        (False, 'Escala A'),
-        (True, 'Escala B'),
-    ]
-
-    e_escala_b = forms.TypedChoiceField(
-        choices=TIPO_ESCALA_CHOICES,
-        coerce=lambda x: x == 'True',
-        widget=forms.Select,
-        label='Tipo de Escala'
-    )
-
     class Meta:
         model = Escala
-        fields = ['servico', 'data', 'e_escala_b', 'observacoes']
+        fields = ['servico', 'data', 'observacoes']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

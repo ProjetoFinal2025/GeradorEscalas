@@ -107,8 +107,8 @@ class EscalaAdmin(VersionAdmin):
     inlines = [EscalaMilitarInline]
     actions = [reset_orders_by_nim]
     form = EscalaForm
-    list_display = ['id', 'servico', 'data', 'e_escala_b']
-    list_filter = ('servico', 'data', 'e_escala_b')
+    list_display = ['id', 'servico', 'data']
+    list_filter = ('servico', 'data')
     search_fields = ('servico__nome', 'data')
     date_hierarchy = 'data'
 
