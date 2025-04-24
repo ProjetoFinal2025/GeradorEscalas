@@ -25,32 +25,6 @@ class GeradorEscalasAdminSite(admin.AdminSite):
 
     def get_app_list(self, request):
         app_list = super().get_app_list(request)
-
-
-        # Encontrar a app 'core'
-        core_app = next((app for app in app_list if app['app_label'] == 'core'), None)
-        
-        if core_app:
-            # Criar nova seção para Previsões
-            previsoes_section = {
-                'name': 'PREVISÕES',
-                'app_label': 'core',
-                'app_url': '/admin/core/',
-                'has_module_perms': True,
-                'models': [
-                    {
-                        'name': 'Previsão de Escalas',
-                        'object_name': 'previsaoescalasproxy',
-                        'admin_url': '/admin/core/previsaoescalasproxy/',
-                        'view_only': False,
-                    }
-                ],
-            }
-            
-            # Adicionar a nova seção após a app 'core'
-            index = app_list.index(core_app)
-            app_list.insert(index + 1, previsoes_section)
-        
         return app_list
 
 @register.filter
@@ -198,147 +172,6 @@ class EscalaAdmin(VersionAdmin):
     def get_urls(self):
         urls = super().get_urls()
         return urls
-
-class PrevisaoEscalasAdmin(VersionAdmin):
-    change_list_template = 'admin/core/escala/previsao.html'
-
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        
-        # Processar geração de escalas
-        if request.method == 'POST' and 'gerar_escalas' in request.POST:
-            servico_id = request.POST.get('servico')
-            data_inicio = request.POST.get('data_inicio')
-            data_fim = request.POST.get('data_fim_geracao')
-
-            try:
-                servico = Servico.objects.get(id=servico_id)
-                data_inicio = date.fromisoformat(data_inicio)
-                data_fim = date.fromisoformat(data_fim)
-
-                from .utils import gerar_escalas_automaticamente
-                if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
-                    messages.success(request, "Escalas geradas com sucesso!")
-                else:
-                    messages.error(request, "Erro ao gerar escalas.")
-            except Exception as e:
-                messages.error(request, f"Erro: {str(e)}")
-
-        # Obter serviço selecionado
-        servico_id = request.GET.get('servico')
-        if servico_id:
-            servico = get_object_or_404(Servico, id=servico_id, ativo=True)
-        else:
-            servico = Servico.objects.filter(ativo=True).first()
-
-        # Preparar contexto
-        extra_context.update({
-            'servico': servico,
-            'servicos': Servico.objects.filter(ativo=True),
-            'hoje': date.today(),
-            'proximo_mes': date.today().replace(day=1) + timedelta(days=32),
-            'request': request,  # Passar o request para o template
-        })
-
-        return super().changelist_view(request, extra_context=extra_context)
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return True
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('', self.admin_site.admin_view(self.previsao_view), name='core_previsaoescalasproxy_changelist'),
-        ]
-        return custom_urls + urls
-
-    def previsao_view(self, request):
-        # Obter o serviço selecionado ou o primeiro serviço ativo
-        servico_id = request.GET.get('servico')
-        if servico_id:
-            servico = Servico.objects.get(id=servico_id)
-        else:
-            servico = Servico.objects.filter(ativo=True).first()
-
-        # Obter a data final da previsão
-        hoje = date.today()
-        data_fim_str = request.GET.get('data_fim')
-        if data_fim_str:
-            try:
-                data_fim = date.fromisoformat(data_fim_str)
-            except ValueError:
-                data_fim = hoje + timedelta(days=30)
-        else:
-            data_fim = hoje + timedelta(days=30)
-
-        # Calcular próximo mês
-        proximo_mes = hoje.replace(day=1) + timedelta(days=32)
-
-        # Obter feriados no período
-        feriados = obter_feriados(hoje, data_fim)
-        
-        # Gerar lista de datas com suas escalas
-        datas = []
-        data_atual = hoje
-
-        while data_atual <= data_fim:
-            # Buscar escala existente para esta data
-            escala = Escala.objects.filter(
-                servico=servico,
-                data=data_atual,
-            ).first()
-
-            # Verificar se é fim de semana ou feriado
-            e_fim_semana = data_atual.weekday() >= 5
-            e_feriado = data_atual in feriados
-
-            datas.append({
-                'data': data_atual,
-                'escala': escala,
-                'e_fim_semana': e_fim_semana,
-                'e_feriado': e_feriado,
-                'tipo_dia': 'feriado' if e_feriado else ('fim_semana' if e_fim_semana else 'util')
-            })
-            
-            data_atual += timedelta(days=1)
-
-        # Buscar todos os serviços ativos para o seletor
-        servicos = Servico.objects.filter(ativo=True)
-
-        context = {
-            'title': f'Previsão de Escalas - {servico.nome}',
-            'servico': servico,
-            'servicos': servicos,
-            'datas': datas,
-            'hoje': hoje,
-            'data_fim': data_fim,
-            'proximo_mes': proximo_mes,
-            'opts': self.model._meta,
-            'cl': self,
-            'is_popup': False,
-            'has_add_permission': self.has_add_permission(request),
-            'has_change_permission': self.has_change_permission(request),
-            'has_delete_permission': self.has_delete_permission(request),
-        }
-
-        return render(request, 'admin/core/escala/previsao.html', context)
-
-    class Meta:
-        verbose_name = "Previsão de Escalas"
-        verbose_name_plural = "Previsão de Escalas"
-
-# DO WE NEED THIS?
-class PrevisaoEscalasProxy(Escala):
-    class Meta:
-        proxy = True
-        verbose_name = "Previsão de Escalas"
-        verbose_name_plural = "Previsão de Escalas"
 
 class DispensaAdmin(VersionAdmin):
     list_display = ('militar', 'data_inicio', 'data_fim', 'motivo', 'servico_atual')
@@ -496,6 +329,146 @@ class FeriadoAdmin(admin.ModelAdmin):
     search_fields = ('nome',)
     date_hierarchy = 'data'
 
+class PrevisaoEscalasAdmin(VersionAdmin):
+    change_list_template = 'admin/core/escala/previsao.html'
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        
+        # Processar geração de escalas
+        if request.method == 'POST' and 'gerar_escalas' in request.POST:
+            servico_id = request.POST.get('servico')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim_geracao')
+
+            try:
+                servico = Servico.objects.get(id=servico_id)
+                data_inicio = date.fromisoformat(data_inicio)
+                data_fim = date.fromisoformat(data_fim)
+
+                from .utils import gerar_escalas_automaticamente
+                if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
+                    messages.success(request, "Escalas geradas com sucesso!")
+                else:
+                    messages.error(request, "Erro ao gerar escalas.")
+            except Exception as e:
+                messages.error(request, f"Erro: {str(e)}")
+
+        # Obter serviço selecionado
+        servico_id = request.GET.get('servico')
+        if servico_id:
+            servico = get_object_or_404(Servico, id=servico_id, ativo=True)
+        else:
+            servico = Servico.objects.filter(ativo=True).first()
+
+        # Preparar contexto
+        extra_context.update({
+            'servico': servico,
+            'servicos': Servico.objects.filter(ativo=True),
+            'hoje': date.today(),
+            'proximo_mes': date.today().replace(day=1) + timedelta(days=32),
+            'request': request,  # Passar o request para o template
+        })
+
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('', self.admin_site.admin_view(self.previsao_view), name='core_previsaoescalasproxy_changelist'),
+        ]
+        return custom_urls + urls
+
+    def previsao_view(self, request):
+        # Obter o serviço selecionado ou o primeiro serviço ativo
+        servico_id = request.GET.get('servico')
+        if servico_id:
+            servico = Servico.objects.get(id=servico_id)
+        else:
+            servico = Servico.objects.filter(ativo=True).first()
+
+        # Obter a data final da previsão
+        hoje = date.today()
+        data_fim_str = request.GET.get('data_fim')
+        if data_fim_str:
+            try:
+                data_fim = date.fromisoformat(data_fim_str)
+            except ValueError:
+                data_fim = hoje + timedelta(days=30)
+        else:
+            data_fim = hoje + timedelta(days=30)
+
+        # Calcular próximo mês
+        proximo_mes = hoje.replace(day=1) + timedelta(days=32)
+
+        # Obter feriados no período
+        feriados = obter_feriados(hoje, data_fim)
+        
+        # Gerar lista de datas com suas escalas
+        datas = []
+        data_atual = hoje
+
+        while data_atual <= data_fim:
+            # Buscar escala existente para esta data
+            escala = Escala.objects.filter(
+                servico=servico,
+                data=data_atual,
+            ).first()
+
+            # Verificar se é fim de semana ou feriado
+            e_fim_semana = data_atual.weekday() >= 5
+            e_feriado = data_atual in feriados
+
+            datas.append({
+                'data': data_atual,
+                'escala': escala,
+                'e_fim_semana': e_fim_semana,
+                'e_feriado': e_feriado,
+                'tipo_dia': 'feriado' if e_feriado else ('fim_semana' if e_fim_semana else 'util')
+            })
+            
+            data_atual += timedelta(days=1)
+
+        # Buscar todos os serviços ativos para o seletor
+        servicos = Servico.objects.filter(ativo=True)
+
+        context = {
+            'title': f'Previsão de Escalas - {servico.nome}',
+            'servico': servico,
+            'servicos': servicos,
+            'datas': datas,
+            'hoje': hoje,
+            'data_fim': data_fim,
+            'proximo_mes': proximo_mes,
+            'opts': self.model._meta,
+            'cl': self,
+            'is_popup': False,
+            'has_add_permission': self.has_add_permission(request),
+            'has_change_permission': self.has_change_permission(request),
+            'has_delete_permission': self.has_delete_permission(request),
+        }
+
+        return render(request, 'admin/core/escala/previsao.html', context)
+
+    class Meta:
+        verbose_name = "Previsão de Escalas"
+        verbose_name_plural = "Previsão de Escalas"
+
+# Proxy model para Previsão de Escalas
+class PrevisaoEscalasProxy(Escala):
+    class Meta:
+        proxy = True
+        verbose_name = "Previsão de Escalas"
+        verbose_name_plural = "Previsão de Escalas"
 
 # Criar instância do admin site customizado
 admin_site = GeradorEscalasAdminSite(name='admin')
