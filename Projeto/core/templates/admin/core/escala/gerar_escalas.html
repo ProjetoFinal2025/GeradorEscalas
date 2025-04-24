@@ -1,0 +1,64 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post">
+        {% csrf_token %}
+        <fieldset class="module aligned">
+            <div class="form-row">
+                <label for="servico_input">Serviço:</label>
+                <select name="servico" id="servico_input" required>
+                    {% for servico in servicos %}
+                        <option value="{{ servico.id }}" {% if servico == servico_selecionado %}selected{% endif %}>
+                            {{ servico.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="data_inicio_input">Data Início:</label>
+                <input type="date" name="data_inicio" id="data_inicio_input" value="{{ data_inicio_selecionada|default:hoje|date:'Y-m-d' }}" required>
+            </div>
+            <div class="form-row">
+                <label for="data_fim_input">Data Fim:</label>
+                <input type="date" name="data_fim" id="data_fim_input" value="{{ data_fim_selecionada|default:proximo_mes|date:'Y-m-d' }}" required>
+            </div>
+        </fieldset>
+        <div class="submit-row">
+            <input type="submit" name="gerar_escalas" value="Gerar Escalas A e B" class="default">
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-row {
+        margin-bottom: 1em;
+    }
+    .form-row label {
+        display: inline-block;
+        width: 150px;
+        font-weight: bold;
+    }
+    .form-row input[type="date"],
+    .form-row select {
+        width: 200px;
+        padding: 5px;
+    }
+    .submit-row {
+        margin-top: 2em;
+        text-align: right;
+    }
+    .submit-row input[type="submit"] {
+        padding: 10px 15px;
+        background: #417690;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .submit-row input[type="submit"]:hover {
+        background: #205067;
+    }
+</style>
+{% endblock %} 

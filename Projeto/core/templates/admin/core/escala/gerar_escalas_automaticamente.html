@@ -1,0 +1,69 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static "admin/css/changelists.css" %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+  <style>
+    .content-container {
+      padding: 20px;
+    }
+    .form-row {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f8f8f8;
+      border: 1px solid #eee;
+    }
+    .submit-row {
+      padding: 10px;
+      background: #f8f8f8;
+      border: 1px solid #eee;
+      margin-top: 20px;
+    }
+    .actions label {
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    .actions select, .actions input {
+      padding: 5px;
+      margin-right: 20px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="content-container">
+        <h1>Gerar Escalas Automaticamente</h1>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                <label>Serviço:</label>
+                <select name="servico" required>
+                    <option value="">Selecione um serviço</option>
+                    {% for s in servicos %}
+                        <option value="{{ s.id }}">{{ s.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label>Data de Início:</label>
+                <input type="date" name="data_inicio" value="{{ hoje|date:'Y-m-d' }}" required>
+                
+                <label>Data de Fim:</label>
+                <input type="date" name="data_fim" value="{{ proximo_mes|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="submit-row">
+                <input type="submit" value="Gerar Escalas" class="default">
+                <a href="{% url 'admin:core_previsaoescalasproxy_changelist' %}" class="button">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

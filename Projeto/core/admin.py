@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.template.defaulttags import register
 from .forms import MilitarForm, ServicoForm, EscalaForm
 from django.contrib.auth.models import User, Group
-from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from django.contrib.auth.admin import UserAdmin
 from django.contrib import messages
 
 # Permite alterar os seguintes modelos na admin view
@@ -490,15 +490,6 @@ class DispensaAdmin(VersionAdmin):
         
         return redirect('admin:mapa-dispensas')
 
-class ConfiguracaoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'inicio_semana')
-    
-    fieldsets = (
-        ('Configurações Gerais', {
-            'fields': ('inicio_semana',)
-        }),
-    )
-
 class FeriadoAdmin(admin.ModelAdmin):
     list_display = ('nome', 'data', 'tipo')
     list_filter = ('tipo',)
@@ -509,14 +500,12 @@ class FeriadoAdmin(admin.ModelAdmin):
 # Criar instância do admin site customizado
 admin_site = GeradorEscalasAdminSite(name='admin')
 admin_site.register(User, UserAdmin)
-admin_site.register(Group, GroupAdmin)
 
 # Registrar os modelos no admin site customizado
 admin_site.register(Militar, MilitarAdmin)
 admin_site.register(Servico, ServicoAdmin)
 admin_site.register(Escala, EscalaAdmin)
 admin_site.register(Dispensa, DispensaAdmin)
-admin_site.register(Configuracao, ConfiguracaoAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
 
