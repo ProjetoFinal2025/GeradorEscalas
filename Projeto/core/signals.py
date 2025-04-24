@@ -4,7 +4,7 @@ from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 from .models import Militar, Servico, Dispensa, Escala, Configuracao, Log, Role, EscalaMilitar
-
+from decouple import config
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
     """Função auxiliar para criar logs"""
@@ -134,7 +134,7 @@ def log_logout(sender, request, user, **kwargs):
 def criar_user_para_militar(sender, instance, created, **kwargs):
     if created and not instance.user:
         username = str(instance.nim)
-        password = "mel"
+        password = config('USER_PASSWORD')
 
         # Evita duplicação
         if not User.objects.filter(username=username).exists():
