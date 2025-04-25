@@ -35,27 +35,22 @@ def home_view(request):
     """View da página inicial com visualização das escalas"""
     # Debug: Imprimir todos os serviços ativos
     todos_servicos = Servico.objects.filter(ativo=True)
-    print("=== DEBUG ===")
-    print("Serviços ativos encontrados:", [f"{s.id}: {s.nome}" for s in todos_servicos])
-    
+
+
     # Obtém o serviço selecionado ou o primeiro serviço ativo
     servico_id = request.GET.get('servico_id')
-    print("Serviço ID recebido:", servico_id)
-    
+
     if servico_id:
         servico = get_object_or_404(Servico, pk=servico_id, ativo=True)
-        print("Serviço encontrado por ID:", f"{servico.id}: {servico.nome}")
     else:
         servico = Servico.objects.filter(ativo=True).first()
-        print("Primeiro serviço ativo:", f"{servico.id}: {servico.nome}" if servico else "Nenhum")
         if not servico:
             messages.warning(request, "Não existem serviços ativos.")
             return render(request, 'core/home.html')
 
     # Verifica se é visualização de previsão
     tipo_visualizacao = request.GET.get('tipo', 'atual')
-    print("Tipo de visualização:", tipo_visualizacao)
-    
+
     # Define o período
     hoje = date.today()
     if tipo_visualizacao == 'previsao':
@@ -74,21 +69,15 @@ def home_view(request):
         else:
             data_fim = date(hoje.year, hoje.month + 1, 1) - timedelta(days=1)
 
-    print("Período:", data_inicio, "a", data_fim)
-
     # Busca as escalas do período
     escalas = Escala.objects.filter(
         servico=servico,
         data__range=[data_inicio, data_fim]
     ).order_by('data')
-    print("Escalas encontradas:", escalas.count())
-    for escala in escalas:
-        print(f"Escala: {escala.data} - Militar: {escala.militar.nome if escala.militar else 'Nenhum'}")
 
     # Lista de serviços ativos para o seletor
     servicos_ativos = Servico.objects.filter(ativo=True)
-    print("Serviços ativos para o seletor:", [f"{s.id}: {s.nome}" for s in servicos_ativos])
-    print("=== FIM DEBUG ===")
+
 
     context = {
         'servico': servico,
