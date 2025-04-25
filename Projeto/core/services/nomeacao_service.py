@@ -2,9 +2,10 @@ from datetime import date, timedelta
 from typing import Tuple, List, Optional
 from django.db.models import QuerySet, Q
 from operator import attrgetter
+from django.utils import timezone
 
-from ..models import Militar, Dispensa, Nomeacao, Escala, Servico, POSTOS_CHOICES
-from ..views import obter_feriados
+from ..models import Militar, Dispensa, Escala, Servico, POSTOS_CHOICES, EscalaMilitar, Feriado
+from ..utils import obter_feriados
 
 class NomeacaoService:
     def __init__(self, servico: Servico):
@@ -19,7 +20,7 @@ class NomeacaoService:
         regras_flexiveis: bool = False
     ) -> bool:
         # Verificar se já existe uma nomeação para este militar nesta data
-        if Nomeacao.objects.filter(militar=militar, data=data).exists():
+        if EscalaMilitar.objects.filter(militar=militar, data=data).exists():
             return False
 
         # Verificar dispensas e licenças
@@ -43,14 +44,14 @@ class NomeacaoService:
 
         if not regras_flexiveis:
             # Verificar folga entre escalas (24h)
-            if Nomeacao.objects.filter(
+            if EscalaMilitar.objects.filter(
                 militar=militar,
                 data__in=[data - timedelta(days=1), data + timedelta(days=1)]
             ).exists():
                 return False
 
             # Verificar folga na mesma escala (48h)
-            if Nomeacao.objects.filter(
+            if EscalaMilitar.objects.filter(
                 militar=militar,
                 data__in=[
                     data - timedelta(days=2),
@@ -78,7 +79,7 @@ class NomeacaoService:
         militares = self.servico.militares.filter(ativo=True).order_by('posto', 'nim')
         
         # Filtra militares que já estão nomeados como efetivos no mesmo dia
-        militares_nomeados = Nomeacao.objects.filter(
+        militares_nomeados = EscalaMilitar.objects.filter(
             data=data,
             posicao='efetivo'
         ).values_list('militar__nim', flat=True)
@@ -128,9 +129,9 @@ class NomeacaoService:
         escala: Escala,
         data: date,
         posicao: str
-    ) -> Nomeacao:
+    ) -> EscalaMilitar:
         # Verifica se já existe uma nomeação para este militar nesta data
-        nomeacao_existente = Nomeacao.objects.filter(
+        nomeacao_existente = EscalaMilitar.objects.filter(
             militar=militar,
             data=data
         ).first()
@@ -143,16 +144,12 @@ class NomeacaoService:
             return nomeacao_existente
 
         # Se não existe, cria uma nova
-        nomeacao = Nomeacao.objects.create(
+        nomeacao = EscalaMilitar.objects.create(
             militar=militar,
             escala=escala,
             data=data,
             posicao=posicao
         )
-        
-        # Atualizar última nomeação do militar
-        militar.ultima_nomeacao = nomeacao
-        militar.save()
         
         return nomeacao
 
@@ -164,7 +161,7 @@ class NomeacaoService:
     ) -> None:
         try:
             # Limpar nomeações existentes
-            Nomeacao.objects.filter(
+            EscalaMilitar.objects.filter(
                 data__gte=data_inicio,
                 data__lte=data_fim,
                 escala__servico=self.servico
@@ -256,7 +253,7 @@ class NomeacaoService:
                     # Se for escala A, verificar se o militar não está nomeado na escala B do dia anterior
                     if not e_escala_b:
                         data_anterior = data - timedelta(days=1)
-                        nomeacao_anterior = Nomeacao.objects.filter(
+                        nomeacao_anterior = EscalaMilitar.objects.filter(
                             militar=militar,
                             data=data_anterior,
                             escala__e_escala_b=True
@@ -284,7 +281,7 @@ class NomeacaoService:
                         # Se for escala A, verificar se o militar não está nomeado na escala B do dia anterior
                         if not e_escala_b:
                             data_anterior = data - timedelta(days=1)
-                            nomeacao_anterior = Nomeacao.objects.filter(
+                            nomeacao_anterior = EscalaMilitar.objects.filter(
                                 militar=militar,
                                 data=data_anterior,
                                 escala__e_escala_b=True
@@ -312,13 +309,13 @@ class NomeacaoService:
         while data_atual <= data_fim:
             if data_atual < data_fim:
                 # Verificar nomeações no dia atual e no dia seguinte
-                nomeacoes_hoje = Nomeacao.objects.filter(
+                nomeacoes_hoje = EscalaMilitar.objects.filter(
                     data=data_atual,
                     escala__servico=self.servico,
                     escala__e_escala_b=False  # Apenas escala A
                 ).select_related('escala', 'militar')
 
-                nomeacoes_amanha = Nomeacao.objects.filter(
+                nomeacoes_amanha = EscalaMilitar.objects.filter(
                     data=data_atual + timedelta(days=1),
                     escala__servico=self.servico
                 ).select_related('escala', 'militar')
@@ -374,3 +371,70 @@ class NomeacaoService:
                                     proxima_data += timedelta(days=1)
 
             data_atual += timedelta(days=1)
+
+    def obter_militares_disponiveis(self, data: date) -> list:
+        """
+        Retorna uma lista de militares disponíveis para nomeação em uma determinada data
+        """
+        # Obtém todos os militares ativos
+        militares = Militar.objects.filter(ativo=True)
+        
+        # Filtra militares que já estão nomeados para a data
+        militares_nomeados = EscalaMilitar.objects.filter(
+            data=data
+        ).values_list('militar__nim', flat=True)
+        
+        # Filtra militares com dispensas na data
+        militares_com_dispensa = Dispensa.objects.filter(
+            data_inicio__lte=data,
+            data_fim__gte=data
+        ).values_list('militar__nim', flat=True)
+        
+        # Filtra militares disponíveis
+        militares_disponiveis = militares.exclude(
+            Q(nim__in=militares_nomeados) |
+            Q(nim__in=militares_com_dispensa)
+        )
+        
+        return list(militares_disponiveis)
+    
+    def criar_nomeacao(self, militar: Militar, servico: Servico, data: date, posicao: str) -> bool:
+        """
+        Cria uma nomeação para um militar em um serviço específico
+        """
+        try:
+            # Verifica se o militar já está nomeado para a data
+            if EscalaMilitar.objects.filter(militar=militar, data=data).exists():
+                return False
+            
+            # Verifica se o militar tem dispensa na data
+            if Dispensa.objects.filter(
+                militar=militar,
+                data_inicio__lte=data,
+                data_fim__gte=data
+            ).exists():
+                return False
+            
+            # Cria a nomeação
+            EscalaMilitar.objects.create(
+                militar=militar,
+                servico=servico,
+                data=data,
+                posicao=posicao,
+                data_criacao=timezone.now()
+            )
+            
+            return True
+        except Exception:
+            return False
+    
+    def remover_nomeacao(self, militar: Militar, data: date) -> bool:
+        """
+        Remove uma nomeação de um militar em uma data específica
+        """
+        try:
+            nomeacao = EscalaMilitar.objects.get(militar=militar, data=data)
+            nomeacao.delete()
+            return True
+        except EscalaMilitar.DoesNotExist:
+            return False

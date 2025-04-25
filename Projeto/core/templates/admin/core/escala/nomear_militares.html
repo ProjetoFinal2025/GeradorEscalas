@@ -1,0 +1,127 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static "admin/css/changelists.css" %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+  <style>
+    .content-container {
+      padding: 20px;
+    }
+    .form-row {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f8f8f8;
+      border: 1px solid #eee;
+    }
+    .submit-row {
+      padding: 10px;
+      background: #f8f8f8;
+      border: 1px solid #eee;
+      margin-top: 20px;
+    }
+    .actions label {
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    .actions select, .actions input {
+      padding: 5px;
+      margin-right: 20px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .militares-disponiveis {
+      margin-top: 20px;
+    }
+    .militar-card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+    .militar-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .militar-details {
+      flex-grow: 1;
+    }
+    .militar-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-nomear {
+      padding: 5px 10px;
+      background: #417690;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .btn-nomear:hover {
+      background: #205067;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="content-container">
+        <h1>Nomear Militares</h1>
+        
+        <form method="get" class="mb-3">
+            <div class="form-row">
+                <label>Serviço:</label>
+                <select name="servico" onchange="this.form.submit()">
+                    <option value="">Selecione um serviço</option>
+                    {% for s in servicos %}
+                        <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
+                            {{ s.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label>Data:</label>
+                <input type="date" name="data" value="{{ data|date:'Y-m-d' }}" required>
+            </div>
+        </form>
+
+        {% if servico and data %}
+        <div class="militares-disponiveis">
+            <h2>Militares Disponíveis</h2>
+            {% for militar in militares_disponiveis %}
+            <div class="militar-card">
+                <div class="militar-info">
+                    <div class="militar-details">
+                        <strong>{{ militar.posto }} {{ militar.nome }}</strong>
+                        <br>
+                        NIM: {{ militar.nim|stringformat:"08d" }}
+                    </div>
+                    <div class="militar-actions">
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="militar_id" value="{{ militar.nim }}">
+                            <input type="hidden" name="posicao" value="efetivo">
+                            <button type="submit" class="btn-nomear">Nomear como Efetivo</button>
+                        </form>
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="militar_id" value="{{ militar.nim }}">
+                            <input type="hidden" name="posicao" value="reserva">
+                            <button type="submit" class="btn-nomear">Nomear como Reserva</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p>Não existem militares disponíveis para esta data.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

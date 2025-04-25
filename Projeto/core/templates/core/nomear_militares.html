@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Nomeação de Militares</h1>
+    
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="servico">Serviço:</label>
+                    <select name="servico" id="servico" class="form-control" required>
+                        <option value="">Selecione um serviço</option>
+                        {% for servico in servicos %}
+                            <option value="{{ servico.id }}" {% if servico_selecionado and servico_selecionado.id == servico.id %}selected{% endif %}>
+                                {{ servico.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="data">Data:</label>
+                    <input type="date" name="data" id="data" class="form-control" value="{{ data|date:'Y-m-d' }}" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary form-control">Buscar Militares</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if servico_selecionado and data %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Militares Disponíveis para {{ servico_selecionado.nome }} em {{ data|date:"d/m/Y" }}</h5>
+            </div>
+            <div class="card-body">
+                {% if militares_disponiveis %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="servico" value="{{ servico_selecionado.id }}">
+                        <input type="hidden" name="data" value="{{ data|date:'Y-m-d' }}">
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>NIM</th>
+                                        <th>Nome</th>
+                                        <th>Posto</th>
+                                        <th>Posição</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for militar in militares_disponiveis %}
+                                        <tr>
+                                            <td>{{ militar.nim }}</td>
+                                            <td>{{ militar.nome }}</td>
+                                            <td>{{ militar.get_posto_display }}</td>
+                                            <td>
+                                                <select name="posicao_{{ militar.id }}" class="form-control">
+                                                    <option value="1">1ª Posição</option>
+                                                    <option value="2">2ª Posição</option>
+                                                    <option value="3">3ª Posição</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button type="submit" name="militar" value="{{ militar.id }}" class="btn btn-success">
+                                                    Nomear
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="alert alert-info">
+                        Não há militares disponíveis para nomeação nesta data.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

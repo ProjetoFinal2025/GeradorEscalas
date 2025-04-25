@@ -3,8 +3,11 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from .models import Servico, Dispensa, Escala
-from datetime import datetime, timedelta, date, timezone
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils import timezone
+from datetime import datetime, timedelta, date
+from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar
+from .services.nomeacao_service import NomeacaoService
 
 
 # view de log in
@@ -135,61 +138,6 @@ def mapa_dispensas_view(request):
         'servico_selecionado': servico_selecionado
     })
 
-def obter_feriados(data_inicio=None, data_fim=None):
-    """Retorna lista de feriados para o período especificado"""
-    if data_inicio is None:
-        data_inicio = date.today()
-    if data_fim is None:
-        data_fim = date(data_inicio.year, 12, 31)
-
-    feriados = []
-    anos = range(data_inicio.year, data_fim.year + 1)
-    
-    for ano in anos:
-        # Adiciona feriados nacionais
-        feriados_nacionais = [
-            date(ano, 1, 1),   # Ano Novo
-            date(ano, 4, 25),  # Dia da Liberdade
-            date(ano, 5, 1),   # Dia do Trabalhador
-            date(ano, 6, 10),  # Dia de Portugal
-            date(ano, 8, 15),  # Assunção de Nossa Senhora
-            date(ano, 10, 5),  # Implantação da República
-            date(ano, 11, 1),  # Todos os Santos
-            date(ano, 12, 1),  # Restauração da Independência
-            date(ano, 12, 8),  # Imaculada Conceição
-            date(ano, 12, 25), # Natal
-        ]
-        feriados.extend(feriados_nacionais)
-        
-        # Adiciona feriados móveis para 2024
-        if ano == 2024:
-            feriados.extend([
-                date(2024, 2, 13),  # Carnaval
-                date(2024, 3, 29),  # Sexta-feira Santa
-                date(2024, 3, 31),  # Páscoa
-                date(2024, 5, 30),  # Corpo de Deus
-            ])
-        elif ano == 2025:
-            feriados.extend([
-                date(2025, 3, 4),   # Carnaval
-                date(2025, 4, 18),  # Sexta-feira Santa
-                date(2025, 4, 20),  # Páscoa
-                date(2025, 6, 19),  # Corpo de Deus
-            ])
-    
-    # Adiciona feriados personalizados
-    from .models import Feriado
-    feriados_personalizados = Feriado.objects.filter(
-        data__gte=data_inicio,
-        data__lte=data_fim
-    )
-    feriados.extend([f.data for f in feriados_personalizados])
-    
-    # Filtra apenas os feriados dentro do período especificado
-    feriados = [f for f in feriados if data_inicio <= f <= data_fim]
-    
-    return sorted(list(set(feriados)))  # Remove duplicatas e ordena
-
 @login_required
 def escala_servico_view(request, servico_id=None):
     """View para exibir a escala de um serviço específico"""
@@ -281,3 +229,103 @@ def gerar_escalas_view(request):
     }
     
     return render(request, 'admin/core/escala/gerar_previsoes.html', context)
+
+@staff_member_required
+def nomear_militares_view(request):
+    servicos = Servico.objects.filter(ativo=True)
+    servico = None
+    data = None
+    militares_disponiveis = []
+    
+    if request.method == 'GET':
+        servico_id = request.GET.get('servico')
+        data_str = request.GET.get('data')
+        
+        if servico_id:
+            servico = Servico.objects.get(id=servico_id)
+            if data_str:
+                try:
+                    data = datetime.strptime(data_str, '%Y-%m-%d').date()
+                    nomeacao_service = NomeacaoService()
+                    militares_disponiveis = nomeacao_service.obter_militares_disponiveis(data)
+                except ValueError:
+                    pass
+    
+    elif request.method == 'POST':
+        servico_id = request.GET.get('servico')
+        data_str = request.GET.get('data')
+        militar_id = request.POST.get('militar_id')
+        posicao = request.POST.get('posicao')
+        
+        if servico_id and data_str and militar_id and posicao:
+            try:
+                servico = Servico.objects.get(id=servico_id)
+                data = datetime.strptime(data_str, '%Y-%m-%d').date()
+                militar = Militar.objects.get(nim=militar_id)
+                
+                nomeacao_service = NomeacaoService()
+                nomeacao_service.criar_nomeacao(militar, servico, data, posicao)
+                
+                return redirect('nomear_militares')
+            except (Servico.DoesNotExist, Militar.DoesNotExist, ValueError):
+                pass
+    
+    context = {
+        'servicos': servicos,
+        'servico': servico,
+        'data': data,
+        'militares_disponiveis': militares_disponiveis,
+    }
+    
+    return render(request, 'admin/core/escala/nomear_militares.html', context)
+
+@login_required
+def nomear_militares(request):
+    servicos = Servico.objects.filter(ativo=True)
+    servico_selecionado = None
+    data = None
+    militares_disponiveis = []
+    
+    if request.method == 'GET':
+        servico_id = request.GET.get('servico')
+        data_str = request.GET.get('data')
+        
+        if servico_id and data_str:
+            try:
+                servico_selecionado = Servico.objects.get(id=servico_id)
+                data = date.fromisoformat(data_str)
+                nomeacao_service = NomeacaoService(servico_selecionado)
+                militares_disponiveis = nomeacao_service.obter_militares_disponiveis(data)
+            except (Servico.DoesNotExist, ValueError):
+                messages.error(request, 'Dados inválidos fornecidos.')
+    
+    elif request.method == 'POST':
+        servico_id = request.POST.get('servico')
+        data_str = request.POST.get('data')
+        militar_id = request.POST.get('militar')
+        
+        if servico_id and data_str and militar_id:
+            try:
+                servico = Servico.objects.get(id=servico_id)
+                militar = Militar.objects.get(id=militar_id)
+                data = date.fromisoformat(data_str)
+                posicao = request.POST.get(f'posicao_{militar_id}')
+                
+                nomeacao_service = NomeacaoService(servico)
+                if nomeacao_service.criar_nomeacao(militar, servico, data, posicao):
+                    messages.success(request, f'Militar {militar.nome} nomeado com sucesso!')
+                else:
+                    messages.error(request, 'Não foi possível nomear o militar. Verifique se ele está disponível.')
+                
+                return redirect('nomear_militares')
+            except (Servico.DoesNotExist, Militar.DoesNotExist, ValueError):
+                messages.error(request, 'Dados inválidos fornecidos.')
+    
+    context = {
+        'servicos': servicos,
+        'servico_selecionado': servico_selecionado,
+        'data': data,
+        'militares_disponiveis': militares_disponiveis,
+    }
+    
+    return render(request, 'core/nomear_militares.html', context)

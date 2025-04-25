@@ -120,31 +120,32 @@
 <div id="content-main">
     <div class="content-container">
         <div class="filters-container">
-            <!-- Formulário de filtro e geração -->
+            <!-- Formulário de seleção do serviço -->
+            <form method="get" class="mb-3">
+                <div class="form-row">
+                    <label>Serviço:</label>
+                    <select name="servico" onchange="this.form.submit()">
+                        <option value="">Selecione um serviço</option>
+                        {% for s in servicos %}
+                            <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
+                                {{ s.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+
+            <!-- Formulário de geração de previsões -->
             <form method="post">
                 {% csrf_token %}
-                <div class="actions">
-                    <div class="form-row">
-                        <label>Serviço:</label>
-                        <select name="servico" onchange="this.form.submit()">
-                            <option value="">Selecione um serviço</option>
-                            {% for s in servicos %}
-                                <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
-                                    {{ s.nome }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-row">
-                        <label>Data de Início:</label>
-                        <input type="date" name="data_inicio" value="{{ hoje|date:'Y-m-d' }}" required>
-                        
-                        <label>Data de Fim:</label>
-                        <input type="date" name="data_fim_geracao" value="{{ request.POST.data_fim_geracao|default:proximo_mes|date:'Y-m-d' }}" required>
-                        
-                        <input type="submit" name="gerar_escalas" value="Gerar Previsões" class="default">
-                    </div>
+                <div class="form-row">
+                    <label>Data de Início:</label>
+                    <input type="date" name="data_inicio" value="{{ hoje|date:'Y-m-d' }}" required>
+                    
+                    <label>Data de Fim:</label>
+                    <input type="date" name="data_fim" value="{{ request.GET.data_fim|default:proximo_mes|date:'Y-m-d' }}" required>
+                    
+                    <input type="submit" name="gerar_escalas" value="Gerar Previsões" class="default">
                 </div>
             </form>
         </div>

@@ -9,10 +9,13 @@ from .forms import MilitarForm, ServicoForm, EscalaForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib import messages
+from django.utils.html import format_html
+from django.http import HttpResponse
+from django.contrib.admin.views.decorators import staff_member_required
 
 # Permite alterar os seguintes modelos na admin view
-from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar
-from .views import obter_feriados
+from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar, RegraNomeacao
+from .utils import obter_feriados
 
 from reversion.admin import VersionAdmin
 
@@ -335,11 +338,11 @@ class PrevisaoEscalasAdmin(VersionAdmin):
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
         
-        # Processar geração de escalas
+        # Processar geração de previsões
         if request.method == 'POST' and 'gerar_escalas' in request.POST:
             servico_id = request.POST.get('servico')
             data_inicio = request.POST.get('data_inicio')
-            data_fim = request.POST.get('data_fim_geracao')
+            data_fim = request.POST.get('data_fim')
 
             try:
                 servico = Servico.objects.get(id=servico_id)
@@ -361,13 +364,24 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         else:
             servico = Servico.objects.filter(ativo=True).first()
 
+        # Obter data de fim da previsão
+        data_fim_str = request.GET.get('data_fim')
+        if data_fim_str:
+            try:
+                data_fim = date.fromisoformat(data_fim_str)
+            except ValueError:
+                data_fim = date.today() + timedelta(days=30)
+        else:
+            data_fim = date.today() + timedelta(days=30)
+
         # Preparar contexto
         extra_context.update({
             'servico': servico,
             'servicos': Servico.objects.filter(ativo=True),
             'hoje': date.today(),
             'proximo_mes': date.today().replace(day=1) + timedelta(days=32),
-            'request': request,  # Passar o request para o template
+            'data_fim': data_fim,
+            'request': request,
         })
 
         return super().changelist_view(request, extra_context=extra_context)
