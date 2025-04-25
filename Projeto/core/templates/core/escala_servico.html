@@ -50,16 +50,24 @@
                 {% for escala in escalas %}
                 <tr>
                     <td>{{ escala.data|date:"d/m/Y" }}</td>
-                    <td>{{ escala.militar.posto }} {{ escala.militar.nome }}</td>
+                    <td>
+                        {% for militar_info in escala.militares_info.all %}
+                            {% if not militar_info.e_reserva %}
+                                {{ militar_info.militar.posto }} {{ militar_info.militar.nome }}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
                     <td>
                         {% if escala.e_escala_b %}
                             <span class="badge bg-primary">B</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if escala.militar_reserva %}
-                            ({{ escala.militar_reserva.posto }}) {{ escala.militar_reserva.nim|stringformat:"08d" }} {{ escala.militar_reserva.nome|upper }}
-                        {% endif %}
+                        {% for militar_info in escala.militares_info.all %}
+                            {% if militar_info.e_reserva %}
+                                ({{ militar_info.militar.posto }}) {{ militar_info.militar.nim|stringformat:"08d" }} {{ militar_info.militar.nome|upper }}
+                            {% endif %}
+                        {% endfor %}
                     </td>
                 </tr>
                 {% empty %}

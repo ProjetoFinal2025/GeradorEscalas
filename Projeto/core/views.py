@@ -172,10 +172,12 @@ def escala_servico_view(request, servico_id=None):
         else:
             data_fim = date(hoje.year, hoje.month + 1, 1) - timedelta(days=1)
 
-    # Busca as escalas do período
+    # Busca as escalas do período com os militares nomeados
     escalas = Escala.objects.filter(
         servico=servico,
         data__range=[data_inicio, data_fim]
+    ).prefetch_related(
+        'militares_info__militar'
     ).order_by('data')
 
     # Lista de serviços ativos para o seletor

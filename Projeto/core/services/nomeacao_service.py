@@ -11,6 +11,21 @@ class NomeacaoService:
     def __init__(self, servico: Servico):
         self.servico = servico
 
+    def calcular_tempo_sem_servico(self, militar: Militar, data: date) -> int:
+        """
+        Calcula quantos dias o militar está sem serviço
+        Retorna um número grande se nunca teve serviço
+        """
+        ultimo_servico = EscalaMilitar.objects.filter(
+            militar=militar,
+            data__lt=data
+        ).order_by('-data').first()
+
+        if not ultimo_servico:
+            return 9999  # Nunca teve serviço
+
+        return (data - ultimo_servico.data).days
+
     def militar_disponivel(
         self, 
         militar: Militar, 
@@ -73,10 +88,10 @@ class NomeacaoService:
         militares_indisponiveis=None
     ):
         """
-        Obtém o próximo militar disponível para nomeação, ordenando por posto e antiguidade
+        Obtém o próximo militar disponível para nomeação, ordenando por tempo sem serviço
         """
         # Obtém todos os militares do serviço
-        militares = self.servico.militares.filter(ativo=True).order_by('posto', 'nim')
+        militares = self.servico.militares.filter(ativo=True)
         
         # Filtra militares que já estão nomeados como efetivos no mesmo dia
         militares_nomeados = EscalaMilitar.objects.filter(
@@ -97,31 +112,17 @@ class NomeacaoService:
         if not militares_disponiveis:
             return None
 
-        # Ordena por posto (usando a ordem definida em POSTOS_CHOICES)
-        POSTOS_ORDEM = {posto: idx for idx, (posto, _) in enumerate(POSTOS_CHOICES)}
-        militares_disponiveis.sort(key=lambda m: POSTOS_ORDEM.get(m.posto, 0))
-
-        # Dentro do mesmo posto, ordena por antiguidade (NIM mais baixo = mais antigo)
-        militares_por_posto = {}
-        for militar in militares_disponiveis:
-            if militar.posto not in militares_por_posto:
-                militares_por_posto[militar.posto] = []
-            militares_por_posto[militar.posto].append(militar)
-
-        # Ordena cada grupo de posto por NIM (mais antigos primeiro)
-        for posto in militares_por_posto:
-            militares_por_posto[posto].sort(key=lambda m: int(m.nim))
-
-        # Reconstruir lista ordenada
-        militares_ordenados = []
-        for posto in sorted(militares_por_posto.keys(), key=lambda p: POSTOS_ORDEM.get(p, 0)):
-            militares_ordenados.extend(militares_por_posto[posto])
+        # Ordena por tempo sem serviço (maior tempo primeiro)
+        militares_disponiveis.sort(
+            key=lambda m: self.calcular_tempo_sem_servico(m, data),
+            reverse=True
+        )
 
         # Se for reserva, pega o próximo na ordem
-        if e_reserva and len(militares_ordenados) > 1:
-            return militares_ordenados[1]  # Segundo da lista (próximo na ordem)
+        if e_reserva and len(militares_disponiveis) > 1:
+            return militares_disponiveis[1]  # Segundo da lista (próximo na ordem)
         
-        return militares_ordenados[0]  # Primeiro da lista
+        return militares_disponiveis[0]  # Primeiro da lista
 
     def criar_nomeacao(
         self,

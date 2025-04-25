@@ -6,72 +6,59 @@ def gerar_escalas_automaticamente(servico, data_inicio, data_fim):
     """
     Gera escalas automaticamente para um serviço no período especificado
     """
-    # Obter regras de nomeação
-    regras = RegraNomeacao.objects.filter(servico=servico)
-    regra_mesma_escala = regras.filter(tipo_folga='mesma_escala').first()
-    regra_entre_escalas = regras.filter(tipo_folga='entre_escalas').first()
+    try:
+        # Obter regras de nomeação
+        regras = RegraNomeacao.objects.filter(servico=servico)
+        regra_mesma_escala = regras.filter(tipo_folga='mesma_escala').first()
+        regra_entre_escalas = regras.filter(tipo_folga='entre_escalas').first()
 
-    # Obter militares do serviço ordenados por posto e antiguidade
-    militares = servico.militares.all().order_by('posto', 'nim')
+        # Obter militares do serviço ordenados por posto e antiguidade
+        militares = list(servico.militares.all().order_by('posto', 'nim'))
+        if not militares:
+            return False
 
-    # Gerar previsões para cada dia
-    data_atual = data_inicio
-    while data_atual <= data_fim:
-        # Determinar se é escala A ou B
-        e_fim_semana = data_atual.weekday() >= 5
-        e_escala_b = e_fim_semana
+        # Obter feriados
+        feriados = obter_feriados(data_inicio, data_fim)
 
-        # Criar ou obter escala
-        escala, created = Escala.objects.get_or_create(
-            servico=servico,
-            data=data_atual,
-            e_escala_b=e_escala_b
-        )
+        # Índice para controlar qual militar será nomeado
+        indice_militar = 0
+        total_militares = len(militares)
 
-        # Encontrar militar disponível com maior folga
-        militar_efetivo = None
-        militar_reserva = None
-        maior_folga = -1
+        # Gerar previsões para cada dia
+        data_atual = data_inicio
+        while data_atual <= data_fim:
+            # Determinar se é escala A ou B
+            e_fim_semana = data_atual.weekday() >= 5
+            e_feriado = data_atual in feriados
+            e_escala_b = e_fim_semana or e_feriado
 
-        for militar in militares:
-            # Verificar disponibilidade
-            disponivel = True
-            
-            # Verificar dispensas
-            if Dispensa.objects.filter(
-                militar=militar,
-                data_inicio__lte=data_atual,
-                data_fim__gte=data_atual
-            ).exists():
-                disponivel = False
+            # Se é escala B e o serviço não tem escala B, pular
+            if e_escala_b and not servico.tem_escala_B:
+                data_atual += timedelta(days=1)
                 continue
 
-            # Calcular folga
-            folga = militar.calcular_folga(data_atual, servico)
-            
-            # Verificar regras de folga
-            if e_escala_b:
-                if folga < regra_mesma_escala.horas_minimas:
-                    disponivel = False
-                    continue
-            else:
-                if folga < regra_entre_escalas.horas_minimas:
-                    disponivel = False
-                    continue
+            # Limpar escalas existentes para esta data
+            Escala.objects.filter(
+                servico=servico,
+                data=data_atual,
+                e_escala_b=e_escala_b
+            ).delete()
 
-            if disponivel and folga > maior_folga:
-                maior_folga = folga
-                militar_efetivo = militar
+            # Criar nova escala
+            escala = Escala.objects.create(
+                servico=servico,
+                data=data_atual,
+                e_escala_b=e_escala_b,
+                prevista=True
+            )
 
-        # Encontrar reserva (próximo disponível)
-        if militar_efetivo:
-            for militar in militares:
-                if militar == militar_efetivo:
-                    continue
-                
-                # Verificar disponibilidade
+            # Encontrar próximo militar disponível
+            militar_encontrado = False
+            tentativas = 0
+            while not militar_encontrado and tentativas < total_militares:
+                militar = militares[indice_militar]
                 disponivel = True
-                
+
                 # Verificar dispensas
                 if Dispensa.objects.filter(
                     militar=militar,
@@ -79,34 +66,45 @@ def gerar_escalas_automaticamente(servico, data_inicio, data_fim):
                     data_fim__gte=data_atual
                 ).exists():
                     disponivel = False
-                    continue
+
+                # Verificar se já está nomeado para outra escala no mesmo dia
+                if EscalaMilitar.objects.filter(
+                    escala__data=data_atual,
+                    militar=militar
+                ).exists():
+                    disponivel = False
 
                 # Calcular folga
                 folga = militar.calcular_folga(data_atual, servico)
-                
+
                 # Verificar regras de folga
-                if e_escala_b:
+                if e_escala_b and regra_mesma_escala:
                     if folga < regra_mesma_escala.horas_minimas:
                         disponivel = False
-                        continue
-                else:
+                elif not e_escala_b and regra_entre_escalas:
                     if folga < regra_entre_escalas.horas_minimas:
                         disponivel = False
-                        continue
 
                 if disponivel:
-                    militar_reserva = militar
-                    break
+                    # Criar EscalaMilitar para o militar
+                    EscalaMilitar.objects.create(
+                        escala=escala,
+                        militar=militar,
+                        ordem_semana=1 if not e_escala_b else None,
+                        ordem_fds=1 if e_escala_b else None
+                    )
+                    militar_encontrado = True
 
-        # Atribuir militares à escala
-        if militar_efetivo:
-            escala.militar = militar_efetivo
-            escala.militar_reserva = militar_reserva
-            escala.save()
+                # Avançar para o próximo militar
+                indice_militar = (indice_militar + 1) % total_militares
+                tentativas += 1
 
-        data_atual += timedelta(days=1)
+            data_atual += timedelta(days=1)
 
-    return True 
+        return True
+    except Exception as e:
+        print(f"Erro ao gerar escalas: {str(e)}")
+        return False
 
 def obter_feriados(data_inicio=None, data_fim=None):
     """Retorna lista de feriados para o período especificado"""

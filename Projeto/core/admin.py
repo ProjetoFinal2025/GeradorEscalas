@@ -1,34 +1,23 @@
-from django.contrib import admin
-from django.utils.safestring import mark_safe
+from django.contrib import admin, messages
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import path
-from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils.safestring import mark_safe
+from reversion.admin import VersionAdmin
 from datetime import date, timedelta
+from .models import *
+from .utils import obter_feriados
 from django.utils import timezone
 from django.template.defaulttags import register
 from .forms import MilitarForm, ServicoForm, EscalaForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin
-from django.contrib import messages
 from django.utils.html import format_html
-from django.http import HttpResponse
-from django.contrib.admin.views.decorators import staff_member_required
+from django.db import models
 
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar, RegraNomeacao
-from .utils import obter_feriados
-
-from reversion.admin import VersionAdmin
-
-
-# Configuração do Admin Site
-class GeradorEscalasAdminSite(admin.AdminSite):
-    site_header = 'Gerador de Escalas'
-    site_title = 'Gerador de Escalas'
-    index_title = 'Administração do Sistema'
-
-    def get_app_list(self, request):
-        app_list = super().get_app_list(request)
-        return app_list
 
 @register.filter
 def get_item(dictionary, key):
@@ -352,10 +341,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
                 from .utils import gerar_escalas_automaticamente
                 if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
                     messages.success(request, "Previsões geradas com sucesso!")
+                    # Redirecionar de volta para o mesmo serviço
+                    return redirect(f"{request.path}?servico={servico_id}")
                 else:
                     messages.error(request, "Erro ao gerar previsões.")
+                    # Redirecionar de volta para o mesmo serviço
+                    return redirect(f"{request.path}?servico={servico_id}")
             except Exception as e:
                 messages.error(request, f"Erro: {str(e)}")
+                # Redirecionar de volta para o mesmo serviço
+                return redirect(f"{request.path}?servico={servico_id}")
 
         # Obter serviço selecionado
         servico_id = request.GET.get('servico')
@@ -403,6 +398,31 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         return custom_urls + urls
 
     def previsao_view(self, request):
+        # Processar geração de previsões
+        if request.method == 'POST' and 'gerar_escalas' in request.POST:
+            servico_id = request.POST.get('servico')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim')
+
+            try:
+                servico = Servico.objects.get(id=servico_id)
+                data_inicio = date.fromisoformat(data_inicio)
+                data_fim = date.fromisoformat(data_fim)
+
+                from .utils import gerar_escalas_automaticamente
+                if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
+                    messages.success(request, "Previsões geradas com sucesso!")
+                    # Redirecionar de volta para o mesmo serviço
+                    return redirect(f"{request.path}?servico={servico_id}")
+                else:
+                    messages.error(request, "Erro ao gerar previsões.")
+                    # Redirecionar de volta para o mesmo serviço
+                    return redirect(f"{request.path}?servico={servico_id}")
+            except Exception as e:
+                messages.error(request, f"Erro: {str(e)}")
+                # Redirecionar de volta para o mesmo serviço
+                return redirect(f"{request.path}?servico={servico_id}")
+
         # Obter o serviço selecionado ou o primeiro serviço ativo
         servico_id = request.GET.get('servico')
         if servico_id:
@@ -432,10 +452,13 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         data_atual = hoje
 
         while data_atual <= data_fim:
-            # Buscar escala existente para esta data
+            # Buscar escala existente para esta data com os militares relacionados
             escala = Escala.objects.filter(
                 servico=servico,
                 data=data_atual,
+            ).prefetch_related(
+                'militares_info',
+                'militares_info__militar'
             ).first()
 
             # Verificar se é fim de semana ou feriado
@@ -483,6 +506,16 @@ class PrevisaoEscalasProxy(Escala):
         proxy = True
         verbose_name = "Previsões de Nomeação"
         verbose_name_plural = "Previsões de Nomeação"
+
+# Configuração do Admin Site
+class GeradorEscalasAdminSite(admin.AdminSite):
+    site_header = 'Gerador de Escalas'
+    site_title = 'Gerador de Escalas'
+    index_title = 'Administração do Sistema'
+
+    def get_app_list(self, request):
+        app_list = super().get_app_list(request)
+        return app_list
 
 # Criar instância do admin site customizado
 admin_site = GeradorEscalasAdminSite(name='admin')

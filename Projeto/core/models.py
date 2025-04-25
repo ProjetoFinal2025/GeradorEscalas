@@ -121,15 +121,16 @@ class Militar(models.Model):
         """
         Obtém a data do último serviço do militar
         """
-        query = self.escalas_atribuidas.filter(
-            data__lt=date.today()
-        ).order_by('-data')
+        query = EscalaMilitar.objects.filter(
+            militar=self,
+            escala__data__lt=date.today()
+        ).select_related('escala').order_by('-escala__data')
 
         if servico:
-            query = query.filter(servico=servico)
+            query = query.filter(escala__servico=servico)
 
         ultimo_servico = query.first()
-        return ultimo_servico.data if ultimo_servico else None
+        return ultimo_servico.escala.data if ultimo_servico else None
 
     def calcular_folga(self, data_proposta, servico=None):
         """
@@ -227,6 +228,7 @@ class Escala(models.Model):
     data = models.DateField()
     e_escala_b = models.BooleanField(default=False, verbose_name="Escala B")
     observacoes = models.TextField(blank=True, verbose_name="Observações")
+    prevista = models.BooleanField(default=True, verbose_name="Prevista")
 
     class Meta:
         verbose_name = "Escala"
