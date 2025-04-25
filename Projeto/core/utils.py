@@ -14,7 +14,7 @@ def gerar_escalas_automaticamente(servico, data_inicio, data_fim):
     # Obter militares do serviço ordenados por posto e antiguidade
     militares = servico.militares.all().order_by('posto', 'nim')
 
-    # Gerar escalas para cada dia
+    # Gerar previsões para cada dia
     data_atual = data_inicio
     while data_atual <= data_fim:
         # Determinar se é escala A ou B

@@ -25,7 +25,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="escalasDropdown">
                             <li><a class="dropdown-item" href="{% url 'escala_servico' %}">Escalas Atuais</a></li>
-                            <li><a class="dropdown-item" href="{% url 'escala_servico' %}?tipo=previsao">Previsão de Escalas</a></li>
+                            <li><a class="dropdown-item" href="{% url 'previsao_escalas' %}">Previsões de Nomeação</a></li>
                             {% if user.is_staff %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/admin/core/escala/">Gerir Escalas</a></li>

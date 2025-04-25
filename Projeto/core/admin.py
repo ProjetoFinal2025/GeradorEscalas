@@ -348,9 +348,9 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
                 from .utils import gerar_escalas_automaticamente
                 if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
-                    messages.success(request, "Escalas geradas com sucesso!")
+                    messages.success(request, "Previsões geradas com sucesso!")
                 else:
-                    messages.error(request, "Erro ao gerar escalas.")
+                    messages.error(request, "Erro ao gerar previsões.")
             except Exception as e:
                 messages.error(request, f"Erro: {str(e)}")
 
@@ -442,7 +442,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         servicos = Servico.objects.filter(ativo=True)
 
         context = {
-            'title': f'Previsão de Escalas - {servico.nome}',
+            'title': f'Previsões de Nomeação - {servico.nome}',
             'servico': servico,
             'servicos': servicos,
             'datas': datas,
@@ -460,15 +460,15 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         return render(request, 'admin/core/escala/previsao.html', context)
 
     class Meta:
-        verbose_name = "Previsão de Escalas"
-        verbose_name_plural = "Previsão de Escalas"
+        verbose_name = "Previsões de Nomeação"
+        verbose_name_plural = "Previsões de Nomeação"
 
-# Proxy model para Previsão de Escalas
+# Proxy model para Previsões de Nomeação
 class PrevisaoEscalasProxy(Escala):
     class Meta:
         proxy = True
-        verbose_name = "Previsão de Escalas"
-        verbose_name_plural = "Previsão de Escalas"
+        verbose_name = "Previsões de Nomeação"
+        verbose_name_plural = "Previsões de Nomeação"
 
 # Criar instância do admin site customizado
 admin_site = GeradorEscalasAdminSite(name='admin')
@@ -482,7 +482,7 @@ admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
 
-# Registrar a Previsão de Escalas como um modelo proxy
+# Registrar a Previsões de Nomeação como um modelo proxy
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
 
 

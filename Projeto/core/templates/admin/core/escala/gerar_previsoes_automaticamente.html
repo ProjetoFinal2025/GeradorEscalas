@@ -37,7 +37,7 @@
 {% block content %}
 <div id="content-main">
     <div class="content-container">
-        <h1>Gerar Escalas Automaticamente</h1>
+        <h1>Gerar Previsões Automaticamente</h1>
         
         <form method="post">
             {% csrf_token %}
@@ -60,7 +60,7 @@
             </div>
 
             <div class="submit-row">
-                <input type="submit" value="Gerar Escalas" class="default">
+                <input type="submit" value="Gerar Previsões" class="default">
                 <a href="{% url 'admin:core_previsaoescalasproxy_changelist' %}" class="button">Cancelar</a>
             </div>
         </form>

@@ -265,7 +265,7 @@ def gerar_escalas_view(request):
                 # Redireciona para a previsão com o serviço selecionado
                 return redirect(f'/admin/core/previsaoescalasproxy/?servico={servico_id}&data_fim={data_fim}')
             else:
-                messages.error(request, "Erro ao gerar escalas.")
+                messages.error(request, "Erro ao gerar previsões.")
         except Exception as e:
             messages.error(request, f"Erro: {str(e)}")
 
@@ -280,4 +280,4 @@ def gerar_escalas_view(request):
         'proximo_mes': date.today().replace(day=1) + timedelta(days=32),
     }
     
-    return render(request, 'admin/core/escala/gerar_escalas.html', context)
+    return render(request, 'admin/core/escala/gerar_previsoes.html', context)

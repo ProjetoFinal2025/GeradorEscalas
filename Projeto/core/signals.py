@@ -70,19 +70,13 @@ def log_alteracoes_escala(sender, instance, **kwargs):
     """Regista alterações em Escala"""
     if 'created' in kwargs:
         if kwargs['created']:
-            # CRIA ERRO POIS VARIAVEL NAO EXISTE
-            #acao = f"Criada escala: {instance.militar.nome} para {instance.data}"
-            acao = ''
+            acao = f"Criada escala para o serviço {instance.servico.nome} na data {instance.data.strftime('%d/%m/%Y')}"
             tipo_acao = 'CREATE'
         else:
-            # CRIA ERRO POIS VARIAVEL NAO EXISTE
-           #acao = f"Atualizada escala: {instance.militar.nome} para {instance.data}"
-            acao = ''
+            acao = f"Atualizada escala para o serviço {instance.servico.nome} na data {instance.data.strftime('%d/%m/%Y')}"
             tipo_acao = 'UPDATE'
     else:
-       # CRIA ERRO POIS VARIAVEL NAO EXISTE
-       # acao = f"Removida escala de {instance.militar.nome} para {instance.data}"
-        acao = ''
+        acao = f"Removida escala do serviço {instance.servico.nome} na data {instance.data.strftime('%d/%m/%Y')}"
         tipo_acao = 'DELETE'
     
     criar_log(12345678, acao, 'Escala', tipo_acao)
