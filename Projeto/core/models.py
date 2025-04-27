@@ -265,7 +265,6 @@ class Log(models.Model):
     id = models.AutoField(primary_key=True)
     nim_admin = models.BigIntegerField(help_text="NIM do administrador que realizou a ação")
     acao = models.CharField(max_length=255, help_text="Descrição da ação realizada")
-    modelo = models.CharField(max_length=50, help_text="Nome do modelo alterado", default='Sistema')
     tipo_acao = models.CharField(max_length=20, choices=[
         ('CREATE', 'Criar'),
         ('UPDATE', 'Atualizar'),
@@ -273,6 +272,7 @@ class Log(models.Model):
         ('LOGIN', 'Login'),
         ('LOGOUT', 'Logout')
     ], default='UPDATE')
+    modelo = models.CharField(max_length=50, help_text="Nome do modelo alterado", default='Sistema')
     data = models.DateTimeField(auto_now_add=True, help_text="Data e hora da ação")
 
     class Meta:

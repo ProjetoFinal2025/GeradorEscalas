@@ -11,7 +11,6 @@ class CoreConfig(AppConfig):
         from . import initial_setup
 
         #Escolhe que modelos tem backup
-
         if not reversion.is_registered(User):
             reversion.register(User)
 

@@ -36,7 +36,6 @@ from django.http import HttpResponse
 @login_required
 def home_view(request):
     """View da página inicial com visualização das escalas"""
-    # Debug: Imprimir todos os serviços ativos
     todos_servicos = Servico.objects.filter(ativo=True)
 
 

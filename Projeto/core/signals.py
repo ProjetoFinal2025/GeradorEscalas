@@ -81,21 +81,6 @@ def log_alteracoes_escala(sender, instance, **kwargs):
     
     criar_log(12345678, acao, 'Escala', tipo_acao)
 
-@receiver([post_save, post_delete], sender=Configuracao)
-def log_alteracoes_configuracao(sender, instance, **kwargs):
-    """Regista alterações em Configuração"""
-    if 'created' in kwargs:
-        if kwargs['created']:
-            acao = "Criada nova configuração"
-            tipo_acao = 'CREATE'
-        else:
-            acao = "Atualizada configuração"
-            tipo_acao = 'UPDATE'
-    else:
-        acao = "Removida configuração"
-        tipo_acao = 'DELETE'
-    
-    criar_log(12345678, acao, 'Configuracao', tipo_acao)
 
 @receiver(user_logged_in)
 def log_login(sender, request, user, **kwargs):
@@ -175,7 +160,7 @@ def atualizar_user_com_base_em_administrador(sender, instance, **kwargs):
 
     user.save()
 
-# Sincs the militares in a Escala When Serviço is updated
+# Syncs the militares in a Escala When Serviço is updated
 @receiver(m2m_changed, sender=Servico.militares.through)
 def sync_escalas_when_servico_changes(sender, instance, action, **kwargs):
     if action not in ['post_add', 'post_remove', 'post_clear']:
