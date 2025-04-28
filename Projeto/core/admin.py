@@ -31,14 +31,14 @@ class MilitarAdmin(VersionAdmin):
 
 class ServicoAdmin(VersionAdmin):
     form = ServicoForm
-    list_display = ('nome', 'hora_inicio', 'hora_fim', 'n_elementos', 'tem_escala_B', 'armamento', 'ativo')
-    list_filter = ('ativo', 'tem_escala_B', 'armamento')
+    list_display = ('nome', 'hora_inicio', 'hora_fim', 'n_elementos', 'tipo_escalas', 'armamento', 'ativo')
+    list_filter = ('ativo', 'tipo_escalas', 'armamento')
     fieldsets = (
         ('Informações Básicas', {
             'fields': ('nome', 'ativo')
         }),
         ('Configurações do Serviço', {
-            'fields': ('hora_inicio', 'hora_fim', 'n_elementos', 'tem_escala_B', 'armamento'),
+            'fields': ('hora_inicio', 'hora_fim', 'n_elementos', 'tipo_escalas', 'armamento'),
             'classes': ('wide',)
         }),
         ('Militares', {
@@ -99,49 +99,53 @@ class EscalaAdmin(VersionAdmin):
     inlines = [EscalaMilitarInline]
     actions = [reset_orders_by_nim]
     form = EscalaForm
-    list_display = ['id', 'servico', 'data']
-    list_filter = ('servico', 'data')
+    list_display = ("id", "servico", "data", "e_escala_b")
+    list_filter   = ("servico", "data", "e_escala_b")
     search_fields = ('servico__nome', 'data')
     date_hierarchy = 'data'
 
+
     def save_model(self, request, obj, form, change):
-        # save Escala
         super().save_model(request, obj, form, change)
 
-        # create a row for each Militar in the related Servico
-        if obj.servico:
-            servico_militares = obj.servico.militares.all()
+        self._sincronizar_militares_e_criar_B(obj)
+        messages.success(request, "Escala gravada e sincronizada com sucesso.")
 
-            # Atribuir militares à escala atual (A ou B)
-            for mil in servico_militares:
+    def _sincronizar_militares_e_criar_B(self, escala):
+        """Sincroniza EscalaMilitar e cria escala B quando aplicável."""
+        servico = escala.servico
+        tipo_servico = servico.tipo_escalas  # "A", "B", "AB"
+        militares_srv = servico.militares.all()
+
+        #  sincronizar militares da escala actual
+        EscalaMilitar.objects.filter(escala=escala).exclude(
+            militar__in=militares_srv).delete()
+
+        for i, mil in enumerate(militares_srv, 1):
+            EscalaMilitar.objects.get_or_create(
+                escala=escala,
+                militar=mil,
+                defaults={"ordem_semana": i, "ordem_fds": i},
+            )
+
+        #  se serviço "AB" e esta é A criar/actualizar B
+        if tipo_servico == "AB" and not escala.e_escala_b:
+            escala_b, _ = Escala.objects.get_or_create(
+                servico=servico,
+                data=escala.data,
+                e_escala_b=True,
+                defaults={"comentario": "Gerada automaticamente"},
+            )
+            EscalaMilitar.objects.filter(escala=escala_b).exclude(
+                militar__in=militares_srv).delete()
+
+            for i, mil in enumerate(militares_srv, 1):
                 EscalaMilitar.objects.get_or_create(
-                    escala=obj,
+                    escala=escala_b,
                     militar=mil,
-                    defaults={
-                        'ordem_semana': EscalaMilitar.objects.filter(escala=obj).count() + 1,
-                        'ordem_fds': EscalaMilitar.objects.filter(escala=obj).count() + 1
-                    }
+                    defaults={"ordem_semana": i, "ordem_fds": i},
                 )
 
-            # Se o serviço tem escala B e esta é uma escala A, criar a escala B correspondente
-            if obj.servico.tem_escala_B and not obj.e_escala_b:
-                # Criar ou atualizar a escala B correspondente
-                escala_b, created = Escala.objects.get_or_create(
-                    servico=obj.servico,
-                    data=obj.data,
-                    e_escala_b=True
-                )
-
-                # Atribuir militares à escala B
-                for mil in servico_militares:
-                    EscalaMilitar.objects.get_or_create(
-                        escala=escala_b,
-                        militar=mil,
-                        defaults={
-                            'ordem_semana': EscalaMilitar.objects.filter(escala=escala_b).count() + 1,
-                            'ordem_fds': EscalaMilitar.objects.filter(escala=escala_b).count() + 1
-                        }
-                    )
 
     # Allows to reset based on NIM for Escala ordem
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):

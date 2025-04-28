@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 from datetime import time, date, timedelta
+from django.utils.translation import gettext_lazy as _
 
 # Lista de postos do Exército Português (excluindo oficiais generais)
 POSTOS_CHOICES = [
@@ -185,6 +186,12 @@ class Feriado(models.Model):
 
 
 class Servico(models.Model):
+    ESCALA_OPTIONS = [
+        ("A", "Só Escala A"),
+        ("B", "Só Escala B"),
+        ("AB", "Escala A e B"),
+    ]
+
     id = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100)
     militares = models.ManyToManyField('Militar', related_name='servicos')
@@ -192,7 +199,14 @@ class Servico(models.Model):
     hora_inicio = models.TimeField(default=time(8, 0), help_text="Hora de início do serviço")
     hora_fim = models.TimeField(default=time(17, 0), help_text="Hora de fim do serviço")
     n_elementos = models.IntegerField(default=1, help_text="Número de elementos necessários por escala")
-    tem_escala_B = models.BooleanField(default=False, help_text="Se o serviço tem escala B")
+
+    tipo_escalas = models.CharField(
+        max_length=2,
+        choices=ESCALA_OPTIONS,
+        default="A",
+        help_text="Que escalas existem neste serviço",
+    )
+
     armamento = models.BooleanField(default=False, help_text="Se o serviço requer armamento")
 
     def __str__(self):
@@ -234,6 +248,30 @@ class Escala(models.Model):
         verbose_name = "Escala"
         verbose_name_plural = "Escalas"
         ordering = ['data', 'servico']
+
+    def clean(self):
+        super().clean()
+
+        tipo = self.servico.tipo_escalas  # "A", "B" ou "AB"
+        is_B = self.e_escala_b
+
+        if tipo == "A" and is_B:
+            raise ValidationError(
+                {"e_escala_b": _("Este serviço só permite escalas do tipo A.")}
+            )
+        if tipo == "B" and not is_B:
+            raise ValidationError(
+                {"e_escala_b": _("Este serviço só permite escalas do tipo B.")}
+            )
+        # Para "A" ou "B", não pode existir já outra escala igual nessa data
+        if tipo in ("A", "B"):
+            clash = Escala.objects.filter(
+                servico=self.servico, data=self.data
+            ).exclude(pk=self.pk).exists()
+            if clash:
+                raise ValidationError(
+                    _("Já existe uma escala para este serviço deste tipo.")
+                )
 
     def __str__(self):
         tipo_escala = "B" if self.e_escala_b else "A"
