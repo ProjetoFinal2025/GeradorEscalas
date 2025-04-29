@@ -54,7 +54,7 @@ class EscalaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # ─── Determina o serviço (POST ou instance) ──────────────────────
+        # Determina o serviço
         servico = None
         has_errors = self.errors and len(self.errors) > 0  # Check if form has errors
 
@@ -67,7 +67,7 @@ class EscalaForm(forms.ModelForm):
             elif self.instance and self.instance.pk:
                 servico = self.instance.servico
 
-            # ─── Ajusta o campo consoante o serviço ──────────────────────────
+            # Ajusta o campo consoante o serviço
             if servico:
                 if servico.tipo_escalas == "A":
                     # bloqueia em A
@@ -79,7 +79,7 @@ class EscalaForm(forms.ModelForm):
                     self.initial["e_escala_b"] = "1"
                 # para "AB" mantemos o radio-button
 
-    # converte "0"/"1" → bool
+    # converte
     def clean_e_escala_b(self):
         return self.cleaned_data["e_escala_b"] == "1"
 

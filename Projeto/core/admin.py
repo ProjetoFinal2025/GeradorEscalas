@@ -1,7 +1,6 @@
 from django.contrib import admin, messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import path
-from django.utils.safestring import mark_safe
 from reversion.admin import VersionAdmin
 from .models import *
 from .utils import obter_feriados
@@ -13,7 +12,8 @@ from django.contrib.auth.admin import UserAdmin
 from django.urls import reverse
 from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
-from .models import Escala
+from .services.pdf_exports import gerar_pdf_escala
+from django.http import FileResponse, Http404
 
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar, RegraNomeacao
@@ -136,15 +136,64 @@ class EscalaAdmin(VersionAdmin):
     search_fields = ('servico__nome', 'data')
     date_hierarchy = 'data'
 
+    change_form_template = "admin/core/escala/change_form.html"  # NEW
+
+    def get_urls(self):
+
+        urls = super().get_urls()
+        custom = [
+            path(
+                "<path:object_id>/export-pdf/",
+                self.admin_site.admin_view(self.export_militares_pdf),
+                name="core_escala_export_pdf",
+            ),
+        ]
+        return custom + urls
+
+    def export_militares_pdf(self, request, object_id, *args, **kwargs):
+        escala = self.get_object(request, object_id)
+        if not escala:
+            raise Http404
+        pdf_buffer = gerar_pdf_escala(escala)
+        filename = f"escala_{escala.pk}_militares.pdf"
+        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
+
+    def changeform_view(self, request, object_id=None,
+                        form_url="", extra_context=None):
+
+        #  handle the special POST that resets ordem
+        if request.method == "POST" and "_reset_ordem" in request.POST and object_id:
+            escala = self.get_object(request, object_id)
+            if escala:
+                related = (escala.militares_info
+                           .select_related("militar")
+                           .order_by("militar__nim"))
+                for i, em in enumerate(related, start=1):
+                    em.ordem_semana = i
+                    em.ordem_fds = i
+                    em.save()
+                self.message_user(request, "Ordem redefinida com sucesso.")
+                return redirect(request.path)
+
+        # supply both variables to the template
+        extra_context = extra_context or {}
+        extra_context["custom_reset_button"] = True
+        if object_id:
+            extra_context["export_pdf_url"] = reverse(
+                "admin:core_escala_export_pdf", args=[object_id]
+            )
+
+        return super().changeform_view(request, object_id, form_url,
+                                       extra_context)
+
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-
         self._sincronizar_militares_e_criar_B(obj)
         messages.success(request, "Escala gravada e sincronizada com sucesso.")
 
     def _sincronizar_militares_e_criar_B(self, escala):
-        """Sincroniza EscalaMilitar e cria escala B quando aplicável."""
+        #Sincroniza EscalaMilitar e cria escala B quando aplicável.
         servico = escala.servico
         tipo_servico = servico.tipo_escalas  # "A", "B", "AB"
         militares_srv = servico.militares.all()
@@ -177,29 +226,6 @@ class EscalaAdmin(VersionAdmin):
                     militar=mil,
                     defaults={"ordem_semana": i, "ordem_fds": i},
                 )
-
-
-    # Allows to reset based on NIM for Escala ordem
-    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
-        if request.method == "POST" and "_reset_ordem" in request.POST:
-            escala = self.get_object(request, object_id)
-            if escala:
-                # Reset ordem by NIM
-                related = escala.militares_info.select_related('militar').order_by('militar__nim')
-                for i, em in enumerate(related, start=1):
-                    em.ordem_semana = i
-                    em.ordem_fds = i
-                    em.save()
-                self.message_user(request, "Ordem redefinida com sucesso.")
-                return redirect(request.path)
-
-        extra_context = extra_context or {}
-        extra_context["custom_reset_button"] = True
-        return super().changeform_view(request, object_id, form_url, extra_context)
-
-    def get_urls(self):
-        urls = super().get_urls()
-        return urls
 
 class DispensaAdmin(VersionAdmin):
     list_display = ('militar', 'data_inicio', 'data_fim', 'motivo', 'servico_atual')
