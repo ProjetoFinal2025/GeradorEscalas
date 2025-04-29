@@ -1,11 +1,8 @@
 from django.contrib import admin, messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import path
-from django.http import HttpResponse
-from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.safestring import mark_safe
 from reversion.admin import VersionAdmin
-from datetime import date, timedelta
 from .models import *
 from .utils import obter_feriados
 from django.utils import timezone
@@ -13,8 +10,10 @@ from django.template.defaulttags import register
 from .forms import MilitarForm, ServicoForm, EscalaForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin
-from django.utils.html import format_html
-from django.db import models
+from django.urls import reverse
+from django.utils.html import format_html_join
+from django.utils.safestring import mark_safe
+from .models import Escala
 
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar, RegraNomeacao
@@ -31,7 +30,11 @@ class MilitarAdmin(VersionAdmin):
 
 class ServicoAdmin(VersionAdmin):
     form = ServicoForm
-    list_display = ('nome', 'hora_inicio', 'hora_fim', 'n_elementos', 'tipo_escalas', 'armamento', 'ativo')
+    list_display = (
+        'nome', 'hora_inicio', 'hora_fim', 'n_elementos',
+        'tipo_escalas', 'armamento', 'ativo',
+        'escalas_col',
+    )
     list_filter = ('ativo', 'tipo_escalas', 'armamento')
     fieldsets = (
         ('Informações Básicas', {
@@ -48,6 +51,35 @@ class ServicoAdmin(VersionAdmin):
     )
     filter_horizontal = ('militares',)
     readonly_fields = ['ver_escalas']
+
+    # Shows Escalas in Service View
+    def escalas_col(self, obj):
+        if hasattr(obj, "escalas"):
+            qs = obj.escalas.all()  # related_name='escalas'
+        else:
+            qs = Escala.objects.filter(servico=obj)  # related_name='+' (no reverse)
+
+        if not qs.exists():
+            return "—"
+
+        items = format_html_join(
+            '',
+            '<li><a href="{}">{}</a></li>',
+            (
+                (
+                    reverse('admin:core_escala_change', args=(e.pk,)),
+                    str(e),
+                )
+                for e in qs
+            )
+        )
+        return mark_safe(
+            f'<details><summary>{qs.count()} escala(s)</summary>'
+            f'<ul style="margin-left:1rem">{items}</ul>'
+            f'</details>'
+        )
+
+    escalas_col.short_description = "Escalas"
 
     def ver_escalas(self, obj):
         if not obj.pk:

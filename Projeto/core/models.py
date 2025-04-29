@@ -252,26 +252,24 @@ class Escala(models.Model):
     def clean(self):
         super().clean()
 
-        tipo = self.servico.tipo_escalas  # "A", "B" ou "AB"
-        is_B = self.e_escala_b
+        # "A" "B" or "AB"
+        tipo_srv = self.servico.tipo_escalas
 
-        if tipo == "A" and is_B:
-            raise ValidationError(
-                {"e_escala_b": _("Este serviço só permite escalas do tipo A.")}
-            )
-        if tipo == "B" and not is_B:
-            raise ValidationError(
-                {"e_escala_b": _("Este serviço só permite escalas do tipo B.")}
-            )
-        # Para "A" ou "B", não pode existir já outra escala igual nessa data
-        if tipo in ("A", "B"):
-            clash = Escala.objects.filter(
-                servico=self.servico, data=self.data
-            ).exclude(pk=self.pk).exists()
-            if clash:
-                raise ValidationError(
-                    _("Já existe uma escala para este serviço deste tipo.")
-                )
+        # checks that A/B matches the Serviço
+        if tipo_srv == "A" and self.e_escala_b:
+            raise ValidationError(_("Este serviço só pode ter escalas do tipo A."))
+        if tipo_srv == "B" and not self.e_escala_b:
+            raise ValidationError(_("Este serviço só pode ter escalas do tipo B."))
+
+        # checks only one escala of that kind for this Serviço
+        clash = (
+            Escala.objects
+            .filter(servico=self.servico, e_escala_b=self.e_escala_b)
+            .exclude(pk=self.pk)
+            .exists()
+        )
+        if clash:
+            raise ValidationError(_("Já existe uma escala deste tipo para este serviço."))
 
     def __str__(self):
         tipo_escala = "B" if self.e_escala_b else "A"
