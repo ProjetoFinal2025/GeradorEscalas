@@ -209,6 +209,31 @@ class Servico(models.Model):
 
     armamento = models.BooleanField(default=False, help_text="Se o serviço requer armamento")
 
+    def clean(self):
+        super().clean()
+
+
+        if not self.pk:
+            return
+
+        escalas = self.escalas.all()
+
+        # Checks if Escalas already exists when changing Servico escala type
+
+        if self.tipo_escalas == "A" and escalas.filter(e_escala_b=True).exists():
+            raise ValidationError(
+                _("Não pode mudar este serviço para 'Só Escala A' "
+                  "enquanto existir uma Escala B associada. "
+                  "Apague ou migre essa escala primeiro.")
+            )
+
+        if self.tipo_escalas == "B" and escalas.filter(e_escala_b=False).exists():
+            raise ValidationError(
+                _("Não pode mudar este serviço para 'Só Escala B' "
+                  "enquanto existir uma Escala A associada. "
+                  "Apague ou migre essa escala primeiro.")
+            )
+
     def __str__(self):
         return self.nome
 
