@@ -308,8 +308,7 @@ class EscalaMilitar(models.Model):
     ordem_semana = models.IntegerField(null=True, blank=True)
     ordem_fds = models.IntegerField(null=True, blank=True)
 
-    # Is this necessary?
-   # is_reserva = models.BooleanField(default=False)
+    e_reserva = models.BooleanField(default=False, verbose_name="É Reserva")
 
     class Meta:
         unique_together = ('escala', 'militar')

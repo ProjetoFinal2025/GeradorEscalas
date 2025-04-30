@@ -23,6 +23,7 @@ def gerar_escalas_automaticamente(servico, data_inicio, data_fim):
         # Índice para controlar qual militar será nomeado
         indice_militar = 0
         total_militares = len(militares)
+        militares_disponiveis = set(militares)  # Conjunto de militares ainda não nomeados
 
         # Gerar previsões para cada dia
         data_atual = data_inicio
@@ -33,7 +34,7 @@ def gerar_escalas_automaticamente(servico, data_inicio, data_fim):
             e_escala_b = e_fim_semana or e_feriado
 
             # Se é escala B e o serviço não tem escala B, pular
-            if e_escala_b and not servico.tem_escala_B:
+            if e_escala_b and servico.tipo_escalas == "A":
                 data_atual += timedelta(days=1)
                 continue
 
@@ -52,48 +53,67 @@ def gerar_escalas_automaticamente(servico, data_inicio, data_fim):
                 prevista=True
             )
 
-            # Encontrar próximo militar disponível
-            militar_encontrado = False
+            # Nomear o número correto de militares
+            militares_nomeados = 0
             tentativas = 0
-            while not militar_encontrado and tentativas < total_militares:
+            militares_tentados = set()  # Conjunto de militares já tentados neste dia
+
+            while militares_nomeados < servico.n_elementos and tentativas < total_militares:
                 militar = militares[indice_militar]
                 disponivel = True
 
+                # Se já tentamos todos os militares disponíveis, reinicia o conjunto
+                if len(militares_tentados) == len(militares_disponiveis):
+                    militares_disponiveis = set(militares)
+                    militares_tentados.clear()
+
+                # Verificar se o militar está disponível
+                if militar not in militares_disponiveis:
+                    disponivel = False
+
                 # Verificar dispensas
-                if Dispensa.objects.filter(
+                if disponivel and Dispensa.objects.filter(
                     militar=militar,
                     data_inicio__lte=data_atual,
                     data_fim__gte=data_atual
                 ).exists():
                     disponivel = False
+                    militares_disponiveis.remove(militar)
 
                 # Verificar se já está nomeado para outra escala no mesmo dia
-                if EscalaMilitar.objects.filter(
+                if disponivel and EscalaMilitar.objects.filter(
                     escala__data=data_atual,
                     militar=militar
                 ).exists():
                     disponivel = False
+                    militares_disponiveis.remove(militar)
 
                 # Calcular folga
-                folga = militar.calcular_folga(data_atual, servico)
+                if disponivel:
+                    folga = militar.calcular_folga(data_atual, servico)
 
-                # Verificar regras de folga
-                if e_escala_b and regra_mesma_escala:
-                    if folga < regra_mesma_escala.horas_minimas:
-                        disponivel = False
-                elif not e_escala_b and regra_entre_escalas:
-                    if folga < regra_entre_escalas.horas_minimas:
-                        disponivel = False
+                    # Verificar regras de folga
+                    if e_escala_b and regra_mesma_escala:
+                        if folga < regra_mesma_escala.horas_minimas:
+                            disponivel = False
+                    elif not e_escala_b and regra_entre_escalas:
+                        if folga < regra_entre_escalas.horas_minimas:
+                            disponivel = False
 
                 if disponivel:
                     # Criar EscalaMilitar para o militar
                     EscalaMilitar.objects.create(
                         escala=escala,
                         militar=militar,
-                        ordem_semana=1 if not e_escala_b else None,
-                        ordem_fds=1 if e_escala_b else None
+                        ordem_semana=militares_nomeados + 1 if not e_escala_b else None,
+                        ordem_fds=militares_nomeados + 1 if e_escala_b else None,
+                        e_reserva=militares_nomeados > 0  # O primeiro é efetivo, os outros são reserva
                     )
-                    militar_encontrado = True
+                    militares_nomeados += 1
+                    militares_disponiveis.remove(militar)
+
+                # Adicionar militar à lista de tentados
+                militares_tentados.add(militar)
 
                 # Avançar para o próximo militar
                 indice_militar = (indice_militar + 1) % total_militares
