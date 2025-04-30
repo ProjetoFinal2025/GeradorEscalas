@@ -260,3 +260,49 @@ nav.toplinks a.date-back {
 button.theme-toggle {
     display: none !important;
 }
+
+#content-main .module caption {
+    background-color: #4A5D23 !important; /* Dark olive green */
+    color: white !important;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+/* Section titles (Autenticação e Autorização, CORE) */
+#content-main .module caption a.section {
+    color: white !important;
+    text-decoration: none;
+}
+
+/* Model links (like Utilizadores, Dispensas, etc.) */
+#content-main .module td a,
+#content-main .module th a {
+    color: #4A5D23 !important;
+    font-weight: bold;
+}
+
+/* Model links on hover */
+#content-main .module td a:hover,
+#content-main .module th a:hover {
+    color: #6B8E23 !important;
+    text-decoration: underline;
+}
+
+
+/* Links in recent actions */
+#recent-actions-module .actionlist a {
+    color: #4A5D23 !important; /* Olive green */
+    font-weight: bold;
+    text-decoration: none;
+}
+
+#recent-actions-module .actionlist a:hover {
+    color: #6B8E23 !important;
+    text-decoration: underline;
+}
+
+/* Optional: make the mini "Escala" and "Servico" text also olive green */
+#recent-actions-module .mini.quiet {
+    color: #4A5D23 !important;
+}
