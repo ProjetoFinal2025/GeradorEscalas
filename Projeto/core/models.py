@@ -204,7 +204,7 @@ class Servico(models.Model):
         max_length=2,
         choices=ESCALA_OPTIONS,
         default="A",
-        help_text="Que escalas existem neste serviço",
+        help_text="Que tipo de escalas compõem este serviço.",
     )
 
     armamento = models.BooleanField(default=False, help_text="Se o serviço requer armamento")
