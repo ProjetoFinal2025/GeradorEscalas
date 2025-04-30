@@ -1,0 +1,262 @@
+/* ADMIN BACKGROUND HEADER */
+#header {
+    background: linear-gradient(135deg, #4A5D23, #6B8E23);
+}
+
+#header h1 a {
+    color: white !important;
+    font-weight: 600;
+}
+
+/* LOGIN and BODY background (optional global) */
+body {
+    background: #f7fdf7 !important;
+}
+
+/* BUTTONS (like "Gravar", "Reset ordem", etc.) */
+input.button, a.button, button.button {
+    background-color: #4A5D23 !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 5px;
+}
+
+input.button:hover, a.button:hover, button.button:hover {
+    background-color: #6B8E23 !important;
+}
+
+/* Sidebar headings */
+.module h2 {
+    background: #4A5D23 !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Links in list pages (e.g., escala names) */
+a {
+    color: #4A5D23;
+}
+a:hover {
+    color: #6B8E23;
+}
+
+
+/* Fix breadcrumb bottom border underline */
+.breadcrumbs {
+    border-bottom: 2px solid #6B8E23 !important;
+}
+
+/* Fix sidebar link hover and current app highlight */
+#nav-sidebar .model.current-app,
+#nav-sidebar .model.current-model {
+    background-color: #4A5D23 !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Sidebar section toggle arrows and filter toggle */
+#changelist-filter h2, .filter-title {
+    background-color: #4A5D23 !important;
+    color: white !important;
+    padding: 6px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+#changelist-form .actions select {
+    background-color: white !important;
+    color: black !important;
+    border: 2px solid #4A5D23 !important;
+    border-radius: 6px !important;
+    font-weight: bold;
+    padding: 4px 10px;
+    appearance: none; /* optional: make it consistent across browsers */
+}
+
+#changelist-form .actions select:focus {
+    outline: none;
+    box-shadow: 0 0 3px rgba(107, 142, 35, 0.6);
+}
+
+/* Optional: tweak the "Go" button */
+#changelist-form .actions button {
+    background-color: #4A5D23 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: bold;
+    padding: 6px 12px;
+}
+#changelist-form .actions button:hover {
+    background-color: #6B8E23 !important;
+}
+
+/* Add button in changelist top right */
+.object-tools .addlink {
+    background-color: #4A5D23 !important;
+    border-radius: 5px;
+    color: white !important;
+    font-weight: bold;
+    padding: 8px 12px;
+    border: none !important;
+}
+.object-tools .addlink:hover {
+    background-color: #6B8E23 !important;
+}
+
+/* Optional: blue focus outlines */
+*:focus {
+    outline-color: #6B8E23 !important;
+}
+
+.breadcrumbs {
+    background-color: #4A5D23 !important;
+    border-bottom: 3px solid #6B8E23 !important;
+    color: white !important;
+    padding: 10px 15px;
+    font-weight: bold;
+}
+.breadcrumbs a {
+    color: white !important;
+    text-decoration: none;
+}
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+/* Table row hover and zebra striping */
+.results tbody tr:nth-child(even) {
+    background-color: #f3fcef !important;
+}
+.results tbody tr:nth-child(odd) {
+    background-color: #e8f7e0 !important;
+}
+.results tbody tr:hover {
+    background-color: #dff2d0 !important;
+}
+
+/* Table header styling */
+.results thead th {
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Links inside the table */
+.results tbody a {
+    color: #4A5D23 !important;
+    font-weight: bold;
+}
+.results tbody a:hover {
+    color: #6B8E23 !important;
+}
+
+/* Sidebar search input */
+#nav-sidebar input#nav-filter {
+    border: 2px solid #4A5D23 !important;
+    border-radius: 6px;
+    padding: 6px 8px;
+    width: 90%;
+    margin: 10px auto;
+    display: block;
+    font-weight: bold;
+    color: #333;
+    background-color: white;
+}
+#nav-sidebar input#nav-filter:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(107, 142, 35, 0.3);
+}
+
+
+/* Selected model row (highlighted entry like "Dispensas") */
+#nav-sidebar tr.current-model {
+    background-color: #6B8E23 !important;
+}
+#nav-sidebar tr.current-model a {
+    color: white !important;
+    font-weight: bold;
+}
+
+/* All sidebar links */
+#nav-sidebar a {
+    color: #4A5D23;
+    text-decoration: none;
+}
+#nav-sidebar a:hover {
+    color: #6B8E23;
+    text-decoration: underline;
+}
+
+
+/* Sidebar "Adicionar" buttons */
+#nav-sidebar .addlink {
+    background-color: transparent !important;
+    color: #4A5D23 !important;
+    font-weight: bold;
+    border: 2px solid #4A5D23 !important;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+#nav-sidebar .addlink:hover {
+    background-color: #6B8E23 !important;
+    color: white !important;
+}
+
+/* Style for the date navigation bar */
+nav.toplinks a {
+    color: #4A5D23 !important;           /* olive green */
+    font-weight: bold;
+    text-decoration: none;
+    margin-right: 10px;
+}
+
+/* Hover effect */
+nav.toplinks a:hover {
+    color: #6B8E23 !important;           /* lighter green on hover */
+    text-decoration: underline;
+}
+
+/* Optional: style the year nav separately if needed */
+nav.toplinks a.date-back {
+    font-size: 14px;
+    margin-right: 20px;
+}
+
+
+/* Make the section bars (CORE, AUTENTICAÇÃO*/
+#nav-sidebar .module caption .section {
+    background: #4A5D23 !important;
+    color:  white !important;
+    font-weight: bold;
+    padding: 8px 12px;
+    display: block;
+}
+
+/*  Adicionar link */
+#nav-sidebar .addlink,
+#nav-sidebar .addlink::before {
+    background-image: none !important;
+    content: none !important;
+    padding-left: 8px;
+}
+
+
+#nav-sidebar .module caption {
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+#site-name a {
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Hide defaultswitcher button */
+button.theme-toggle {
+    display: none !important;
+}
