@@ -101,24 +101,31 @@ class EscalaService:
         return True, "Militar disponível"
 
     @staticmethod
-    def nomear_escala(servico: Servico, data: date) -> Tuple[bool, str]:
-        """Nomeia um efetivo e um reserva para um dia específico."""
-        # Verifica se o serviço está ativo
-        if not servico.ativo:
-            return False, "O serviço não está ativo"
-
-        # Obtém militares do serviço
+    def obter_militares_disponiveis(servico: Servico, data: date) -> List[Militar]:
+        """Obtém lista de militares disponíveis para uma data específica."""
         militares = servico.militares.all()
-        if not militares.exists():
-            return False, "Não existem militares no serviço"
-
-        # Filtra militares disponíveis
         militares_disponiveis = []
+        
         for militar in militares:
             disponivel, _ = EscalaService.verificar_disponibilidade_militar(militar, data)
             if disponivel:
                 militares_disponiveis.append(militar)
+                
+        return militares_disponiveis
 
+    @staticmethod
+    def nomear_escala_a(servico: Servico, data: date) -> Tuple[bool, str]:
+        """Nomeia um efetivo e um reserva para um dia útil (escala A)."""
+        # Verifica se o serviço está ativo
+        if not servico.ativo:
+            return False, "O serviço não está ativo"
+
+        # Verifica se é dia útil
+        if data.weekday() >= 5 or data in Feriado.objects.all():
+            return False, "Este dia não é um dia útil"
+
+        # Obtém militares disponíveis
+        militares_disponiveis = EscalaService.obter_militares_disponiveis(servico, data)
         if len(militares_disponiveis) < 2:
             return False, "Não existem militares suficientes disponíveis"
 
@@ -126,7 +133,7 @@ class EscalaService:
         escala, _ = Escala.objects.get_or_create(
             servico=servico,
             data=data,
-            e_escala_b=data.weekday() >= 5 or data in Feriado.objects.all()
+            e_escala_b=False
         )
 
         # Nomeia efetivo
@@ -134,7 +141,7 @@ class EscalaService:
         EscalaMilitar.objects.create(
             escala=escala,
             militar=efetivo,
-            posicao='efetivo'
+            e_reserva=False
         )
 
         # Nomeia reserva
@@ -142,7 +149,57 @@ class EscalaService:
         EscalaMilitar.objects.create(
             escala=escala,
             militar=reserva,
-            posicao='reserva'
+            e_reserva=True
         )
 
-        return True, "Escala nomeada com sucesso"
+        return True, "Escala A nomeada com sucesso"
+
+    @staticmethod
+    def nomear_escala_b(servico: Servico, data: date) -> Tuple[bool, str]:
+        """Nomeia um efetivo e um reserva para um fim de semana ou feriado (escala B)."""
+        # Verifica se o serviço está ativo
+        if not servico.ativo:
+            return False, "O serviço não está ativo"
+
+        # Verifica se é fim de semana ou feriado
+        if data.weekday() < 5 and data not in Feriado.objects.all():
+            return False, "Este dia não é um fim de semana ou feriado"
+
+        # Obtém militares disponíveis
+        militares_disponiveis = EscalaService.obter_militares_disponiveis(servico, data)
+        if len(militares_disponiveis) < 2:
+            return False, "Não existem militares suficientes disponíveis"
+
+        # Cria ou obtém a escala
+        escala, _ = Escala.objects.get_or_create(
+            servico=servico,
+            data=data,
+            e_escala_b=True
+        )
+
+        # Nomeia efetivo
+        efetivo = militares_disponiveis[0]
+        EscalaMilitar.objects.create(
+            escala=escala,
+            militar=efetivo,
+            e_reserva=False
+        )
+
+        # Nomeia reserva
+        reserva = militares_disponiveis[1]
+        EscalaMilitar.objects.create(
+            escala=escala,
+            militar=reserva,
+            e_reserva=True
+        )
+
+        return True, "Escala B nomeada com sucesso"
+
+    @staticmethod
+    def nomear_escala(servico: Servico, data: date) -> Tuple[bool, str]:
+        """Nomeia um efetivo e um reserva para um dia específico, escolhendo automaticamente o tipo de escala."""
+        # Verifica se é fim de semana ou feriado
+        if data.weekday() >= 5 or data in Feriado.objects.all():
+            return EscalaService.nomear_escala_b(servico, data)
+        else:
+            return EscalaService.nomear_escala_a(servico, data)

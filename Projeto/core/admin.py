@@ -33,7 +33,7 @@ class ServicoAdmin(VersionAdmin):
     form = ServicoForm
     list_display = (
         'nome', 'hora_inicio', 'hora_fim', 'n_elementos',
-        'tipo_escalas', 'armamento', 'ativo',
+        'n_reservas', 'tipo_escalas', 'armamento', 'ativo',
         'escalas_col',
     )
     list_filter = ('ativo', 'tipo_escalas', 'armamento')
@@ -42,7 +42,7 @@ class ServicoAdmin(VersionAdmin):
             'fields': ('nome', 'ativo')
         }),
         ('Configurações do Serviço', {
-            'fields': ('hora_inicio', 'hora_fim', 'n_elementos', 'tipo_escalas', 'armamento'),
+            'fields': ('hora_inicio', 'hora_fim', 'n_elementos', 'n_reservas', 'tipo_escalas', 'armamento'),
             'classes': ('wide',)
         }),
         ('Militares', {
@@ -457,8 +457,51 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         urls = super().get_urls()
         custom_urls = [
             path('', self.admin_site.admin_view(self.previsao_view), name='core_previsaoescalasproxy_changelist'),
+            path('remover-previsao/<int:escala_id>/', self.admin_site.admin_view(self.remover_previsao), name='remover_previsao'),
         ]
         return custom_urls + urls
+
+    def remover_previsao(self, request, escala_id):
+        try:
+            escala = Escala.objects.get(id=escala_id)
+            if escala.prevista:
+                escala.prevista = False
+                escala.save()
+                messages.success(request, "Status de previsão removido com sucesso.")
+                
+                # Encontrar a próxima data disponível
+                hoje = date.today()
+                proxima_data = None
+                
+                # Buscar a próxima escala prevista
+                proxima_escala = Escala.objects.filter(
+                    servico=escala.servico,
+                    data__gt=hoje,
+                    prevista=True
+                ).order_by('data').first()
+                
+                if proxima_escala:
+                    proxima_data = proxima_escala.data
+                else:
+                    # Se não houver previsões futuras, usar a data atual
+                    proxima_data = hoje
+                
+                # Redirecionar de volta mantendo os parâmetros da URL e atualizando a data inicial
+                redirect_url = f"{reverse('admin:core_previsaoescalasproxy_changelist')}?servico={escala.servico.id}"
+                if 'data_fim' in request.GET:
+                    redirect_url += f"&data_fim={request.GET['data_fim']}"
+                redirect_url += f"&data_inicio={proxima_data.isoformat()}"
+                return redirect(redirect_url)
+            else:
+                messages.warning(request, "Esta nomeação já não é uma previsão.")
+                return redirect('admin:core_previsaoescalasproxy_changelist')
+
+        except Escala.DoesNotExist:
+            messages.error(request, "Escala não encontrada.")
+            return redirect('admin:core_previsaoescalasproxy_changelist')
+        except Exception as e:
+            messages.error(request, f"Erro ao remover previsão: {str(e)}")
+            return redirect('admin:core_previsaoescalasproxy_changelist')
 
     def previsao_view(self, request):
         # Processar geração de previsões
@@ -515,9 +558,35 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         
         # Gerar lista de datas com suas escalas
         datas = []
+
+        # Obter nomeações anteriores (últimos 30 dias antes da data inicial)
+        data_inicio_historico = hoje - timedelta(days=30)
+        escalas_anteriores = Escala.objects.filter(
+            servico=servico,
+            data__gte=data_inicio_historico,
+            data__lte=hoje  # Alterado de data__lt para data__lte para incluir o dia atual
+        ).prefetch_related(
+            'militares_info',
+            'militares_info__militar'
+        ).select_related('servico').order_by('data')
+
+        # Adicionar nomeações anteriores à lista
+        for escala in escalas_anteriores:
+            e_feriado = escala.data in feriados
+            e_fim_semana = escala.data.weekday() >= 5
+            datas.append({
+                'data': escala.data,
+                'escala': escala,
+                'e_fim_semana': e_fim_semana and not e_feriado,
+                'e_feriado': e_feriado,
+                'tipo_dia': 'feriado' if e_feriado else ('fim_semana' if e_fim_semana else 'util')
+            })
         
         # Processar ESCALA B primeiro (fins de semana/feriados)
         for data in dias_escala['escala_b']:
+            # Pular se já temos uma escala para esta data das nomeações anteriores
+            if data <= hoje and any(d['data'] == data for d in datas):
+                continue
             # Buscar escala existente para esta data com os militares relacionados
             escala = Escala.objects.filter(
                 servico=servico,
@@ -526,7 +595,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             ).prefetch_related(
                 'militares_info',
                 'militares_info__militar'
-            ).first()
+            ).select_related('servico').first()
 
             e_feriado = data in feriados
             datas.append({
@@ -539,6 +608,10 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         
         # Processar ESCALA A depois (dias úteis)
         for data in dias_escala['escala_a']:
+            # Pular se já temos uma escala para esta data das nomeações anteriores
+            if data <= hoje and any(d['data'] == data for d in datas):
+                continue
+                
             # Buscar escala existente para esta data com os militares relacionados
             escala = Escala.objects.filter(
                 servico=servico,
@@ -547,7 +620,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             ).prefetch_related(
                 'militares_info',
                 'militares_info__militar'
-            ).first()
+            ).select_related('servico').first()
 
             datas.append({
                 'data': data,
@@ -592,6 +665,135 @@ class PrevisaoEscalasProxy(Escala):
         verbose_name = "Previsões de Nomeação"
         verbose_name_plural = "Previsões de Nomeação"
 
+class HistoricoEscalasAdmin(VersionAdmin):
+    change_list_template = 'admin/core/escala/historico.html'
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        
+        # Obter o serviço selecionado ou o primeiro serviço ativo
+        servico_id = request.GET.get('servico')
+        if servico_id:
+            servico = Servico.objects.get(id=servico_id)
+        else:
+            servico = Servico.objects.filter(ativo=True).first()
+
+        # Obter datas do período
+        hoje = date.today()
+        data_inicio_str = request.GET.get('data_inicio')
+        data_fim_str = request.GET.get('data_fim')
+
+        if data_inicio_str and data_fim_str:
+            try:
+                data_inicio = date.fromisoformat(data_inicio_str)
+                data_fim = date.fromisoformat(data_fim_str)
+            except ValueError:
+                data_inicio = hoje - timedelta(days=30)
+                data_fim = hoje
+        else:
+            data_inicio = hoje - timedelta(days=30)
+            data_fim = hoje
+
+        # Obter feriados no período
+        feriados = obter_feriados(data_inicio, data_fim)
+        
+        # Separar dias por tipo
+        dias_escala = EscalaService.obter_dias_escala(data_inicio, data_fim)
+        
+        # Gerar lista de datas com suas escalas
+        datas = []
+        
+        # Processar ESCALA B primeiro (fins de semana/feriados)
+        for data in dias_escala['escala_b']:
+            # Buscar escala existente para esta data com os militares relacionados
+            escala = Escala.objects.filter(
+                servico=servico,
+                data=data,
+                e_escala_b=True
+            ).prefetch_related(
+                'militares_info',
+                'militares_info__militar'
+            ).select_related('servico').first()
+
+            e_feriado = data in feriados
+            datas.append({
+                'data': data,
+                'escala': escala,
+                'e_fim_semana': not e_feriado,
+                'e_feriado': e_feriado,
+                'tipo_dia': 'feriado' if e_feriado else 'fim_semana'
+            })
+        
+        # Processar ESCALA A depois (dias úteis)
+        for data in dias_escala['escala_a']:
+            # Buscar escala existente para esta data com os militares relacionados
+            escala = Escala.objects.filter(
+                servico=servico,
+                data=data,
+                e_escala_b=False
+            ).prefetch_related(
+                'militares_info',
+                'militares_info__militar'
+            ).select_related('servico').first()
+
+            datas.append({
+                'data': data,
+                'escala': escala,
+                'e_fim_semana': False,
+                'e_feriado': False,
+                'tipo_dia': 'util'
+            })
+
+        # Ordenar por data
+        datas = sorted(datas, key=lambda x: x['data'])
+
+        # Buscar todos os serviços ativos para o seletor
+        servicos = Servico.objects.filter(ativo=True)
+
+        context = {
+            'title': f'Histórico de Nomeações - {servico.nome}',
+            'servico': servico,
+            'servicos': servicos,
+            'datas': datas,
+            'data_inicio': data_inicio,
+            'data_fim': data_fim,
+            'opts': self.model._meta,
+            'cl': self,
+            'is_popup': False,
+            'has_add_permission': self.has_add_permission(request),
+            'has_change_permission': self.has_change_permission(request),
+            'has_delete_permission': self.has_delete_permission(request),
+        }
+
+        return render(request, 'admin/core/escala/historico.html', context)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('', self.admin_site.admin_view(self.changelist_view), name='core_historicoescalasproxy_changelist'),
+        ]
+        return custom_urls + urls
+
+    class Meta:
+        verbose_name = "Histórico de Nomeações"
+        verbose_name_plural = "Histórico de Nomeações"
+
+# Proxy model para Histórico de Nomeações
+class HistoricoEscalasProxy(Escala):
+    class Meta:
+        proxy = True
+        verbose_name = "Histórico de Nomeações"
+        verbose_name_plural = "Histórico de Nomeações"
+
 # Configuração do Admin Site
 class GeradorEscalasAdminSite(admin.AdminSite):
     site_header = 'Gerador de Escalas'
@@ -616,5 +818,8 @@ admin_site.register(Log)
 
 # Registrar a Previsões de Nomeação como um modelo proxy
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
+
+# Registrar o Histórico de Nomeações como um modelo proxy
+admin_site.register(HistoricoEscalasProxy, HistoricoEscalasAdmin)
 
 
