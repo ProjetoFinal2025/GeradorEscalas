@@ -14,6 +14,7 @@ from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
 from .services.pdf_exports import gerar_pdf_escala
 from django.http import FileResponse, Http404
+from .services.escala_service import EscalaService
 
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar, RegraNomeacao
@@ -509,33 +510,55 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         # Obter feriados no período
         feriados = obter_feriados(hoje, data_fim)
         
+        # Separar dias por tipo ANTES de processar
+        dias_escala = EscalaService.obter_dias_escala(hoje, data_fim)
+        
         # Gerar lista de datas com suas escalas
         datas = []
-        data_atual = hoje
-
-        while data_atual <= data_fim:
+        
+        # Processar ESCALA B primeiro (fins de semana/feriados)
+        for data in dias_escala['escala_b']:
             # Buscar escala existente para esta data com os militares relacionados
             escala = Escala.objects.filter(
                 servico=servico,
-                data=data_atual,
+                data=data,
+                e_escala_b=True
             ).prefetch_related(
                 'militares_info',
                 'militares_info__militar'
             ).first()
 
-            # Verificar se é fim de semana ou feriado
-            e_fim_semana = data_atual.weekday() >= 5
-            e_feriado = data_atual in feriados
+            e_feriado = data in feriados
+            datas.append({
+                'data': data,
+                'escala': escala,
+                'e_fim_semana': not e_feriado,
+                'e_feriado': e_feriado,
+                'tipo_dia': 'feriado' if e_feriado else 'fim_semana'
+            })
+        
+        # Processar ESCALA A depois (dias úteis)
+        for data in dias_escala['escala_a']:
+            # Buscar escala existente para esta data com os militares relacionados
+            escala = Escala.objects.filter(
+                servico=servico,
+                data=data,
+                e_escala_b=False
+            ).prefetch_related(
+                'militares_info',
+                'militares_info__militar'
+            ).first()
 
             datas.append({
-                'data': data_atual,
+                'data': data,
                 'escala': escala,
-                'e_fim_semana': e_fim_semana,
-                'e_feriado': e_feriado,
-                'tipo_dia': 'feriado' if e_feriado else ('fim_semana' if e_fim_semana else 'util')
+                'e_fim_semana': False,
+                'e_feriado': False,
+                'tipo_dia': 'util'
             })
-            
-            data_atual += timedelta(days=1)
+
+        # Ordenar por data
+        datas = sorted(datas, key=lambda x: x['data'])
 
         # Buscar todos os serviços ativos para o seletor
         servicos = Servico.objects.filter(ativo=True)
@@ -575,7 +598,7 @@ class GeradorEscalasAdminSite(admin.AdminSite):
     site_title = 'Gerador de Escalas'
     index_title = 'Administração do Sistema'
 
-    def get_app_list(self, request):
+    def get_app_list(self, request, app_label=None):
         app_list = super().get_app_list(request)
         return app_list
 

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Gestão da Ordem de Entrada - {{ servico.nome }}</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h4>Dias Úteis</h4>
+            <div class="card">
+                <div class="card-body">
+                    <ul id="ordem-dias-uteis" class="list-group sortable">
+                        {% for militar in ordem_dias_uteis %}
+                        <li class="list-group-item" data-id="{{ militar.id }}">
+                            {{ militar.nome }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <h4>Fim de Semana</h4>
+            <div class="card">
+                <div class="card-body">
+                    <ul id="ordem-fim-semana" class="list-group sortable">
+                        {% for militar in ordem_fim_semana %}
+                        <li class="list-group-item" data-id="{{ militar.id }}">
+                            {{ militar.nome }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h4>Militares Disponíveis</h4>
+            <div class="card">
+                <div class="card-body">
+                    <ul id="militares-disponiveis" class="list-group">
+                        {% for militar in militares %}
+                        <li class="list-group-item" data-id="{{ militar.id }}">
+                            {{ militar.nome }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <button id="salvar-ordem" class="btn btn-primary">Salvar Ordem</button>
+        <a href="{% url 'servico_detail' servico.id %}" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+$(document).ready(function() {
+    // Inicializar sortable
+    $(".sortable").sortable({
+        connectWith: ".sortable",
+        placeholder: "ui-state-highlight"
+    });
+    
+    // Permitir arrastar militares disponíveis para as listas de ordem
+    $("#militares-disponiveis li").draggable({
+        connectToSortable: ".sortable",
+        helper: "clone",
+        revert: "invalid"
+    });
+    
+    // Salvar ordem
+    $("#salvar-ordem").click(function() {
+        var ordemDiasUteis = [];
+        var ordemFimSemana = [];
+        
+        $("#ordem-dias-uteis li").each(function() {
+            ordemDiasUteis.push($(this).data("id"));
+        });
+        
+        $("#ordem-fim-semana li").each(function() {
+            ordemFimSemana.push($(this).data("id"));
+        });
+        
+        $.ajax({
+            url: "{% url 'atualizar_ordem_entrada' servico.id %}",
+            method: "POST",
+            data: JSON.stringify({
+                ordem_dias_uteis: ordemDiasUteis,
+                ordem_fim_semana: ordemFimSemana
+            }),
+            contentType: "application/json",
+            success: function(response) {
+                if (response.status === "success") {
+                    alert("Ordem salva com sucesso!");
+                } else {
+                    alert("Erro ao salvar ordem: " + response.message);
+                }
+            },
+            error: function(xhr) {
+                alert("Erro ao salvar ordem. Por favor, tente novamente.");
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.sortable {
+    min-height: 50px;
+    padding: 5px;
+}
+
+.ui-state-highlight {
+    height: 1.5em;
+    line-height: 1.2em;
+    background-color: #f8f9fa;
+    border: 1px dashed #ccc;
+}
+
+.list-group-item {
+    cursor: move;
+}
+</style>
+{% endblock %}
+{% endblock %} 
