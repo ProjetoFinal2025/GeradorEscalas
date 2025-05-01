@@ -67,19 +67,29 @@ def log_alteracoes_dispensa(sender, instance, **kwargs):
 
 @receiver([post_save, post_delete], sender=Escala)
 def log_alteracoes_escala(sender, instance, **kwargs):
-    """Regista alterações em Escala"""
-    if 'created' in kwargs:
-        if kwargs['created']:
-            acao = f"Criada escala para o serviço {instance.servico.nome} na data {instance.data.strftime('%d/%m/%Y')}"
-            tipo_acao = 'CREATE'
+    # ► extrair intervalo de datas ligado a esta Escala
+    datas = list(instance.militares_info.values_list('data', flat=True))  # related_name='designacoes'
+    if datas:
+        if len(set(datas)) == 1:
+            data_str = datas[0].strftime('%d/%m/%Y')
         else:
-            acao = f"Atualizada escala para o serviço {instance.servico.nome} na data {instance.data.strftime('%d/%m/%Y')}"
-            tipo_acao = 'UPDATE'
+            data_str = f"{min(datas).strftime('%d/%m/%Y')} – {max(datas).strftime('%d/%m/%Y')}"
     else:
-        acao = f"Removida escala do serviço {instance.servico.nome} na data {instance.data.strftime('%d/%m/%Y')}"
+        data_str = 'sem data'
+
+    # ► compor mensagem
+    if kwargs.get('created') is True:
+        acao = f"Criada escala para o serviço {instance.servico.nome} ({data_str})"
+        tipo_acao = 'CREATE'
+    elif 'created' in kwargs:
+        acao = f"Atualizada escala para o serviço {instance.servico.nome} ({data_str})"
+        tipo_acao = 'UPDATE'
+    else:
+        acao = f"Removida escala do serviço {instance.servico.nome} ({data_str})"
         tipo_acao = 'DELETE'
-    
+
     criar_log(12345678, acao, 'Escala', tipo_acao)
+
 
 
 @receiver(user_logged_in)

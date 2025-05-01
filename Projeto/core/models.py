@@ -120,18 +120,20 @@ class Militar(models.Model):
 
     def obter_ultimo_servico(self, servico=None):
         """
-        Obtém a data do último serviço do militar
+        Devolve a última *data* em que o militar serviu.
         """
-        query = EscalaMilitar.objects.filter(
-            militar=self,
-            escala__data__lt=date.today()
-        ).select_related('escala').order_by('-escala__data')
+        qs = (
+            EscalaMilitar.objects
+            .filter(militar=self, data__lt=date.today())
+            .select_related('escala')
+            .order_by('-data')
+        )
 
         if servico:
-            query = query.filter(escala__servico=servico)
+            qs = qs.filter(escala__servico=servico)
 
-        ultimo_servico = query.first()
-        return ultimo_servico.escala.data if ultimo_servico else None
+        ultimo = qs.first()
+        return ultimo.data if ultimo else None
 
     def calcular_folga(self, data_proposta, servico=None):
         """
@@ -264,7 +266,7 @@ class Escala(models.Model):
     id = models.AutoField(primary_key=True)
     servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='escalas')
     comentario = models.TextField(blank=True)
-    data = models.DateField()
+
     e_escala_b = models.BooleanField(default=False, verbose_name="Escala B")
     observacoes = models.TextField(blank=True, verbose_name="Observações")
     prevista = models.BooleanField(default=True, verbose_name="Prevista")
@@ -272,7 +274,7 @@ class Escala(models.Model):
     class Meta:
         verbose_name = "Escala"
         verbose_name_plural = "Escalas"
-        ordering = ['data', 'servico']
+        ordering = ['servico']
 
     def clean(self):
         super().clean()
@@ -298,12 +300,14 @@ class Escala(models.Model):
 
     def __str__(self):
         tipo_escala = "B" if self.e_escala_b else "A"
-        return f"Escala {tipo_escala} - {self.servico.nome} - {self.data.strftime('%d-%b-%y')}"
+        return f"Escala {tipo_escala} - {self.servico.nome}"
 
 
 class EscalaMilitar(models.Model):
     escala = models.ForeignKey('Escala', on_delete=models.CASCADE, related_name='militares_info')
     militar = models.ForeignKey('Militar', on_delete=models.CASCADE)
+
+    data = models.DateField(null=True, blank=True)
 
     # Where each Militar fits in for this Escala
     ordem_semana = models.IntegerField(null=True, blank=True)
@@ -312,7 +316,7 @@ class EscalaMilitar(models.Model):
     e_reserva = models.BooleanField(default=False, verbose_name="É Reserva")
 
     class Meta:
-        unique_together = ('escala', 'militar')
+        unique_together = ("escala", "militar", "data")
         verbose_name = "Militares Na Escala"
         verbose_name_plural = "Militares Na Escala"
 

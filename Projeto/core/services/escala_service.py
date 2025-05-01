@@ -1,10 +1,8 @@
-from datetime import datetime, date, timedelta
-from typing import Tuple, List, Optional, Dict
-from django.db.models import QuerySet, Q
+from datetime import date, timedelta
+from typing import Tuple, List, Dict
 from django.utils import timezone
 
 from ..models import Escala, Militar, Servico, Feriado, EscalaMilitar, Dispensa
-from ..utils import obter_feriados
 
 class EscalaService:
     """Serviço para gerir escalas e nomeações militares."""

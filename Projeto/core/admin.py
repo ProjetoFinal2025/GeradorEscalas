@@ -1,15 +1,14 @@
 from django.contrib import admin, messages
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import path
 from reversion.admin import VersionAdmin
 from .models import *
-from .utils import obter_feriados
+from .utils import obter_feriados,  gerar_escalas_automaticamente
 from django.utils import timezone
 from django.template.defaulttags import register
 from .forms import MilitarForm, ServicoForm, EscalaForm
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
-from django.urls import reverse
+from django.urls import reverse, path
 from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
 from .services.pdf_exports import gerar_pdf_escala
@@ -18,6 +17,7 @@ from .services.escala_service import EscalaService
 
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar, RegraNomeacao
+from .services.escala_service import EscalaService
 
 @register.filter
 def get_item(dictionary, key):
@@ -101,20 +101,25 @@ class ServicoAdmin(VersionAdmin):
 class EscalaMilitarInline(admin.TabularInline):
     model = EscalaMilitar
     extra = 0
-    fields = ('display_militar', 'ordem_semana', 'ordem_fds')
-    readonly_fields = ('display_militar',)
+    fields = (
+        'display_militar',
+        'data',
+        'ordem_semana',
+        'ordem_fds',
+    )
+    readonly_fields = (
+        'display_militar',
+        'data',
+    )
     can_delete = False
 
-    #Removes the ability to add a new Militar in Escala View
     def has_add_permission(self, request, obj):
-        # Return False => no "Add another" link in the inline
         return False
 
     def display_militar(self, obj):
         if not obj.pk:
             return "Selecione acima e salve."
         return f"{obj.militar.posto} {obj.militar.nome} ({str(obj.militar.nim).zfill(8)})"
-
     display_militar.short_description = "Militar"
 
 @admin.action(description="Reset orders by NIM")
@@ -132,10 +137,9 @@ class EscalaAdmin(VersionAdmin):
     inlines = [EscalaMilitarInline]
     actions = [reset_orders_by_nim]
     form = EscalaForm
-    list_display = ("id", "servico", "data", "e_escala_b")
-    list_filter   = ("servico", "data", "e_escala_b")
-    search_fields = ('servico__nome', 'data')
-    date_hierarchy = 'data'
+    list_display = ("id", "servico", "e_escala_b")
+    list_filter = ("servico", "e_escala_b")
+    search_fields = ("servico__nome",)
 
     change_form_template = "admin/core/escala/change_form.html"  # NEW
 
@@ -190,43 +194,66 @@ class EscalaAdmin(VersionAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        self._sincronizar_militares_e_criar_B(obj)
+        self._sincronizar_militares(obj)
         messages.success(request, "Escala gravada e sincronizada com sucesso.")
 
-    def _sincronizar_militares_e_criar_B(self, escala):
-        #Sincroniza EscalaMilitar e cria escala B quando aplicável.
-        servico = escala.servico
-        tipo_servico = servico.tipo_escalas  # "A", "B", "AB"
-        militares_srv = servico.militares.all()
+    @staticmethod
+    def _sincronizar_militares(escala):
+        militares_srv = list(escala.servico.militares.all())
 
-        #  sincronizar militares da escala actual
-        EscalaMilitar.objects.filter(escala=escala).exclude(
-            militar__in=militares_srv).delete()
+        # apagar designações órfãs
+        (
+            EscalaMilitar.objects
+            .filter(escala=escala)
+            .exclude(militar__in=militares_srv)
+            .delete()
+        )
 
-        for i, mil in enumerate(militares_srv, 1):
-            EscalaMilitar.objects.get_or_create(
+        # criar/atualizar as que faltam
+        for idx, mil in enumerate(militares_srv, start=1):
+            EscalaMilitar.objects.update_or_create(
                 escala=escala,
                 militar=mil,
-                defaults={"ordem_semana": i, "ordem_fds": i},
+                defaults={
+                    "ordem_semana": idx,
+                    "ordem_fds": idx,
+                },
             )
 
-        #  se serviço "AB" e esta é A criar/actualizar B
-        if tipo_servico == "AB" and not escala.e_escala_b:
-            escala_b, _ = Escala.objects.get_or_create(
-                servico=servico,
-                data=escala.data,
-                e_escala_b=True,
-                defaults={"comentario": "Gerada automaticamente"},
-            )
-            EscalaMilitar.objects.filter(escala=escala_b).exclude(
-                militar__in=militares_srv).delete()
-
-            for i, mil in enumerate(militares_srv, 1):
-                EscalaMilitar.objects.get_or_create(
-                    escala=escala_b,
-                    militar=mil,
-                    defaults={"ordem_semana": i, "ordem_fds": i},
-                )
+    ### NOT WORKING
+    # def _sincronizar_militares_e_criar_B(self, escala):
+    #     #Sincroniza EscalaMilitar e cria escala B quando aplicável.
+    #     servico = escala.servico
+    #     tipo_servico = servico.tipo_escalas  # "A", "B", "AB"
+    #     militares_srv = servico.militares.all()
+    #
+    #     #  sincronizar militares da escala actual
+    #     EscalaMilitar.objects.filter(escala=escala).exclude(
+    #         militar__in=militares_srv).delete()
+    #
+    #     for i, mil in enumerate(militares_srv, 1):
+    #         EscalaMilitar.objects.get_or_create(
+    #             escala=escala,
+    #             militar=mil,
+    #             defaults={"ordem_semana": i, "ordem_fds": i},
+    #         )
+    #
+    #     #  se serviço "AB" e esta é A criar/actualizar B
+    #     if tipo_servico == "AB" and not escala.e_escala_b:
+    #         escala_b, _ = Escala.objects.get_or_create(
+    #             servico=servico,
+    #             e_escala_b=True,
+    #             defaults={"comentario": "Gerada automaticamente"},
+    #         )
+    #         EscalaMilitar.objects.filter(escala=escala_b).exclude(
+    #             militar__in=militares_srv).delete()
+    #
+    #         for i, mil in enumerate(militares_srv, 1):
+    #             EscalaMilitar.objects.get_or_create(
+    #                 escala=escala_b,
+    #                 militar=mil,
+    #                 defaults={"ordem_semana": i, "ordem_fds": i},
+    #             )
 
 class DispensaAdmin(VersionAdmin):
     list_display = ('militar', 'data_inicio', 'data_fim', 'motivo', 'servico_atual')
@@ -384,65 +411,69 @@ class FeriadoAdmin(admin.ModelAdmin):
     search_fields = ('nome',)
     date_hierarchy = 'data'
 
+
 class PrevisaoEscalasAdmin(VersionAdmin):
+    """
+    Tela de previsões de nomeação:
+    gera escalas, mostra dias futuros, permite remover flag 'prevista'.
+    """
     change_list_template = 'admin/core/escala/previsao.html'
+
+    # Página padrão (changelist) ‒ só injeta contexto extra
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        
-        # Processar geração de previsões
-        if request.method == 'POST' and 'gerar_escalas' in request.POST:
-            servico_id = request.POST.get('servico')
-            data_inicio = request.POST.get('data_inicio')
-            data_fim = request.POST.get('data_fim')
+
+        # processar POST de geração rápida
+        if request.method == "POST" and "gerar_escalas" in request.POST:
+            servico_id  = request.POST.get("servico")
+            data_inicio = request.POST.get("data_inicio")
+            data_fim    = request.POST.get("data_fim")
 
             try:
-                servico = Servico.objects.get(id=servico_id)
+                servico     = Servico.objects.get(pk=servico_id)
                 data_inicio = date.fromisoformat(data_inicio)
-                data_fim = date.fromisoformat(data_fim)
+                data_fim    = date.fromisoformat(data_fim)
 
-                from .utils import gerar_escalas_automaticamente
-                if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
-                    messages.success(request, "Previsões geradas com sucesso!")
-                    # Redirecionar de volta para o mesmo serviço
-                    return redirect(f"{request.path}?servico={servico_id}")
-                else:
-                    messages.error(request, "Erro ao gerar previsões.")
-                    # Redirecionar de volta para o mesmo serviço
-                    return redirect(f"{request.path}?servico={servico_id}")
-            except Exception as e:
-                messages.error(request, f"Erro: {str(e)}")
-                # Redirecionar de volta para o mesmo serviço
-                return redirect(f"{request.path}?servico={servico_id}")
+                ok = gerar_escalas_automaticamente(servico, data_inicio, data_fim)
+                msg = "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões."
+                (messages.success if ok else messages.error)(request, msg)
 
-        # Obter serviço selecionado
-        servico_id = request.GET.get('servico')
-        if servico_id:
-            servico = get_object_or_404(Servico, id=servico_id, ativo=True)
-        else:
-            servico = Servico.objects.filter(ativo=True).first()
+            except Exception as exc:  # pylint: disable=broad-except
+                messages.error(request, f"Erro: {exc}")
 
-        # Obter data de fim da previsão
-        data_fim_str = request.GET.get('data_fim')
-        if data_fim_str:
-            try:
-                data_fim = date.fromisoformat(data_fim_str)
-            except ValueError:
-                data_fim = date.today() + timedelta(days=30)
-        else:
-            data_fim = date.today() + timedelta(days=30)
+            # redireciona sempre para a mesma página (GET)
+            return redirect(f"{request.path}?servico={servico_id}")
 
-        # Preparar contexto
-        extra_context.update({
-            'servico': servico,
-            'servicos': Servico.objects.filter(ativo=True),
-            'hoje': date.today(),
-            'proximo_mes': date.today().replace(day=1) + timedelta(days=32),
-            'data_fim': data_fim,
-            'request': request,
-        })
+        # serviço activo seleccionado
+        servico_id = request.GET.get("servico")
+        servico = (
+            get_object_or_404(Servico, pk=servico_id, ativo=True)
+            if servico_id
+            else Servico.objects.filter(ativo=True).first()
+        )
 
+        data_fim_str = request.GET.get("data_fim")
+        try:
+            data_fim = date.fromisoformat(data_fim_str) if data_fim_str else None
+        except ValueError:
+            data_fim = None
+        data_fim = data_fim or date.today() + timedelta(days=30)
+
+        extra_context.update(
+            {
+                "servico":   servico,
+                "servicos":  Servico.objects.filter(ativo=True),
+                "hoje":      date.today(),
+                "proximo_mes": date.today().replace(day=1) + timedelta(days=32),
+                "data_fim":  data_fim,
+                "request":   request,
+            }
+        )
         return super().changelist_view(request, extra_context=extra_context)
+
+
+    #  Permissões
 
     def has_add_permission(self, request):
         return False
@@ -453,210 +484,202 @@ class PrevisaoEscalasAdmin(VersionAdmin):
     def has_change_permission(self, request, obj=None):
         return True
 
+    #  URLs extra
+
     def get_urls(self):
         urls = super().get_urls()
-        custom_urls = [
-            path('', self.admin_site.admin_view(self.previsao_view), name='core_previsaoescalasproxy_changelist'),
-            path('remover-previsao/<int:escala_id>/', self.admin_site.admin_view(self.remover_previsao), name='remover_previsao'),
+        custom = [
+            path(
+                "",
+                self.admin_site.admin_view(self.previsao_view),
+                name="core_previsaoescalasproxy_changelist",
+            ),
+            path(
+                "remover-previsao/<int:escala_id>/",
+                self.admin_site.admin_view(self.remover_previsao),
+                name="remover_previsao",
+            ),
         ]
-        return custom_urls + urls
+        return custom + urls
 
+
+    #  Remover flag 'prevista' de uma Escala
     def remover_previsao(self, request, escala_id):
         try:
-            escala = Escala.objects.get(id=escala_id)
-            if escala.prevista:
-                escala.prevista = False
-                escala.save()
-                messages.success(request, "Status de previsão removido com sucesso.")
-                
-                # Encontrar a próxima data disponível
-                hoje = date.today()
-                proxima_data = None
-                
-                # Buscar a próxima escala prevista
-                proxima_escala = Escala.objects.filter(
-                    servico=escala.servico,
-                    data__gt=hoje,
-                    prevista=True
-                ).order_by('data').first()
-                
-                if proxima_escala:
-                    proxima_data = proxima_escala.data
-                else:
-                    # Se não houver previsões futuras, usar a data atual
-                    proxima_data = hoje
-                
-                # Redirecionar de volta mantendo os parâmetros da URL e atualizando a data inicial
-                redirect_url = f"{reverse('admin:core_previsaoescalasproxy_changelist')}?servico={escala.servico.id}"
-                if 'data_fim' in request.GET:
-                    redirect_url += f"&data_fim={request.GET['data_fim']}"
-                redirect_url += f"&data_inicio={proxima_data.isoformat()}"
-                return redirect(redirect_url)
-            else:
-                messages.warning(request, "Esta nomeação já não é uma previsão.")
-                return redirect('admin:core_previsaoescalasproxy_changelist')
-
+            escala = Escala.objects.get(pk=escala_id)
         except Escala.DoesNotExist:
             messages.error(request, "Escala não encontrada.")
-            return redirect('admin:core_previsaoescalasproxy_changelist')
-        except Exception as e:
-            messages.error(request, f"Erro ao remover previsão: {str(e)}")
-            return redirect('admin:core_previsaoescalasproxy_changelist')
+            return redirect("admin:core_previsaoescalasproxy_changelist")
+
+        if not escala.prevista:
+            messages.warning(request, "Esta nomeação já não é uma previsão.")
+            return redirect("admin:core_previsaoescalasproxy_changelist")
+
+        escala.prevista = False
+        escala.save()
+        messages.success(request, "Status de previsão removido com sucesso.")
+
+        hoje = date.today()
+        proxima = (
+            EscalaMilitar.objects.filter(
+                escala__servico=escala.servico,
+                escala__prevista=True,
+                data__gt=hoje,
+            )
+            .order_by("data")
+            .first()
+        )
+        proxima_data = proxima.data if proxima else hoje
+
+        url = (
+            f"{reverse('admin:core_previsaoescalasproxy_changelist')}"
+            f"?servico={escala.servico.pk}&data_inicio={proxima_data.isoformat()}"
+        )
+        if "data_fim" in request.GET:
+            url += f"&data_fim={request.GET['data_fim']}"
+        return redirect(url)
+
+    # 5. Tela principal de previsões
 
     def previsao_view(self, request):
-        # Processar geração de previsões
-        if request.method == 'POST' and 'gerar_escalas' in request.POST:
-            servico_id = request.POST.get('servico')
-            data_inicio = request.POST.get('data_inicio')
-            data_fim = request.POST.get('data_fim')
+        # ---------- geração automática (POST) ----------
+        if request.method == "POST" and "gerar_escalas" in request.POST:
+            servico_id  = request.POST.get("servico")
+            data_inicio = request.POST.get("data_inicio")
+            data_fim    = request.POST.get("data_fim")
 
             try:
-                servico = Servico.objects.get(id=servico_id)
-                data_inicio = date.fromisoformat(data_inicio)
-                data_fim = date.fromisoformat(data_fim)
+                servico = Servico.objects.get(pk=servico_id)
+                ok = gerar_escalas_automaticamente(
+                    servico,
+                    date.fromisoformat(data_inicio),
+                    date.fromisoformat(data_fim),
+                )
+                (messages.success if ok else messages.error)(
+                    request,
+                    "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões.",
+                )
+            except Exception as exc:  # pylint: disable=broad-except
+                messages.error(request, f"Erro: {exc}")
 
-                from .utils import gerar_escalas_automaticamente
-                if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
-                    messages.success(request, "Previsões geradas com sucesso!")
-                    # Redirecionar de volta para o mesmo serviço e data de fim
-                    return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
-                else:
-                    messages.error(request, "Erro ao gerar previsões.")
-                    # Redirecionar de volta para o mesmo serviço e data de fim
-                    return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
-            except Exception as e:
-                messages.error(request, f"Erro: {str(e)}")
-                # Redirecionar de volta para o mesmo serviço e data de fim
-                return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
+            return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
 
-        # Obter o serviço selecionado ou o primeiro serviço ativo
-        servico_id = request.GET.get('servico')
-        if servico_id:
-            servico = Servico.objects.get(id=servico_id)
-        else:
-            servico = Servico.objects.filter(ativo=True).first()
+        # ---------- parâmetros GET ----------
+        servico_id = request.GET.get("servico")
+        servico = (
+            Servico.objects.get(pk=servico_id)
+            if servico_id
+            else Servico.objects.filter(ativo=True).first()
+        )
 
-        # Obter a data final da previsão
         hoje = date.today()
-        data_fim_str = request.GET.get('data_fim')
-        if data_fim_str:
-            try:
-                data_fim = date.fromisoformat(data_fim_str)
-            except ValueError:
-                data_fim = hoje + timedelta(days=30)
-        else:
+        try:
+            data_fim = date.fromisoformat(request.GET.get("data_fim", ""))
+        except ValueError:
             data_fim = hoje + timedelta(days=30)
+        data_fim = data_fim or (hoje + timedelta(days=30))
 
-        # Calcular próximo mês
-        proximo_mes = hoje.replace(day=1) + timedelta(days=32)
+        # ---------- feriados / dias de escala ----------
+        feriados     = obter_feriados(hoje, data_fim)
+        dias_escala  = EscalaService.obter_dias_escala(hoje, data_fim)  # {'escala_a': [...], 'escala_b': [...]}
 
-        # Obter feriados no período
-        feriados = obter_feriados(hoje, data_fim)
-        
-        # Separar dias por tipo ANTES de processar
-        dias_escala = EscalaService.obter_dias_escala(hoje, data_fim)
-        
-        # Gerar lista de datas com suas escalas
         datas = []
 
-        # Obter nomeações anteriores (últimos 30 dias antes da data inicial)
-        data_inicio_historico = hoje - timedelta(days=30)
-        escalas_anteriores = Escala.objects.filter(
-            servico=servico,
-            data__gte=data_inicio_historico,
-            data__lte=hoje  # Alterado de data__lt para data__lte para incluir o dia atual
-        ).prefetch_related(
-            'militares_info',
-            'militares_info__militar'
-        ).select_related('servico').order_by('data')
+        # --- histórico (últimos 30 dias) ---
+        historico_ini = hoje - timedelta(days=30)
+        historico_qs = (
+            EscalaMilitar.objects.filter(
+                escala__servico=servico,
+                data__gte=historico_ini,
+                data__lte=hoje,
+            )
+            .select_related("escala", "militar")
+            .order_by("data")
+        )
+        for em in historico_qs:
+            dia          = em.data
+            e_feriado    = dia in feriados
+            e_fim_semana = dia.weekday() >= 5
+            datas.append(
+                {
+                    "data":        dia,
+                    "nomeacoes":   historico_qs.filter(data=dia),
+                    "e_fim_semana": e_fim_semana and not e_feriado,
+                    "e_feriado":   e_feriado,
+                    "tipo_dia":   "feriado" if e_feriado else ("fim_semana" if e_fim_semana else "util"),
+                }
+            )
 
-        # Adicionar nomeações anteriores à lista
-        for escala in escalas_anteriores:
-            e_feriado = escala.data in feriados
-            e_fim_semana = escala.data.weekday() >= 5
-            datas.append({
-                'data': escala.data,
-                'escala': escala,
-                'e_fim_semana': e_fim_semana and not e_feriado,
-                'e_feriado': e_feriado,
-                'tipo_dia': 'feriado' if e_feriado else ('fim_semana' if e_fim_semana else 'util')
-            })
-        
-        # Processar ESCALA B primeiro (fins de semana/feriados)
-        for data in dias_escala['escala_b']:
-            # Pular se já temos uma escala para esta data das nomeações anteriores
-            if data <= hoje and any(d['data'] == data for d in datas):
+        # --- futuros | Escala B (fds / feriados) ---
+        for dia in dias_escala["escala_b"]:
+            if dia <= hoje and any(d["data"] == dia for d in datas):
                 continue
-            # Buscar escala existente para esta data com os militares relacionados
-            escala = Escala.objects.filter(
-                servico=servico,
-                data=data,
-                e_escala_b=True
-            ).prefetch_related(
-                'militares_info',
-                'militares_info__militar'
-            ).select_related('servico').first()
+            nomeacoes_b = (
+                EscalaMilitar.objects.filter(
+                    escala__servico=servico,
+                    escala__e_escala_b=True,
+                    data=dia,
+                )
+                .select_related("escala", "militar")
+            )
+            e_feriado = dia in feriados
+            datas.append(
+                {
+                    "data":        dia,
+                    "nomeacoes":   nomeacoes_b,
+                    "e_fim_semana": not e_feriado,
+                    "e_feriado":   e_feriado,
+                    "tipo_dia":   "feriado" if e_feriado else "fim_semana",
+                }
+            )
 
-            e_feriado = data in feriados
-            datas.append({
-                'data': data,
-                'escala': escala,
-                'e_fim_semana': not e_feriado,
-                'e_feriado': e_feriado,
-                'tipo_dia': 'feriado' if e_feriado else 'fim_semana'
-            })
-        
-        # Processar ESCALA A depois (dias úteis)
-        for data in dias_escala['escala_a']:
-            # Pular se já temos uma escala para esta data das nomeações anteriores
-            if data <= hoje and any(d['data'] == data for d in datas):
+        # --- futuros | Escala A (dias úteis) ---
+        for dia in dias_escala["escala_a"]:
+            if dia <= hoje and any(d["data"] == dia for d in datas):
                 continue
-                
-            # Buscar escala existente para esta data com os militares relacionados
-            escala = Escala.objects.filter(
-                servico=servico,
-                data=data,
-                e_escala_b=False
-            ).prefetch_related(
-                'militares_info',
-                'militares_info__militar'
-            ).select_related('servico').first()
+            nomeacoes_a = (
+                EscalaMilitar.objects.filter(
+                    escala__servico=servico,
+                    escala__e_escala_b=False,
+                    data=dia,
+                )
+                .select_related("escala", "militar")
+            )
+            datas.append(
+                {
+                    "data":        dia,
+                    "nomeacoes":   nomeacoes_a,
+                    "e_fim_semana": False,
+                    "e_feriado":   False,
+                    "tipo_dia":   "util",
+                }
+            )
 
-            datas.append({
-                'data': data,
-                'escala': escala,
-                'e_fim_semana': False,
-                'e_feriado': False,
-                'tipo_dia': 'util'
-            })
+        # ordena a lista consolidada
+        datas.sort(key=lambda x: x["data"])
 
-        # Ordenar por data
-        datas = sorted(datas, key=lambda x: x['data'])
-
-        # Buscar todos os serviços ativos para o seletor
-        servicos = Servico.objects.filter(ativo=True)
-
+        # ---------- render ----------
         context = {
-            'title': f'Previsões de Nomeação - {servico.nome}',
-            'servico': servico,
-            'servicos': servicos,
-            'datas': datas,
-            'hoje': hoje,
-            'data_fim': data_fim,
-            'proximo_mes': proximo_mes,
-            'opts': self.model._meta,
-            'cl': self,
-            'is_popup': False,
-            'has_add_permission': self.has_add_permission(request),
-            'has_change_permission': self.has_change_permission(request),
-            'has_delete_permission': self.has_delete_permission(request),
+            "title": f"Previsões de Nomeação – {servico.nome}",
+            "servico":  servico,
+            "servicos": Servico.objects.filter(ativo=True),
+            "datas":    datas,
+            "hoje":     hoje,
+            "data_fim": data_fim,
+            "proximo_mes": hoje.replace(day=1) + timedelta(days=32),
+            "opts":     self.model._meta,
+            "cl":       self,
+            "is_popup": False,
+            "has_add_permission":    self.has_add_permission(request),
+            "has_change_permission": self.has_change_permission(request),
+            "has_delete_permission": self.has_delete_permission(request),
         }
-
-        return render(request, 'admin/core/escala/previsao.html', context)
+        return render(request, "admin/core/escala/previsao.html", context)
 
     class Meta:
         verbose_name = "Previsões de Nomeação"
         verbose_name_plural = "Previsões de Nomeação"
+
 
 # Proxy model para Previsões de Nomeação
 class PrevisaoEscalasProxy(Escala):
@@ -706,14 +729,15 @@ class HistoricoEscalasAdmin(VersionAdmin):
         # Processar ESCALA B primeiro (fins de semana/feriados)
         for data in dias_escala['escala_b']:
             # Buscar escala existente para esta data com os militares relacionados
-            escala = Escala.objects.filter(
-                servico=servico,
-                data=data,
-                e_escala_b=True
-            ).prefetch_related(
-                'militares_info',
-                'militares_info__militar'
-            ).select_related('servico').first()
+            escala = (
+                EscalaMilitar.objects
+                .filter(
+                    escala__servico=servico,
+                    escala__e_escala_b=True | False,
+                    data=data
+                )
+                .select_related('escala', 'militar')
+            )
 
             e_feriado = data in feriados
             datas.append({
@@ -727,14 +751,15 @@ class HistoricoEscalasAdmin(VersionAdmin):
         # Processar ESCALA A depois (dias úteis)
         for data in dias_escala['escala_a']:
             # Buscar escala existente para esta data com os militares relacionados
-            escala = Escala.objects.filter(
-                servico=servico,
-                data=data,
-                e_escala_b=False
-            ).prefetch_related(
-                'militares_info',
-                'militares_info__militar'
-            ).select_related('servico').first()
+            escala = (
+                EscalaMilitar.objects
+                .filter(
+                    escala__servico=servico,
+                    escala__e_escala_b=True | False,
+                    data=data
+                )
+                .select_related('escala', 'militar')
+            )
 
             datas.append({
                 'data': data,
