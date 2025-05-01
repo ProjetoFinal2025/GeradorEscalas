@@ -136,7 +136,7 @@
             </form>
 
             <!-- Formulário de geração de previsões -->
-            <form method="post" action="{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico={{ servico.id }}">
+            <form method="post" action="{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico={{ servico.id }}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">
                 {% csrf_token %}
                 <div class="form-row">
                     <input type="hidden" name="servico" value="{{ servico.id }}">
@@ -144,7 +144,7 @@
                     <input type="date" name="data_inicio" value="{{ hoje|date:'Y-m-d' }}" required>
                     
                     <label>Data de Fim:</label>
-                    <input type="date" name="data_fim" value="{{ request.GET.data_fim|default:proximo_mes|date:'Y-m-d' }}" required>
+                    <input type="date" name="data_fim" value="{{ data_fim|date:'Y-m-d' }}" required>
                     
                     <input type="submit" name="gerar_escalas" value="Gerar Previsões" class="default">
                 </div>

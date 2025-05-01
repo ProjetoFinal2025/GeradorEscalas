@@ -475,16 +475,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
                 from .utils import gerar_escalas_automaticamente
                 if gerar_escalas_automaticamente(servico, data_inicio, data_fim):
                     messages.success(request, "Previsões geradas com sucesso!")
-                    # Redirecionar de volta para o mesmo serviço
-                    return redirect(f"{request.path}?servico={servico_id}")
+                    # Redirecionar de volta para o mesmo serviço e data de fim
+                    return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
                 else:
                     messages.error(request, "Erro ao gerar previsões.")
-                    # Redirecionar de volta para o mesmo serviço
-                    return redirect(f"{request.path}?servico={servico_id}")
+                    # Redirecionar de volta para o mesmo serviço e data de fim
+                    return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
             except Exception as e:
                 messages.error(request, f"Erro: {str(e)}")
-                # Redirecionar de volta para o mesmo serviço
-                return redirect(f"{request.path}?servico={servico_id}")
+                # Redirecionar de volta para o mesmo serviço e data de fim
+                return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
 
         # Obter o serviço selecionado ou o primeiro serviço ativo
         servico_id = request.GET.get('servico')
