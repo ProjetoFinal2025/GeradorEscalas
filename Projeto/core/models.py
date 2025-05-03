@@ -239,29 +239,6 @@ class Servico(models.Model):
     def __str__(self):
         return self.nome
 
-
-class Configuracao(models.Model):
-    DIA_SEMANA_CHOICES = [
-        ('SEG', 'Segunda-feira'),
-        ('DOM', 'Domingo'),
-    ]
-
-    id = models.AutoField(primary_key=True)
-    inicio_semana = models.CharField(
-        max_length=3,
-        choices=DIA_SEMANA_CHOICES,
-        default='SEG',
-        help_text="Define se a semana começa na Segunda-feira ou no Domingo"
-    )
-
-    def __str__(self):
-        return f"Configuração {self.id} - Início: {self.get_inicio_semana_display()}"
-
-    class Meta:
-        verbose_name = "Configuração"
-        verbose_name_plural = "Configurações"
-
-
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
     servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='escalas')

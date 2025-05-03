@@ -16,7 +16,7 @@ from django.http import FileResponse, Http404
 from .services.escala_service import EscalaService
 
 # Permite alterar os seguintes modelos na admin view
-from .models import Militar, Dispensa, Escala, Servico, Configuracao, Log, Feriado, EscalaMilitar, RegraNomeacao
+from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
 from .services.escala_service import EscalaService
 
 @register.filter

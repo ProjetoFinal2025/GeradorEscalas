@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
-from .models import Militar, Servico, Dispensa, Escala, Configuracao, Log, Role, EscalaMilitar
+from .models import Militar, Servico, Dispensa, Escala, Log, Role, EscalaMilitar
 from decouple import config
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
