@@ -1,8 +1,8 @@
 # Projeto/core/forms.py
 
 from django import forms
+from django.forms import HiddenInput
 from django.contrib.admin.widgets import FilteredSelectMultiple
-
 from django.contrib import admin
 from .models import Militar, Servico , Escala, EscalaMilitar
 
@@ -85,12 +85,20 @@ class EscalaForm(forms.ModelForm):
 
 
 class EscalaMilitarForm(forms.ModelForm):
+    class Meta:
+        model = EscalaMilitar
+        fields = ['militar', 'ordem']
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         if self.instance and self.instance.escala_id:
-            servico_id = self.instance.escala.servico_id
-            # Filter only Militares who are in that Servico
+            escala = self.instance.escala
+            servico_id = escala.servico_id
             self.fields['militar'].queryset = Militar.objects.filter(servicos__id=servico_id)
+
+            # Dynamically rename the field label
+            self.fields['ordem'].label = "Ordem FDS" if escala.e_escala_b else "Ordem Semana"
 
 class EscalaMilitarInline(admin.TabularInline):
     model = EscalaMilitar

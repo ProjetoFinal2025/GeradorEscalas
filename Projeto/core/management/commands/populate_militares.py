@@ -1,5 +1,6 @@
+from decouple import config
 from django.core.management.base import BaseCommand
-from core.models import Militar
+from ...models import Militar
 import random
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
@@ -34,7 +35,7 @@ class Command(BaseCommand):
         ]
 
         # Password padrão para todos os militares
-        password_padrao = 'Exercito2024!'
+        USER_PASSWORD= config('USER_PASSWORD')
 
         # Criar 40 militares
         for i in range(40):
@@ -50,7 +51,7 @@ class Command(BaseCommand):
             user = User.objects.create_user(
                 username=username,
                 email=email,
-                password=password_padrao,
+                password=USER_PASSWORD,
                 first_name=nome.split()[0],
                 last_name=' '.join(nome.split()[1:])
             )
@@ -65,11 +66,9 @@ class Command(BaseCommand):
                 e_administrador=False,
                 telefone=telefone,
                 email=email,
-                ordem_semana=random.randint(1, 10),
-                ordem_fds=random.randint(1, 10)
             )
             
             self.stdout.write(self.style.SUCCESS(f'Criado militar: {militar}'))
 
         self.stdout.write(self.style.SUCCESS('Foram criados 40 militares com sucesso!'))
-        self.stdout.write(self.style.SUCCESS(f'Password padrão para todos os militares: {password_padrao}')) 
+        self.stdout.write(self.style.SUCCESS(f'Password padrão para todos os militares: {USER_PASSWORD}'))

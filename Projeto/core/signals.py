@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
-from .models import Militar, Servico, Dispensa, Escala, Log, Role, EscalaMilitar
+from .models import Militar, Servico, Dispensa, Escala, Log, Role, EscalaMilitar, Nomeacao
 from decouple import config
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
@@ -68,7 +68,7 @@ def log_alteracoes_dispensa(sender, instance, **kwargs):
 @receiver([post_save, post_delete], sender=Escala)
 def log_alteracoes_escala(sender, instance, **kwargs):
     # ► extrair intervalo de datas ligado a esta Escala
-    datas = list(instance.militares_info.values_list('data', flat=True))  # related_name='designacoes'
+    datas = list(Nomeacao.objects.filter(escala_militar__escala=instance).values_list('data', flat=True))
     if datas:
         if len(set(datas)) == 1:
             data_str = datas[0].strftime('%d/%m/%Y')
@@ -89,8 +89,6 @@ def log_alteracoes_escala(sender, instance, **kwargs):
         tipo_acao = 'DELETE'
 
     criar_log(12345678, acao, 'Escala', tipo_acao)
-
-
 
 @receiver(user_logged_in)
 def log_login(sender, request, user, **kwargs):
@@ -193,9 +191,8 @@ def sync_escalas_when_servico_changes(sender, instance, action, **kwargs):
             em, created = EscalaMilitar.objects.get_or_create(
                 escala=escala,
                 militar=mil,
-                defaults={"ordem_semana": idx, "ordem_fds": idx}
+                defaults={"ordem": idx}
             )
             if not created:
-                em.ordem_semana = idx
-                em.ordem_fds = idx
+                em.ordem= idx
                 em.save()

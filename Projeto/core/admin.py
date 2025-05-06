@@ -1,8 +1,7 @@
-from django.contrib import admin, messages
 from django.shortcuts import render, get_object_or_404, redirect
 from reversion.admin import VersionAdmin
 from .models import *
-from .utils import obter_feriados,  gerar_escalas_automaticamente
+from .utils import obter_feriados
 from django.utils import timezone
 from django.template.defaulttags import register
 from .forms import MilitarForm, ServicoForm, EscalaForm
@@ -13,8 +12,9 @@ from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
 from .services.pdf_exports import gerar_pdf_escala
 from django.http import FileResponse, Http404
-from .services.escala_service import EscalaService
-
+from collections import defaultdict
+from django.contrib import admin, messages
+from datetime import date
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
 from .services.escala_service import EscalaService
@@ -101,25 +101,16 @@ class ServicoAdmin(VersionAdmin):
 class EscalaMilitarInline(admin.TabularInline):
     model = EscalaMilitar
     extra = 0
-    fields = (
-        'display_militar',
-        'data',
-        'ordem_semana',
-        'ordem_fds',
-    )
-    readonly_fields = (
-        'display_militar',
-        'data',
-    )
     can_delete = False
+    readonly_fields = ("display_militar",)
 
-    def has_add_permission(self, request, obj):
-        return False
+    fields = ("display_militar", "ordem")
 
     def display_militar(self, obj):
         if not obj.pk:
             return "Selecione acima e salve."
         return f"{obj.militar.posto} {obj.militar.nome} ({str(obj.militar.nim).zfill(8)})"
+
     display_militar.short_description = "Militar"
 
 @admin.action(description="Reset orders by NIM")
@@ -128,8 +119,7 @@ def reset_orders_by_nim(modeladmin, request, queryset):
     for escala in queryset:
         esc_mils = EscalaMilitar.objects.filter(escala=escala).select_related('militar').order_by('militar__nim')
         for i, em in enumerate(esc_mils, start=1):
-            em.ordem_semana = i
-            em.ordem_fds = i
+            em.ordem = i
             em.save()
 
 class EscalaAdmin(VersionAdmin):
@@ -141,7 +131,7 @@ class EscalaAdmin(VersionAdmin):
     list_filter = ("servico", "e_escala_b")
     search_fields = ("servico__nome",)
 
-    change_form_template = "admin/core/escala/change_form.html"  # NEW
+    change_form_template = "admin/core/escala/change_form.html"
 
     def get_urls(self):
 
@@ -163,19 +153,19 @@ class EscalaAdmin(VersionAdmin):
         filename = f"escala_{escala.pk}_militares.pdf"
         return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
 
-    def changeform_view(self, request, object_id=None,
-                        form_url="", extra_context=None):
+
+    ## Changes the order of Militares by NIm
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
 
         #  handle the special POST that resets ordem
         if request.method == "POST" and "_reset_ordem" in request.POST and object_id:
             escala = self.get_object(request, object_id)
             if escala:
-                related = (escala.militares_info
+                related = (escala.roster
                            .select_related("militar")
                            .order_by("militar__nim"))
                 for i, em in enumerate(related, start=1):
-                    em.ordem_semana = i
-                    em.ordem_fds = i
+                    em.ordem= i
                     em.save()
                 self.message_user(request, "Ordem redefinida com sucesso.")
                 return redirect(request.path)
@@ -190,6 +180,8 @@ class EscalaAdmin(VersionAdmin):
 
         return super().changeform_view(request, object_id, form_url,
                                        extra_context)
+
+
 
 
     def save_model(self, request, obj, form, change):
@@ -215,45 +207,9 @@ class EscalaAdmin(VersionAdmin):
                 escala=escala,
                 militar=mil,
                 defaults={
-                    "ordem_semana": idx,
-                    "ordem_fds": idx,
+                    "ordem": idx,
                 },
             )
-
-    ### NOT WORKING
-    # def _sincronizar_militares_e_criar_B(self, escala):
-    #     #Sincroniza EscalaMilitar e cria escala B quando aplicável.
-    #     servico = escala.servico
-    #     tipo_servico = servico.tipo_escalas  # "A", "B", "AB"
-    #     militares_srv = servico.militares.all()
-    #
-    #     #  sincronizar militares da escala actual
-    #     EscalaMilitar.objects.filter(escala=escala).exclude(
-    #         militar__in=militares_srv).delete()
-    #
-    #     for i, mil in enumerate(militares_srv, 1):
-    #         EscalaMilitar.objects.get_or_create(
-    #             escala=escala,
-    #             militar=mil,
-    #             defaults={"ordem_semana": i, "ordem_fds": i},
-    #         )
-    #
-    #     #  se serviço "AB" e esta é A criar/actualizar B
-    #     if tipo_servico == "AB" and not escala.e_escala_b:
-    #         escala_b, _ = Escala.objects.get_or_create(
-    #             servico=servico,
-    #             e_escala_b=True,
-    #             defaults={"comentario": "Gerada automaticamente"},
-    #         )
-    #         EscalaMilitar.objects.filter(escala=escala_b).exclude(
-    #             militar__in=militares_srv).delete()
-    #
-    #         for i, mil in enumerate(militares_srv, 1):
-    #             EscalaMilitar.objects.get_or_create(
-    #                 escala=escala_b,
-    #                 militar=mil,
-    #                 defaults={"ordem_semana": i, "ordem_fds": i},
-    #             )
 
 class DispensaAdmin(VersionAdmin):
     list_display = ('militar', 'data_inicio', 'data_fim', 'motivo', 'servico_atual')
@@ -419,6 +375,15 @@ class PrevisaoEscalasAdmin(VersionAdmin):
     """
     change_list_template = 'admin/core/escala/previsao.html'
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
     # Página padrão (changelist) ‒ só injeta contexto extra
 
     def changelist_view(self, request, extra_context=None):
@@ -426,16 +391,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
         # processar POST de geração rápida
         if request.method == "POST" and "gerar_escalas" in request.POST:
-            servico_id  = request.POST.get("servico")
+            servico_id = request.POST.get("servico")
             data_inicio = request.POST.get("data_inicio")
-            data_fim    = request.POST.get("data_fim")
+            data_fim = request.POST.get("data_fim")
 
             try:
-                servico     = Servico.objects.get(pk=servico_id)
+                servico = Servico.objects.get(pk=servico_id)
                 data_inicio = date.fromisoformat(data_inicio)
-                data_fim    = date.fromisoformat(data_fim)
+                data_fim = date.fromisoformat(data_fim)
 
-                ok = gerar_escalas_automaticamente(servico, data_inicio, data_fim)
+                ok = EscalaService.gerar_escalas_automaticamente(servico, data_inicio, data_fim)
                 msg = "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões."
                 (messages.success if ok else messages.error)(request, msg)
 
@@ -462,29 +427,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
         extra_context.update(
             {
-                "servico":   servico,
-                "servicos":  Servico.objects.filter(ativo=True),
-                "hoje":      date.today(),
+                "servico": servico,
+                "servicos": Servico.objects.filter(ativo=True),
+                "hoje": date.today(),
                 "proximo_mes": date.today().replace(day=1) + timedelta(days=32),
-                "data_fim":  data_fim,
-                "request":   request,
+                "data_fim": data_fim,
+                "request": request,
             }
         )
         return super().changelist_view(request, extra_context=extra_context)
 
-
-    #  Permissões
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return True
-
-    #  URLs extra
 
     def get_urls(self):
         urls = super().get_urls()
@@ -501,7 +453,6 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             ),
         ]
         return custom + urls
-
 
     #  Remover flag 'prevista' de uma Escala
     def remover_previsao(self, request, escala_id):
@@ -521,9 +472,9 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
         hoje = date.today()
         proxima = (
-            EscalaMilitar.objects.filter(
-                escala__servico=escala.servico,
-                escala__prevista=True,
+            Nomeacao.objects.filter(
+                escala_militar__escala__servico=escala.servico,
+                escala_militar__escala__prevista=True,
                 data__gt=hoje,
             )
             .order_by("data")
@@ -544,13 +495,13 @@ class PrevisaoEscalasAdmin(VersionAdmin):
     def previsao_view(self, request):
         # ---------- geração automática (POST) ----------
         if request.method == "POST" and "gerar_escalas" in request.POST:
-            servico_id  = request.POST.get("servico")
+            servico_id = request.POST.get("servico")
             data_inicio = request.POST.get("data_inicio")
-            data_fim    = request.POST.get("data_fim")
+            data_fim = request.POST.get("data_fim")
 
             try:
                 servico = Servico.objects.get(pk=servico_id)
-                ok = gerar_escalas_automaticamente(
+                ok = EscalaService.gerar_escalas_automaticamente(
                     servico,
                     date.fromisoformat(data_inicio),
                     date.fromisoformat(data_fim),
@@ -580,33 +531,38 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         data_fim = data_fim or (hoje + timedelta(days=30))
 
         # ---------- feriados / dias de escala ----------
-        feriados     = obter_feriados(hoje, data_fim)
-        dias_escala  = EscalaService.obter_dias_escala(hoje, data_fim)  # {'escala_a': [...], 'escala_b': [...]}
+        feriados = obter_feriados(hoje, data_fim)
+        dias_escala = EscalaService.obter_dias_escala(hoje, data_fim)  # {'escala_a': [...], 'escala_b': [...]}
 
         datas = []
 
         # --- histórico (últimos 30 dias) ---
         historico_ini = hoje - timedelta(days=30)
         historico_qs = (
-            EscalaMilitar.objects.filter(
-                escala__servico=servico,
+            Nomeacao.objects.filter(
+                escala_militar__escala__servico=servico,
                 data__gte=historico_ini,
                 data__lte=hoje,
             )
-            .select_related("escala", "militar")
+            .select_related("escala_militar__escala", "escala_militar__militar")
             .order_by("data")
         )
-        for em in historico_qs:
-            dia          = em.data
-            e_feriado    = dia in feriados
+
+        # Agrupa nomeações por data
+        nomeacoes_por_dia = defaultdict(list)
+        for nomeacao in historico_qs:
+            nomeacoes_por_dia[nomeacao.data].append(nomeacao)
+
+        for dia, nomeacoes in nomeacoes_por_dia.items():
+            e_feriado = dia in feriados
             e_fim_semana = dia.weekday() >= 5
             datas.append(
                 {
-                    "data":        dia,
-                    "nomeacoes":   historico_qs.filter(data=dia),
+                    "data": dia,
+                    "nomeacoes": nomeacoes,
                     "e_fim_semana": e_fim_semana and not e_feriado,
-                    "e_feriado":   e_feriado,
-                    "tipo_dia":   "feriado" if e_feriado else ("fim_semana" if e_fim_semana else "util"),
+                    "e_feriado": e_feriado,
+                    "tipo_dia": "feriado" if e_feriado else ("fim_semana" if e_fim_semana else "util"),
                 }
             )
 
@@ -614,22 +570,29 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         for dia in dias_escala["escala_b"]:
             if dia <= hoje and any(d["data"] == dia for d in datas):
                 continue
-            nomeacoes_b = (
-                EscalaMilitar.objects.filter(
-                    escala__servico=servico,
-                    escala__e_escala_b=True,
-                    data=dia,
-                )
-                .select_related("escala", "militar")
-            )
+            escala = Escala.objects.filter(
+                servico=servico,
+                e_escala_b=True
+            ).first()
+            nomeacoes = []
+            if escala:
+                nomeacoes = Nomeacao.objects.filter(
+                    escala_militar__escala=escala,
+                    data=dia
+                ).select_related("escala_militar__militar")
+
+            efetivo = next((n for n in nomeacoes if not n.e_reserva), None)
+            reserva = next((n for n in nomeacoes if n.e_reserva), None)
             e_feriado = dia in feriados
             datas.append(
                 {
-                    "data":        dia,
-                    "nomeacoes":   nomeacoes_b,
+                    "data": dia,
+                    "escala": escala,
+                    "efetivo": efetivo,
+                    "reserva": reserva,
                     "e_fim_semana": not e_feriado,
-                    "e_feriado":   e_feriado,
-                    "tipo_dia":   "feriado" if e_feriado else "fim_semana",
+                    "e_feriado": e_feriado,
+                    "tipo_dia": "fim_semana" if not e_feriado else "feriado",
                 }
             )
 
@@ -637,21 +600,28 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         for dia in dias_escala["escala_a"]:
             if dia <= hoje and any(d["data"] == dia for d in datas):
                 continue
-            nomeacoes_a = (
-                EscalaMilitar.objects.filter(
-                    escala__servico=servico,
-                    escala__e_escala_b=False,
-                    data=dia,
-                )
-                .select_related("escala", "militar")
-            )
+            escala = Escala.objects.filter(
+                servico=servico,
+                e_escala_b=False
+            ).first()
+            nomeacoes = []
+            if escala:
+                nomeacoes = Nomeacao.objects.filter(
+                    escala_militar__escala=escala,
+                    data=dia
+                ).select_related("escala_militar__militar")
+
+            efetivo = next((n for n in nomeacoes if not n.e_reserva), None)
+            reserva = next((n for n in nomeacoes if n.e_reserva), None)
             datas.append(
                 {
-                    "data":        dia,
-                    "nomeacoes":   nomeacoes_a,
+                    "data": dia,
+                    "escala": escala,
+                    "efetivo": efetivo,
+                    "reserva": reserva,
                     "e_fim_semana": False,
-                    "e_feriado":   False,
-                    "tipo_dia":   "util",
+                    "e_feriado": False,
+                    "tipo_dia": "util",
                 }
             )
 
@@ -661,16 +631,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         # ---------- render ----------
         context = {
             "title": f"Previsões de Nomeação – {servico.nome}",
-            "servico":  servico,
+            "servico": servico,
             "servicos": Servico.objects.filter(ativo=True),
-            "datas":    datas,
-            "hoje":     hoje,
+            "datas": datas,
+            "hoje": hoje,
             "data_fim": data_fim,
             "proximo_mes": hoje.replace(day=1) + timedelta(days=32),
-            "opts":     self.model._meta,
-            "cl":       self,
+            "opts": self.model._meta,
+            "cl": self,
             "is_popup": False,
-            "has_add_permission":    self.has_add_permission(request),
+            "has_add_permission": self.has_add_permission(request),
             "has_change_permission": self.has_change_permission(request),
             "has_delete_permission": self.has_delete_permission(request),
         }

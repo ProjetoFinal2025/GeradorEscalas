@@ -186,18 +186,16 @@
                         <tr class="{{ item.tipo_dia }}">
                             <td>{{ item.data|date:"d-M-y" }} ({{ item.data|date:"D"|title }})</td>
                             <td>
-                                {% if item.escala %}
-                                    {% for militar_info in item.escala.militares_info.all %}
-                                        {% if not militar_info.e_reserva %}
-                                            {{ militar_info.militar.posto }} {{ militar_info.militar.nim|stringformat:"08d" }} {{ militar_info.militar.nome|upper }}
-                                        {% endif %}
-                                    {% endfor %}
+                                {% if item.efetivo %}
+                                    {{ item.efetivo.escala_militar.militar.posto }}
+                                    {{ item.efetivo.escala_militar.militar.nim|stringformat:"08d" }}
+                                    {{ item.efetivo.escala_militar.militar.nome }}
                                 {% endif %}
                             </td>
                             <td>
-                                {% if item.escala.prevista %}
+                                {% if item.escala and item.escala.prevista %}
                                     <span class="prev">Prev</span>
-                                    <a href="{% url 'admin:remover_previsao' item.escala.id %}" 
+                                    <a href="{% url 'admin:remover_previsao' item.escala.id %}"
                                        onclick="return confirm('Tem certeza que deseja remover o status de previsão desta nomeação?')"
                                        class="remover-previsao">
                                         <span class="prev-remove">❌</span>
@@ -206,12 +204,10 @@
                                 {{ item.escala.observacoes }}
                             </td>
                             <td>
-                                {% if item.escala %}
-                                    {% for militar_info in item.escala.militares_info.all %}
-                                        {% if militar_info.e_reserva %}
-                                            {{ militar_info.militar.posto }} {{ militar_info.militar.nim|stringformat:"08d" }} {{ militar_info.militar.nome|upper }}<br>
-                                        {% endif %}
-                                    {% endfor %}
+                                {% if item.reserva %}
+                                    {{ item.reserva.escala_militar.militar.posto }}
+                                    {{ item.reserva.escala_militar.militar.nim|stringformat:"08d" }}
+                                    {{ item.reserva.escala_militar.militar.nome }}
                                 {% endif %}
                             </td>
                         </tr>

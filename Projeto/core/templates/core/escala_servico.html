@@ -49,7 +49,6 @@
             <tbody>
                 {% for escala in escalas %}
                 <tr>
-                    <td>{{ escala.data|date:"d/m/Y" }}</td>
                     <td>
                         {% for militar_info in escala.militares_info.all %}
                             {% if not militar_info.e_reserva %}

@@ -18,13 +18,14 @@ POSTOS_CHOICES = [
     ('1SARG', 'Primeiro-Sargento'),
     ('2SARG', 'Segundo-Sargento'),
     ('FUR', 'Furriel'),
-    ('2FUR', '2ºFurriel'),    
+    ('2FUR', '2ºFurriel'),
     ('CABSEC', 'Cabo de Secção'),
     ('CADJ', 'Cabo-Ajunto'),
     ('1CAB', 'Primeiro-Cabo'),
     ('2CAB', 'Segundo-Cabo'),
     ('SOL', 'Soldado')
 ]
+
 
 # Models
 class Role(models.Model):
@@ -43,11 +44,13 @@ class Militar(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     nome = models.CharField(max_length=100)
     posto = models.CharField(max_length=30, choices=POSTOS_CHOICES)
-    funcao= models.CharField(max_length=50)
+    funcao = models.CharField(max_length=50)
     e_administrador = models.BooleanField(default=False)
     telefone = models.BigIntegerField()
     email = models.EmailField()
 
+    ultima_nomeacao_a = models.DateField(null=True, blank=True)
+    ultima_nomeacao_b = models.DateField(null=True, blank=True)
 
     # Retorna os serviços em que Militar está inscrito
     def listar_servicos(self):
@@ -65,13 +68,13 @@ class Militar(models.Model):
     listar_escalas.short_description = "Escalas"
 
     def listar_dispensas(self):
-        return ", ".join([f"{d.data_inicio} a {d.data_fim}" for d in self.dispensas.all()]) or "Nenhuma dispensa atribuida."
+        return ", ".join(
+            [f"{d.data_inicio} a {d.data_fim}" for d in self.dispensas.all()]) or "Nenhuma dispensa atribuida."
 
     listar_dispensas.short_description = "Dispensas"
 
     def __str__(self):
         return f"{self.posto} {self.nome} ({str(self.nim).zfill(8)})"
-
 
     def clean(self):
         super().clean()
@@ -91,28 +94,28 @@ class Militar(models.Model):
         """
         # Verifica se está de licença
         if self.licencas.filter(
-            data_inicio__lte=data,
-            data_fim__gte=data
+                data_inicio__lte=data,
+                data_fim__gte=data
         ).exists():
             return False
 
         # Verifica se está dispensado
         if self.dispensas.filter(
-            data_inicio__lte=data,
-            data_fim__gte=data
+                data_inicio__lte=data,
+                data_fim__gte=data
         ).exists():
             return False
 
         # Verifica dia útil antes da entrada de licença
         dia_anterior = data - timedelta(days=1)
         if self.licencas.filter(
-            data_inicio=dia_anterior
+                data_inicio=dia_anterior
         ).exists():
             return False
 
         # Verifica dia da apresentação de licença
         if self.licencas.filter(
-            data_fim=data
+                data_fim=data
         ).exists():
             return False
 
@@ -152,7 +155,7 @@ class Militar(models.Model):
 
 
 class Dispensa(models.Model):
-    id = models.AutoField(primary_key = True)
+    id = models.AutoField(primary_key=True)
     # Cria ligaçao entre Militar e Dispensa acedendo diretamente a PK de militar
     militar = models.ForeignKey(Militar, on_delete=models.CASCADE, related_name='dispensas')
     data_inicio = models.DateField()
@@ -177,10 +180,10 @@ class Feriado(models.Model):
         choices=TIPO_CHOICES,
         default='FIXO'
     )
-    
+
     def __str__(self):
         return f"{self.nome} - {self.data.strftime('%d/%m/%Y')}"
-    
+
     class Meta:
         verbose_name = "Feriado"
         verbose_name_plural = "Feriados"
@@ -215,7 +218,6 @@ class Servico(models.Model):
     def clean(self):
         super().clean()
 
-
         if not self.pk:
             return
 
@@ -238,6 +240,7 @@ class Servico(models.Model):
 
     def __str__(self):
         return self.nome
+
 
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
@@ -281,25 +284,50 @@ class Escala(models.Model):
 
 
 class EscalaMilitar(models.Model):
-    escala = models.ForeignKey('Escala', on_delete=models.CASCADE, related_name='militares_info')
+    escala = models.ForeignKey(Escala, on_delete=models.CASCADE, related_name='roster')
     militar = models.ForeignKey('Militar', on_delete=models.CASCADE)
+    ordem = models.IntegerField(null=True, blank=True, verbose_name="Ordem")
 
-    data = models.DateField(null=True, blank=True)
+    class Meta:
+        unique_together = ('escala', 'militar')
+        verbose_name = _("Militar na Escala")
+        verbose_name_plural = _("Militares na Escala")
 
-    # Where each Militar fits in for this Escala
-    ordem_semana = models.IntegerField(null=True, blank=True)
-    ordem_fds = models.IntegerField(null=True, blank=True)
+    def clean(self):
+        super().clean()
 
+        if self.ordem is None:
+            tipo = "B" if self.escala.e_escala_b else "A"
+            raise ValidationError(
+                {"ordem": _(f"Campo obrigatório.")}
+            )
+
+    def __str__(self):
+        return ''
+
+
+class Nomeacao(models.Model):
+    """
+    Nomeação diária: indica que um militar (via EscalaMilitar) cobre
+    a data X, como efetivo ou reserva.
+    """
+    escala_militar = models.ForeignKey(
+        EscalaMilitar,
+        on_delete=models.CASCADE,
+        related_name='nomeacoes'
+    )
+    data = models.DateField()
     e_reserva = models.BooleanField(default=False, verbose_name="É Reserva")
 
     class Meta:
-        unique_together = ("escala", "militar", "data")
-        verbose_name = "Militares Na Escala"
-        verbose_name_plural = "Militares Na Escala"
+        unique_together = ('escala_militar', 'data')
+        verbose_name = _("Nomeação")
+        verbose_name_plural = _("Nomeações")
+        ordering = ["data"]
 
     def __str__(self):
-        # Return an empty string so the TabularInline won't show
-        return ''
+        tipo = "Reserva" if self.e_reserva else "Efetivo"
+        return f"{self.escala_militar.militar} em {self.data:%d/%m/%Y} ({tipo})"
 
 
 class Log(models.Model):
@@ -330,14 +358,14 @@ class RegraNomeacao(models.Model):
         ('mesma_escala', 'Mesma Escala (A/B)'),
         ('entre_escalas', 'Entre Escalas (A/B)'),
     ]
-    
+
     servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='regras_nomeacao')
     tipo_folga = models.CharField(max_length=20, choices=TIPO_FOLGA_CHOICES)
     horas_minimas = models.IntegerField(help_text="Número mínimo de horas de folga")
     prioridade_modernos = models.BooleanField(default=True, help_text="Prioridade para militares mais modernos")
     considerar_ultimo_servico = models.BooleanField(default=True, help_text="Considerar data do último serviço")
     permitir_trocas = models.BooleanField(default=True, help_text="Permitir trocas de serviço")
-    
+
     class Meta:
         verbose_name = "Regra de Nomeação"
         verbose_name_plural = "Regras de Nomeação"

@@ -7,4 +7,8 @@ Projeto/.env
 venv/
 core/__pycache__/
 *.pyc
+# Ignore every file inside any migrations folde
+**/migrations/*
 
+# keep the package marker so the folders stay import‑able
+!**/migrations/__init__.py

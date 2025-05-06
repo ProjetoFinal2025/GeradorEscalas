@@ -103,9 +103,7 @@ def escala_servico_view(request, servico_id):
     # Obter escalas do período
     escalas = Escala.objects.filter(
         servico=servico,
-        data__gte=hoje,
-        data__lte=data_fim
-    ).order_by('data')
+    ).order_by('id')
     
     # Obter feriados
     feriados = obter_feriados(hoje, data_fim)
