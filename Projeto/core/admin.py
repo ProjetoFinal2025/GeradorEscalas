@@ -529,6 +529,10 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             else Servico.objects.filter(ativo=True).first()
         )
 
+        if not servico:
+            messages.warning(request, "Não há serviços ativos no sistema. Por favor, ative um serviço primeiro.")
+            return redirect("admin:core_servico_changelist")
+
         hoje = date.today()
         try:
             data_fim = date.fromisoformat(request.GET.get("data_fim", ""))
@@ -562,10 +566,14 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         for dia, nomeacoes in nomeacoes_por_dia.items():
             e_feriado = dia in feriados
             e_fim_semana = dia.weekday() >= 5
+            efetivo = next((n for n in nomeacoes if not n.e_reserva), None)
+            reserva = next((n for n in nomeacoes if n.e_reserva), None)
             datas.append(
                 {
                     "data": dia,
                     "nomeacoes": nomeacoes,
+                    "efetivo": efetivo,
+                    "reserva": reserva,
                     "e_fim_semana": e_fim_semana and not e_feriado,
                     "e_feriado": e_feriado,
                     "tipo_dia": "feriado" if e_feriado else ("fim_semana" if e_fim_semana else "util"),
