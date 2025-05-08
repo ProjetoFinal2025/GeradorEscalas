@@ -4,71 +4,79 @@ from ...models import Militar
 import random
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
+from django.db.models.signals import post_save
+from core.signals import criar_user_para_militar
 
 class Command(BaseCommand):
-    help = 'Popula a base de dados com 40 militares de diferentes postos'
+    help = 'Popula a base de dados com 45 militares de diferentes postos'
 
     def handle(self, *args, **kwargs):
-        # Lista de nomes fictícios
+        # Desativar temporariamente o sinal de criação de utilizador
+        post_save.disconnect(criar_user_para_militar, sender=Militar)
+
+        # Lista de postos e quantidades
+        postos = {
+            'CAP': 5,    # Capitão
+            'TEN': 5,    # Tenente
+            'ALF': 5,    # Alferes
+            '1SARG': 5,  # Primeiro-Sargento
+            '2SARG': 5,  # Segundo-Sargento
+            'FUR': 5,    # Furriel
+            '2FUR': 5,   # 2ºFurriel
+            'CABSEC': 5, # Cabo de Secção
+            '1CAB': 5,   # Primeiro-Cabo
+            'SOL': 5     # Soldado
+        }
+
+        # Lista de nomes para gerar nomes aleatórios
         nomes = [
-            'João Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Costa', 'Carlos Ferreira',
-            'Sofia Rodrigues', 'Miguel Martins', 'Inês Pereira', 'Tiago Sousa', 'Beatriz Lima',
-            'Rui Carvalho', 'Catarina Almeida', 'André Gomes', 'Mariana Ribeiro', 'Diogo Fernandes',
-            'Laura Pinto', 'Ricardo Marques', 'Carolina Gonçalves', 'Bruno Lopes', 'Matilde Castro',
-            'Francisco Teixeira', 'Clara Correia', 'Gonçalo Mendes', 'Diana Moreira', 'Hugo Azevedo',
-            'Eva Barbosa', 'Daniel Tavares', 'Leonor Pinto', 'Tomás Coelho', 'Bianca Cardoso',
-            'Vasco Machado', 'Mafalda Barros', 'Rafael Baptista', 'Sara Campos', 'Guilherme Fonseca',
-            'Teresa Morais', 'Duarte Nunes', 'Margarida Leal', 'Filipe Matos', 'Isabel Guerreiro'
+            'Silva', 'Santos', 'Oliveira', 'Sousa', 'Rodrigues', 'Ferreira', 'Pereira', 'Costa',
+            'Martins', 'Jesus', 'Lopes', 'Marques', 'Gomes', 'Ribeiro', 'Carvalho', 'Fernandes',
+            'Almeida', 'Antunes', 'Correia', 'Mendes', 'Nunes', 'Soares', 'Vieira', 'Moreira',
+            'Gonçalves', 'Dias', 'Teixeira', 'Araújo', 'Monteiro', 'Ramos'
         ]
 
-        # Lista de funções fictícias
+        # Lista de funções
         funcoes = [
-            'Operador de Sistemas', 'Técnico de Informática', 'Administrador de Redes',
-            'Especialista em Cibersegurança', 'Gestor de Projetos', 'Analista de Sistemas',
-            'Programador', 'Técnico de Suporte', 'Gestor de Base de Dados', 'Consultor IT'
+            'Comandante de Companhia', 'Comandante de Pelotão', 'Comandante de Secção',
+            'Chefe de Secção', 'Operador de Sistemas', 'Condutor', 'Operador de Rádio',
+            'Atirador', 'Observador', 'Mecânico', 'Condutor de Viatura', 'Operador de Arma'
         ]
 
-        # Postos disponíveis
-        postos = [
-            'COR', 'TCOR', 'MAJ', 'CAP', 'TEN', 'ALF', 'ASP', 'SCH', 'SAJ', '1SARG',
-            '2SARG', 'FUR', '2FUR', 'CABSEC', 'CADJ', '1CAB', '2CAB', 'SOL'
-        ]
+        # Gerar militares
+        for posto, quantidade in postos.items():
+            for i in range(quantidade):
+                # Gerar NIM único (8 dígitos)
+                nim = random.randint(10000000, 99999999)
+                while Militar.objects.filter(nim=nim).exists():
+                    nim = random.randint(10000000, 99999999)
 
-        # Password padrão para todos os militares
-        USER_PASSWORD= config('USER_PASSWORD')
+                # Gerar nome
+                nome = f"{random.choice(nomes)} {random.choice(nomes)}"
 
-        # Criar 40 militares
-        for i in range(40):
-            nim = 10000000 + i
-            nome = random.choice(nomes)
-            posto = random.choice(postos)
-            funcao = random.choice(funcoes)
-            telefone = 900000000 + i
-            email = f"{nome.lower().replace(' ', '.')}@exemplo.pt"
-            
-            # Criar o utilizador
-            username = str(nim)
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=USER_PASSWORD,
-                first_name=nome.split()[0],
-                last_name=' '.join(nome.split()[1:])
-            )
-            
-            # Criar o militar
-            militar = Militar.objects.create(
-                nim=nim,
-                user=user,
-                nome=nome,
-                posto=posto,
-                funcao=funcao,
-                e_administrador=False,
-                telefone=telefone,
-                email=email,
-            )
-            
-            self.stdout.write(self.style.SUCCESS(f'Criado militar: {militar}'))
+                # Gerar telefone (9 dígitos)
+                telefone = random.randint(900000000, 999999999)
 
-        self.stdout.write(self.style.SUCCESS('Foram criados 40 militares com sucesso!'))
-        self.stdout.write(self.style.SUCCESS(f'Password padrão para todos os militares: {USER_PASSWORD}'))
+                # Gerar email
+                email = f"{nome.lower().replace(' ', '.')}@exército.pt"
+
+                # Criar militar
+                militar = Militar.objects.create(
+                    nim=nim,
+                    nome=nome,
+                    posto=posto,
+                    funcao=random.choice(funcoes),
+                    telefone=telefone,
+                    email=email
+                )
+
+                self.stdout.write(
+                    self.style.SUCCESS(f'Criado militar: {militar}')
+                )
+
+        # Reativar o sinal de criação de utilizador
+        post_save.connect(criar_user_para_militar, sender=Militar)
+
+        self.stdout.write(
+            self.style.SUCCESS('Base de dados populada com sucesso!')
+        )
