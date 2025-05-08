@@ -23,11 +23,17 @@ from .services.escala_service import EscalaService
 def get_item(dictionary, key):
     return dictionary.get(key)
 
+@admin.action(description="Limpar nomeações")
+def limpar_nomeacoes(modeladmin, request, queryset):
+    updated = queryset.update(ultima_nomeacao_a=None, ultima_nomeacao_b=None)
+    modeladmin.message_user(request, f"{updated} militares atualizados com sucesso.", messages.SUCCESS)
+
 class MilitarAdmin(VersionAdmin):
     form = MilitarForm
     list_display = ('nome', 'posto', 'nim', 'listar_servicos', 'listar_escalas')
     # Remove a habilidade de mudar o Utilizador de um militar
     readonly_fields = ['user', 'listar_servicos', 'listar_escalas','listar_dispensas']
+    actions = [limpar_nomeacoes]
 
 class ServicoAdmin(VersionAdmin):
     form = ServicoForm
