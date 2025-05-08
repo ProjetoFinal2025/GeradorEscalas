@@ -61,39 +61,6 @@ class EscalaService:
         return dias
 
     @staticmethod
-    def obter_feriados_nacionais(ano: int) -> List[date]:
-        return [
-            date(ano, 1, 1),  # Ano Novo
-            date(ano, 4, 25),  # Dia da Liberdade
-            date(ano, 5, 1),  # Dia do Trabalhador
-            date(ano, 6, 10),  # Dia de Portugal
-            date(ano, 8, 15),  # Assunção de Nossa Senhora
-            date(ano, 10, 5),  # Implantação da República
-            date(ano, 11, 1),  # Todos os Santos
-            date(ano, 12, 1),  # Restauração da Independência
-            date(ano, 12, 8),  # Imaculada Conceição
-            date(ano, 12, 25),  # Natal
-        ]
-
-    @staticmethod
-    def obter_feriados_moveis(ano: int) -> List[date]:
-        if ano == 2024:
-            return [
-                date(2024, 2, 13),  # Carnaval
-                date(2024, 3, 29),  # Sexta-feira Santa
-                date(2024, 3, 31),  # Páscoa
-                date(2024, 5, 30),  # Corpo de Deus
-            ]
-        elif ano == 2025:
-            return [
-                date(2025, 3, 4),  # Carnaval
-                date(2025, 4, 18),  # Sexta-feira Santa
-                date(2025, 4, 20),  # Páscoa
-                date(2025, 6, 19),  # Corpo de Deus
-            ]
-        return []
-
-    @staticmethod
     def obter_feriados_personalizados(data_inicio: date, data_fim: date) -> List[date]:
         return list(Feriado.objects.filter(data__gte=data_inicio, data__lte=data_fim).values_list('data', flat=True))
 
@@ -189,325 +156,152 @@ class EscalaService:
         return escala
 
     @staticmethod
-    def nomear_efetivos(escala: Escala, militares: List[Militar], data: date, n_efetivos: int):
-        nomeados = 0
-        for militar in militares:
-            if nomeados >= n_efetivos:
-                break
-
-            # Verifica se já existe uma escala_militar para este militar e esta escala
-            escala_militar, created = EscalaMilitar.objects.get_or_create(
-                escala=escala,
-                militar=militar,
-                defaults={'ordem': nomeados + 1}  # Definir ordem default se for criado
-            )
-
-            # Apenas cria uma nomeação se ainda não existe
-            if not Nomeacao.objects.filter(escala_militar=escala_militar, data=data, e_reserva=False).exists():
-                Nomeacao.objects.create(
-                    escala_militar=escala_militar,
-                    data=data,
-                    e_reserva=False
-                )
-
-                # Atualiza a última nomeação do militar
-                if escala.e_escala_b:
-                    militar.ultima_nomeacao_b = data
-                else:
-                    militar.ultima_nomeacao_a = data
-                militar.save()
-
-                nomeados += 1
-                print(f"[DEBUG] Nomeando militar {militar.nim} para o dia {data} como efetivo")
-
-    @staticmethod
-    def nomear_reservas(escala: Escala, militares: List[Militar], data: date, n_efetivos: int, n_reservas: int):
-        nomeados_reserva = 0
-        for militar in militares[n_efetivos:]:
-            if nomeados_reserva >= n_reservas:
-                break
-
-            # Verifica se já existe uma escala_militar para este militar e esta escala
-            escala_militar, created = EscalaMilitar.objects.get_or_create(
-                escala=escala,
-                militar=militar,
-                defaults={'ordem': n_efetivos + nomeados_reserva + 1}  # Ordem após os efetivos
-            )
-
-            # Apenas cria uma nomeação se ainda não existe
-            if not Nomeacao.objects.filter(escala_militar=escala_militar, data=data, e_reserva=True).exists():
-                Nomeacao.objects.create(
-                    escala_militar=escala_militar,
-                    data=data,
-                    e_reserva=True
-                )
-
-                # Atualiza a última nomeação do militar
-                if escala.e_escala_b:
-                    militar.ultima_nomeacao_b = data
-                else:
-                    militar.ultima_nomeacao_a = data
-                militar.save()
-
-                nomeados_reserva += 1
-                print(f"[DEBUG] Nomeando militar {militar.nim} para o dia {data} como reserva")
-
-    @staticmethod
-    def nomear_escala_a(servico: Servico, data: date) -> Tuple[bool, str]:
-        """Nomeia um efetivo e um reserva para um dia útil."""
-        militares_disponiveis = EscalaService.obter_militares_disponiveis(servico, data)
-        n_efetivos = servico.n_elementos
-        n_reservas = servico.n_reservas
-        if len(militares_disponiveis) < n_efetivos + n_reservas:
-            return False, "Não existem militares suficientes disponíveis"
-
-        escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=False)
-        EscalaService.nomear_efetivos(escala, militares_disponiveis, data, n_efetivos)
-        EscalaService.nomear_reservas(escala, militares_disponiveis, data, n_efetivos, n_reservas)
-
-        return True, "Escala A nomeada com sucesso"
-
-    @staticmethod
-    def nomear_escala_b(servico: Servico, data: date) -> Tuple[bool, str]:
-        """Nomeia um efetivo e um reserva para um fim de semana ou feriado."""
-        militares_disponiveis = EscalaService.obter_militares_disponiveis(servico, data)
-        n_efetivos = servico.n_elementos
-        n_reservas = servico.n_reservas
-        if len(militares_disponiveis) < n_efetivos + n_reservas:
-            return False, "Não existem militares suficientes disponíveis"
-
-        escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=True)
-        EscalaService.nomear_efetivos(escala, militares_disponiveis, data, n_efetivos)
-        EscalaService.nomear_reservas(escala, militares_disponiveis, data, n_efetivos, n_reservas)
-
-        return True, "Escala B nomeada com sucesso"
-
-    @staticmethod
-    def nomear_escala(servico: Servico, data: date) -> Tuple[bool, str]:
-        """Nomeia um efetivo e um reserva para um dia específico, escolhendo automaticamente o tipo de escala."""
-        if not servico.ativo:
-            return False, "O serviço não está ativo"
-        feriados = EscalaService.obter_feriados(data, data)
-        if data.weekday() >= 5 or data in feriados:
-            return EscalaService.nomear_escala_b(servico, data)
-        else:
-            return EscalaService.nomear_escala_a(servico, data)
-
-    @staticmethod
-    def obter_nomeacoes_por_dia(servico: Servico, data_inicio: date, data_fim: date) -> Dict[date, List[Nomeacao]]:
-        nomeacoes_por_dia = defaultdict(list)
-
-        # Obter todas as nomeações para as escalas do serviço no período
-        nomeacoes = Nomeacao.objects.filter(
-            escala_militar__escala__servico=servico,
-            data__range=(data_inicio, data_fim)
-        ).select_related('escala_militar', 'escala_militar__militar', 'escala_militar__escala')
-
-        for nomeacao in nomeacoes:
-            nomeacoes_por_dia[nomeacao.data].append(nomeacao)
-
-        return nomeacoes_por_dia
-
-    @staticmethod
-    def nomear_efetivo(escala: Escala, militar: Militar, dia: date) -> bool:
-        # Verificar ou criar a relação EscalaMilitar
-        escala_militar, created = EscalaMilitar.objects.get_or_create(
-            escala=escala,
-            militar=militar,
-            defaults={'ordem': 1}  # Definir ordem default se for criado
-        )
-
-        # Verificar se já existe nomeação
-        if not Nomeacao.objects.filter(escala_militar=escala_militar, data=dia, e_reserva=False).exists():
-            Nomeacao.objects.create(
-                escala_militar=escala_militar,
-                data=dia,
-                e_reserva=False
-            )
-            return True
-        return False
-
-    @staticmethod
-    def nomear_reserva(escala: Escala, militar: Militar, dia: date) -> bool:
-        # Verificar ou criar a relação EscalaMilitar
-        escala_militar, created = EscalaMilitar.objects.get_or_create(
-            escala=escala,
-            militar=militar,
-            defaults={'ordem': 2}  # Definir ordem default se for criado
-        )
-
-        # Verificar se já existe nomeação
-        if not Nomeacao.objects.filter(escala_militar=escala_militar, data=dia, e_reserva=True).exists():
-            Nomeacao.objects.create(
-                escala_militar=escala_militar,
-                data=dia,
-                e_reserva=True
-            )
-            return True
-        return False
-
-    @staticmethod
-    def atualizar_ultima_nomeacao(militar: Militar, dia: date, tipo: str):
-        if tipo == 'B':
-            militar.ultima_nomeacao_b = dia
-        else:
-            militar.ultima_nomeacao_a = dia
-        militar.save()
-
-    @staticmethod
-    def mover_efetivo_para_fim(disponiveis_nim: List[int], nim: int):
-        if nim in disponiveis_nim:
-            disponiveis_nim.append(disponiveis_nim.pop(disponiveis_nim.index(nim)))
-
-    @staticmethod
-    def reordenar_disponiveis(disponiveis_nim: List[int], ultima_nomeacao_a: Dict[int, date],
-                              ultima_nomeacao_b: Dict[int, date], tipo: str):
-        if tipo == 'B':
-            disponiveis_nim.sort(key=lambda nim: (ultima_nomeacao_b[nim] or date.min, nim))
-        else:
-            disponiveis_nim.sort(key=lambda nim: (ultima_nomeacao_a[nim] or date.min, nim))
-
-    @staticmethod
     def gerar_escalas_automaticamente(servico: Servico, data_inicio: date, data_fim: date) -> bool:
-        """
-        Gera escalas automaticamente para um serviço no período especificado,
-        mantendo em memória a última nomeação de cada militar para garantir rotação justa.
-        Atualiza as datas de última nomeação apenas no final de cada iteração diária.
-        Usa sempre o NIM como referência para garantir consistência.
-        """
         try:
             # Limpar os dados da previsão para o período pedido
-            # Primeiro, encontrar todas as EscalaMilitar associadas ao serviço
             escala_militares_ids = EscalaMilitar.objects.filter(
                 escala__servico=servico
             ).values_list('id', flat=True)
 
-            # Agora, excluir as nomeações dentro do período para essas escalas
+            # Excluir as nomeações dentro do período para essas escalas
             Nomeacao.objects.filter(
                 escala_militar__id__in=escala_militares_ids,
                 data__gte=data_inicio,
                 data__lte=data_fim
             ).delete()
 
+            # Obter todos os dias do período para escalas tipo A e B
             dias_escala = EscalaService.obter_dias_escala(data_inicio, data_fim)
+
+            # Obter todos os militares associados ao serviço
             militares = list(servico.militares.all())
-            militares_dict = {m.nim: m for m in militares}
 
-            # Inicializar dicionários de última nomeação
-            ultima_nomeacao_a = {m.nim: m.ultima_nomeacao_a for m in militares}
-            ultima_nomeacao_b = {m.nim: m.ultima_nomeacao_b for m in militares}
+            # Para garantir resultados consistentes, devemos primeiro carregar TODAS as informações
+            # de última nomeação antes de começar a modificar o banco de dados
+            militares_info = []
+            for militar in militares:
+                # Criar uma cópia dos dados para não modificar o objeto original diretamente
+                militares_info.append({
+                    'nim': militar.nim,
+                    'militar': militar,
+                    'ultima_nomeacao_a': militar.ultima_nomeacao_a,
+                    'ultima_nomeacao_b': militar.ultima_nomeacao_b
+                })
 
-            for dia in dias_escala['escala_a'] + dias_escala['escala_b']:
-                tipo = 'B' if dia in dias_escala['escala_b'] else 'A'
-                print(f"\n[DEBUG] Dia: {dia} | Tipo: {tipo}")
+            # Processar dias para escala tipo A
+            EscalaService._processar_escala_por_tipo(
+                dias=dias_escala['escala_a'],
+                tipo='A',
+                militares_info=militares_info,
+                servico=servico
+            )
 
-                # Obter disponíveis para o dia
-                disponiveis_nim = [nim for nim, m in militares_dict.items()
-                                   if EscalaService.verificar_disponibilidade_militar(m, dia)[0]]
+            # Processar dias para escala tipo B
+            EscalaService._processar_escala_por_tipo(
+                dias=dias_escala['escala_b'],
+                tipo='B',
+                militares_info=militares_info,
+                servico=servico
+            )
 
-                # Ordenar disponíveis por data da última nomeação
-                if tipo == 'B':
-                    disponiveis_nim.sort(key=lambda nim: (ultima_nomeacao_b[nim] or date.min, nim))
-                else:
-                    disponiveis_nim.sort(key=lambda nim: (ultima_nomeacao_a[nim] or date.min, nim))
-
-                print("Ordem dos disponíveis para o próximo dia:")
-                # for nim in disponiveis_nim:
-                #     print(
-                #         f"  Militar: {nim} | Última nomeação A: {ultima_nomeacao_a[nim]} | Última nomeação B: {ultima_nomeacao_b[nim]}")
-
-                n_efetivos = servico.n_elementos
-                n_reservas = servico.n_reservas
-                escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=(tipo == 'B'))
-
-                # Nomear efetivos e reservas
-                nomeados = []
-                if disponiveis_nim:
-                    # Nomear efetivo
-                    nim = disponiveis_nim[0]
-                    militar = militares_dict[nim]
-
-                    # Verificar ou criar a relação EscalaMilitar
-                    escala_militar, created = EscalaMilitar.objects.get_or_create(
-                        escala=escala,
-                        militar=militar,
-                        defaults={'ordem': 1}  # Definir ordem default
-                    )
-
-                    # Criar nomeação para este dia
-                    if not Nomeacao.objects.filter(escala_militar=escala_militar, data=dia, e_reserva=False).exists():
-                        Nomeacao.objects.create(
-                            escala_militar=escala_militar,
-                            data=dia,
-                            e_reserva=False
-                        )
-                        nomeados.append(nim)
-
-                        # Atualizar data da última nomeação
-                        if tipo == 'B':
-                            ultima_nomeacao_b[nim] = dia
-                            militar.ultima_nomeacao_b = dia
-                        else:
-                            ultima_nomeacao_a[nim] = dia
-                            militar.ultima_nomeacao_a = dia
-                        militar.save()
-                        print(f"[DEBUG] Militar nomeado: {nim} | Nova última nomeação {tipo}: {dia}")
-
-                    # Nomear reserva
-                    if len(disponiveis_nim) > 1:
-                        nim = disponiveis_nim[1]
-                        militar = militares_dict[nim]
-
-                        # Verificar ou criar a relação EscalaMilitar
-                        escala_militar, created = EscalaMilitar.objects.get_or_create(
-                            escala=escala,
-                            militar=militar,
-                            defaults={'ordem': 2}  # Definir ordem default
-                        )
-
-                        # Criar nomeação para este dia
-                        if not Nomeacao.objects.filter(escala_militar=escala_militar, data=dia,
-                                                       e_reserva=True).exists():
-                            Nomeacao.objects.create(
-                                escala_militar=escala_militar,
-                                data=dia,
-                                e_reserva=True
-                            )
-                            nomeados.append(nim)
-                            print(f"[DEBUG] Reserva nomeado: {nim}")
-
-                # Mover nomeados para o fim da lista
-                for nim in nomeados:
-                    if nim in disponiveis_nim:
-                        disponiveis_nim.append(disponiveis_nim.pop(disponiveis_nim.index(nim)))
-
-                # Reordenar lista de disponíveis
-                if tipo == 'B':
-                    disponiveis_nim.sort(key=lambda nim: (ultima_nomeacao_b[nim] or date.min, nim))
-                else:
-                    disponiveis_nim.sort(key=lambda nim: (ultima_nomeacao_a[nim] or date.min, nim))
+            # Atualizar todos os militares com suas últimas nomeações em uma única operação
+            for info in militares_info:
+                militar = info['militar']
+                if militar.ultima_nomeacao_a != info['ultima_nomeacao_a']:
+                    militar.ultima_nomeacao_a = info['ultima_nomeacao_a']
+                if militar.ultima_nomeacao_b != info['ultima_nomeacao_b']:
+                    militar.ultima_nomeacao_b = info['ultima_nomeacao_b']
+                militar.save()
 
             return True
         except Exception as e:
             print(f"Erro ao gerar escalas: {str(e)}")
             return False
 
+    @staticmethod
+    def _processar_escala_por_tipo(dias, tipo, militares_info, servico):
+        """
+        Processa a geração de escala para um tipo específico (A ou B).
 
-# Encontrar duplicados nas nomeações
-def remover_nomeacoes_duplicadas():
-    dups = (
-        Nomeacao.objects
-        .values('escala_militar', 'data', 'e_reserva')
-        .annotate(count=Count('id'))
-        .filter(count__gt=1)
-    )
+        Args:
+            dias: Lista de dias para processamento
+            tipo: Tipo de escala ('A' ou 'B')
+            militares_info: Lista com informações dos militares
+            servico: Objeto Servico
+        """
+        for dia in dias:
+            # Obter disponíveis para o dia
+            disponiveis = []
+            for info in militares_info:
+                militar = info['militar']
+                disponivel, _ = EscalaService.verificar_disponibilidade_militar(militar, dia)
+                if disponivel:
+                    disponiveis.append(info)
 
-    for dup in dups:
-        qs = Nomeacao.objects.filter(
-            escala_militar=dup['escala_militar'],
-            data=dup['data'],
-            e_reserva=dup['e_reserva']
+            # Ordenar disponíveis por data da última nomeação e NIM (para desempate)
+            campo_data = 'ultima_nomeacao_b' if tipo == 'B' else 'ultima_nomeacao_a'
+            disponiveis.sort(key=lambda x: (x[campo_data] or date.min, x['nim']))
+
+            # Criar ou obter a escala
+            escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=(tipo == 'B'))
+
+            # Nomear efetivo se houver disponíveis
+            if disponiveis:
+                # Nomear efetivo
+                EscalaService._nomear_militar(
+                    info=disponiveis[0],
+                    dia=dia,
+                    escala=escala,
+                    e_reserva=False,
+                    tipo=tipo
+                )
+
+                # Nomear reserva se houver mais de um disponível
+                if len(disponiveis) > 1:
+                    EscalaService._nomear_militar(
+                        info=disponiveis[1],
+                        dia=dia,
+                        escala=escala,
+                        e_reserva=True,
+                        tipo=tipo
+                    )
+
+    @staticmethod
+    def _nomear_militar(info, dia, escala, e_reserva, tipo):
+        """
+        Nomeia um militar para uma escala específica.
+
+        Args:
+            info: Dicionário com informações do militar
+            dia: Data da nomeação
+            escala: Objeto Escala
+            e_reserva: Se é nomeação de reserva
+            tipo: Tipo de escala ('A' ou 'B')
+        """
+        militar = info['militar']
+
+        # Verificar ou criar a relação EscalaMilitar
+        ordem = 2 if e_reserva else 1
+        escala_militar, _ = EscalaMilitar.objects.get_or_create(
+            escala=escala,
+            militar=militar,
+            defaults={'ordem': ordem}
         )
-        # Mantém só o primeiro, apaga os outros
-        for n in qs[1:]:
-            n.delete()
+
+        # Criar nomeação para este dia se não existir
+        if not Nomeacao.objects.filter(
+                escala_militar=escala_militar,
+                data=dia,
+                e_reserva=e_reserva
+        ).exists():
+            Nomeacao.objects.create(
+                escala_militar=escala_militar,
+                data=dia,
+                e_reserva=e_reserva
+            )
+
+            # Atualizar data da última nomeação (apenas na estrutura de dados local)
+            if tipo == 'B':
+                info['ultima_nomeacao_b'] = dia
+            else:
+                info['ultima_nomeacao_a'] = dia
