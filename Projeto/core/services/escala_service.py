@@ -171,6 +171,54 @@ class EscalaService:
         return False
 
     @staticmethod
+    def verificar_disponibilidade_reserva(militar: Militar, data: date, e_escala_b: bool) -> Tuple[bool, str]:
+        """
+        Verifica se um militar pode ser nomeado como reserva em uma data específica.
+        Considera dispensa e nomeações como efetivo em outras escalas.
+        """
+        # Verificar se está em dispensa
+        if EscalaService.militar_em_dispensa(militar, data):
+            return False, "Militar em dispensa"
+
+        # Verificar se já está nomeado como efetivo ou reserva neste dia
+        if EscalaService.militar_ja_nomeado(militar, data):
+            return False, "Militar já tem escala neste dia"
+
+        # Verificar se está nomeado como efetivo em outra escala no dia seguinte
+        dia_seguinte = data + timedelta(days=1)
+        nomeacao_seguinte = Nomeacao.objects.filter(
+            escala_militar__militar=militar,
+            data=dia_seguinte,
+            e_reserva=False
+        ).first()
+
+        if nomeacao_seguinte:
+            # Se a nomeação seguinte for de uma escala diferente
+            if nomeacao_seguinte.escala_militar.escala.e_escala_b != e_escala_b:
+                return False, "Militar é efetivo de outra escala no dia seguinte"
+
+        return True, "Militar disponível para reserva"
+
+    @staticmethod
+    def encontrar_proximo_efetivo_valido(dia_atual: date, efetivos_dict: dict, dias_escala: list, e_escala_b: bool) -> Tuple[Militar, date]:
+        """
+        Encontra o próximo efetivo disponível para ser reserva após o dia atual.
+        Retorna uma tupla com o militar e a data em que ele é efetivo.
+        """
+        dias_ordenados = sorted(dias_escala)
+        idx_atual = dias_ordenados.index(dia_atual)
+        
+        # Procura nos próximos dias
+        for dia_futuro in dias_ordenados[idx_atual+1:]:
+            if dia_futuro in efetivos_dict:
+                militar = efetivos_dict[dia_futuro]
+                # Verificar se o militar pode ser reserva
+                disponivel, _ = EscalaService.verificar_disponibilidade_reserva(militar, dia_atual, e_escala_b)
+                if disponivel:
+                    return militar, dia_futuro
+        return None, None
+
+    @staticmethod
     def gerar_escalas_automaticamente(servico: Servico, data_inicio: date, data_fim: date) -> bool:
         """
         Gera escalas automaticamente para um serviço no período especificado,
@@ -179,6 +227,10 @@ class EscalaService:
         Garante folga mínima de 1 dia entre escalas.
         O militar de reserva é o efetivo do dia seguinte da mesma escala (A ou B).
         Se não houver efetivo no dia seguinte, procura o próximo efetivo disponível.
+        Um militar não pode ser reserva se:
+        - Estiver em dispensa
+        - Já estiver nomeado como efetivo ou reserva no mesmo dia
+        - For efetivo de outra escala no dia seguinte
         """
         try:
             # Limpar os dados da previsão para o período pedido
@@ -274,17 +326,6 @@ class EscalaService:
                         # Guardar o efetivo para possível uso como reserva no dia anterior
                         efetivos_por_dia_a[dia] = militar_efetivo
 
-            def encontrar_proximo_efetivo(dia_atual, efetivos_dict, dias_escala):
-                """Encontra o próximo efetivo disponível após o dia atual."""
-                dias_ordenados = sorted(dias_escala)
-                idx_atual = dias_ordenados.index(dia_atual)
-                
-                # Procura nos próximos dias
-                for dia_futuro in dias_ordenados[idx_atual+1:]:
-                    if dia_futuro in efetivos_dict:
-                        return efetivos_dict[dia_futuro]
-                return None
-
             # Agora nomear os reservas usando os efetivos do dia seguinte da mesma escala
             # Primeiro para escala B
             for dia in sorted(dias_escala['escala_b']):
@@ -292,15 +333,23 @@ class EscalaService:
                 # Verificar se existe efetivo no dia seguinte da escala B
                 dia_seguinte = dia + timedelta(days=1)
                 militar_reserva = None
+                dia_efetivo = None
                 
                 if dia_seguinte in efetivos_por_dia_b:
                     militar_reserva = efetivos_por_dia_b[dia_seguinte]
-                else:
-                    # Se não houver efetivo no dia seguinte, procura o próximo disponível
-                    militar_reserva = encontrar_proximo_efetivo(dia, efetivos_por_dia_b, dias_escala['escala_b'])
+                    dia_efetivo = dia_seguinte
+                    # Verificar se o militar pode ser reserva
+                    disponivel, _ = EscalaService.verificar_disponibilidade_reserva(militar_reserva, dia, True)
+                    if not disponivel:
+                        militar_reserva = None
+                        dia_efetivo = None
+                
+                if not militar_reserva:
+                    # Se não houver efetivo válido no dia seguinte, procura o próximo disponível
+                    militar_reserva, dia_efetivo = EscalaService.encontrar_proximo_efetivo_valido(dia, efetivos_por_dia_b, dias_escala['escala_b'], True)
                 
                 if militar_reserva and EscalaService.nomear_reserva(escala, militar_reserva, dia):
-                    print(f"[DEBUG] Militar nomeado RESERVA B: {militar_reserva.nim} (efetivo do dia {dia_seguinte if dia_seguinte in efetivos_por_dia_b else 'futuro'})")
+                    print(f"[DEBUG] Militar nomeado RESERVA B: {militar_reserva.nim} (efetivo do dia {dia_efetivo})")
 
             # Depois para escala A
             for dia in sorted(dias_escala['escala_a']):
@@ -308,15 +357,23 @@ class EscalaService:
                 # Verificar se existe efetivo no dia seguinte da escala A
                 dia_seguinte = dia + timedelta(days=1)
                 militar_reserva = None
+                dia_efetivo = None
                 
                 if dia_seguinte in efetivos_por_dia_a:
                     militar_reserva = efetivos_por_dia_a[dia_seguinte]
-                else:
-                    # Se não houver efetivo no dia seguinte, procura o próximo disponível
-                    militar_reserva = encontrar_proximo_efetivo(dia, efetivos_por_dia_a, dias_escala['escala_a'])
+                    dia_efetivo = dia_seguinte
+                    # Verificar se o militar pode ser reserva
+                    disponivel, _ = EscalaService.verificar_disponibilidade_reserva(militar_reserva, dia, False)
+                    if not disponivel:
+                        militar_reserva = None
+                        dia_efetivo = None
+                
+                if not militar_reserva:
+                    # Se não houver efetivo válido no dia seguinte, procura o próximo disponível
+                    militar_reserva, dia_efetivo = EscalaService.encontrar_proximo_efetivo_valido(dia, efetivos_por_dia_a, dias_escala['escala_a'], False)
                 
                 if militar_reserva and EscalaService.nomear_reserva(escala, militar_reserva, dia):
-                    print(f"[DEBUG] Militar nomeado RESERVA A: {militar_reserva.nim} (efetivo do dia {dia_seguinte if dia_seguinte in efetivos_por_dia_a else 'futuro'})")
+                    print(f"[DEBUG] Militar nomeado RESERVA A: {militar_reserva.nim} (efetivo do dia {dia_efetivo})")
             
             return True
         except Exception as e:
