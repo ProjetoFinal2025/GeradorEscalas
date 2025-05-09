@@ -131,8 +131,8 @@
 <div id="content-main">
     <div class="content-container">
         <div class="filters-container">
-            <!-- Formulário de seleção do serviço -->
-            <form method="get" class="mb-3">
+            <form method="post" action="{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico={{ servico.id }}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}" onsubmit="return validarDataInicio();">
+                {% csrf_token %}
                 <div class="form-row">
                     <label>Serviço:</label>
                     <select name="servico" onchange="this.form.submit()">
@@ -143,27 +143,17 @@
                             </option>
                         {% endfor %}
                     </select>
-                </div>
-            </form>
-
-            <!-- Formulário de geração de previsões -->
-            <form method="post" action="{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico={{ servico.id }}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}" onsubmit="return validarDataInicio();">
-                {% csrf_token %}
-                <div class="form-row">
-                    <input type="hidden" name="servico" value="{{ servico.id }}">
                     <label>Data de Início:</label>
                     <input type="date" 
                            name="data_inicio" 
                            value="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}" 
                            required>
-                    
                     <label>Data de Fim:</label>
                     <input type="date" 
                            name="data_fim" 
                            value="{{ data_fim|date:'Y-m-d' }}" 
                            min="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}"
                            required>
-                    
                     <input type="submit" name="gerar_escalas" value="Gerar Previsões" class="default">
                 </div>
             </form>
