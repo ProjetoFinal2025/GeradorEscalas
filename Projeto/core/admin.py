@@ -23,11 +23,17 @@ from .services.escala_service import EscalaService
 def get_item(dictionary, key):
     return dictionary.get(key)
 
+@admin.action(description="Limpar nomeações")
+def limpar_nomeacoes(modeladmin, request, queryset):
+    updated = queryset.update(ultima_nomeacao_a=None, ultima_nomeacao_b=None)
+    modeladmin.message_user(request, f"{updated} militares atualizados com sucesso.", messages.SUCCESS)
+
 class MilitarAdmin(VersionAdmin):
     form = MilitarForm
     list_display = ('nome', 'posto', 'nim', 'listar_servicos', 'listar_escalas')
     # Remove a habilidade de mudar o Utilizador de um militar
     readonly_fields = ['user', 'listar_servicos', 'listar_escalas','listar_dispensas']
+    actions = [limpar_nomeacoes]
 
 class ServicoAdmin(VersionAdmin):
     form = ServicoForm
@@ -128,11 +134,18 @@ class EscalaAdmin(VersionAdmin):
     inlines = [EscalaMilitarInline]
     actions = [reset_orders_by_nim]
     form = EscalaForm
-    list_display = ("id", "servico", "e_escala_b")
+    list_display = ("id", "servico", "tipo_de_escala")
     list_filter = ("servico", "e_escala_b")
     search_fields = ("servico__nome",)
+    remove_from_default = ('e_escala_b',)
 
     change_form_template = "admin/core/escala/change_form.html"
+
+    def tipo_de_escala(self, obj):
+        return 'B' if obj.e_escala_b else 'A'
+
+    tipo_de_escala.short_description = 'Tipo de escala'
+    tipo_de_escala.admin_order_field = 'e_escala_b'
 
     def get_urls(self):
 
