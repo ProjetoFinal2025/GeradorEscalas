@@ -103,8 +103,9 @@ class EscalaMilitarInline(admin.TabularInline):
     extra = 0
     can_delete = False
     readonly_fields = ("display_militar",)
-
     fields = ("display_militar", "ordem")
+    ordering = ("ordem",)
+    sortable_by = ("ordem", "militar")  # Permite ordenar por ordem e militar
 
     def display_militar(self, obj):
         if not obj.pk:

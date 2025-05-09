@@ -239,11 +239,11 @@ class EscalaService:
                 data__gte=data_inicio,
                 data__lte=data_fim
             ).delete()
-            
+
             dias_escala = EscalaService.obter_dias_escala(data_inicio, data_fim)
             militares = list(servico.militares.all())
             militares_dict = {m.nim: m for m in militares}
-            
+
             # Limpar e recalculcar as datas de última nomeação a partir da data de início
             for militar in militares:
                 # Obter a última nomeação antes da data de início
@@ -258,12 +258,12 @@ class EscalaService:
                     data__lt=data_inicio,
                     e_reserva=False
                 ).order_by('-data').first()
-                
+
                 # Atualizar as datas de última nomeação
                 militar.ultima_nomeacao_a = ultima_nomeacao_a.data if ultima_nomeacao_a else None
                 militar.ultima_nomeacao_b = ultima_nomeacao_b.data if ultima_nomeacao_b else None
                 militar.save()
-            
+
             # Inicializar dicionários de última nomeação com os valores atualizados
             ultima_nomeacao_a = {m.nim: m.ultima_nomeacao_a for m in militares}
             ultima_nomeacao_b = {m.nim: m.ultima_nomeacao_b for m in militares}
