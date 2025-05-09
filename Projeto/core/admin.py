@@ -415,8 +415,11 @@ class PrevisaoEscalasAdmin(VersionAdmin):
                 data_fim = date.fromisoformat(data_fim)
 
                 ok = EscalaService.gerar_escalas_automaticamente(servico, data_inicio, data_fim)
-                msg = "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões."
-                (messages.success if ok else messages.error)(request, msg)
+                if not ok and data_inicio <= date.today():
+                    messages.error(request, "Não é permitido gerar previsões para o dia de hoje. Por favor, escolha uma data futura.")
+                else:
+                    msg = "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões."
+                    (messages.success if ok else messages.error)(request, msg)
 
             except Exception as exc:  # pylint: disable=broad-except
                 messages.error(request, f"Erro: {exc}")

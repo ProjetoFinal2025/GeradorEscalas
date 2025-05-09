@@ -147,7 +147,7 @@
             </form>
 
             <!-- Formulário de geração de previsões -->
-            <form method="post" action="{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico={{ servico.id }}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}">
+            <form method="post" action="{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico={{ servico.id }}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}" onsubmit="return validarDataInicio();">
                 {% csrf_token %}
                 <div class="form-row">
                     <input type="hidden" name="servico" value="{{ servico.id }}">
@@ -223,4 +223,20 @@
         </div>
     </div>
 </div>
+
+<script>
+    function validarDataInicio() {
+        var dataInicio = document.querySelector('input[name="data_inicio"]').value;
+        // Obter a data de hoje em UTC (Portugal)
+        var agora = new Date();
+        var hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
+        var partes = dataInicio.split('-');
+        var dataInicioObj = new Date(Date.UTC(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2])));
+        if (dataInicioObj.getTime() === hoje.getTime()) {
+            alert("Não é permitido gerar previsões para o dia de hoje. Por favor, escolha uma data futura.");
+            return false;
+        }
+        return true;
+    }
+</script>
 {% endblock %} 

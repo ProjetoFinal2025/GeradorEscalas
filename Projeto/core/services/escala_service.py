@@ -233,6 +233,11 @@ class EscalaService:
         - For efetivo de outra escala no dia seguinte
         """
         try:
+            hoje = timezone.now().date()
+            if data_inicio <= hoje:
+                print("[ERRO] Só é possível gerar previsões a partir de amanhã.")
+                return False
+
             # Limpar os dados da previsão para o período pedido
             Nomeacao.objects.filter(
                 escala_militar__escala__servico=servico,
@@ -289,14 +294,25 @@ class EscalaService:
                 if disponiveis_nim:
                     nim_efetivo = disponiveis_nim[0]
                     militar_efetivo = militares_dict[nim_efetivo]
+                    mensagem_obs = ""
+                    if EscalaService.militar_licenca_antes(militar_efetivo, dia):
+                        mensagem_obs = "Entrou na escala. "
                     if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
+                        # Adicionar observação apenas à nomeação criada neste dia
+                        nomeacao = Nomeacao.objects.get(
+                            escala_militar__escala=escala,
+                            escala_militar__militar=militar_efetivo,
+                            data=dia,
+                            e_reserva=False
+                        )
+                        if mensagem_obs:
+                            nomeacao.observacoes = mensagem_obs
+                            nomeacao.save()
                         ultima_nomeacao_b[nim_efetivo] = dia
                         militar_efetivo.ultima_nomeacao_b = dia
                         militar_efetivo.save()
                         print(f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação B: {dia}")
-                        # Mover o efetivo para o fim da rotação
                         rotacao_nim.append(rotacao_nim.pop(rotacao_nim.index(nim_efetivo)))
-                        # Guardar o efetivo para possível uso como reserva no dia anterior
                         efetivos_por_dia_b[dia] = militar_efetivo
 
             # Depois processar as escalas A (dias úteis)
@@ -316,14 +332,25 @@ class EscalaService:
                 if disponiveis_nim:
                     nim_efetivo = disponiveis_nim[0]
                     militar_efetivo = militares_dict[nim_efetivo]
+                    mensagem_obs = ""
+                    if EscalaService.militar_licenca_antes(militar_efetivo, dia):
+                        mensagem_obs = "Entrou na escala. "
                     if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
+                        # Adicionar observação apenas à nomeação criada neste dia
+                        nomeacao = Nomeacao.objects.get(
+                            escala_militar__escala=escala,
+                            escala_militar__militar=militar_efetivo,
+                            data=dia,
+                            e_reserva=False
+                        )
+                        if mensagem_obs:
+                            nomeacao.observacoes = mensagem_obs
+                            nomeacao.save()
                         ultima_nomeacao_a[nim_efetivo] = dia
                         militar_efetivo.ultima_nomeacao_a = dia
                         militar_efetivo.save()
                         print(f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação A: {dia}")
-                        # Mover o efetivo para o fim da rotação
                         rotacao_nim.append(rotacao_nim.pop(rotacao_nim.index(nim_efetivo)))
-                        # Guardar o efetivo para possível uso como reserva no dia anterior
                         efetivos_por_dia_a[dia] = militar_efetivo
 
             # Agora nomear os reservas usando os efetivos do dia seguinte da mesma escala

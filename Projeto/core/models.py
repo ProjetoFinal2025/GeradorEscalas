@@ -318,6 +318,7 @@ class Nomeacao(models.Model):
     )
     data = models.DateField()
     e_reserva = models.BooleanField(default=False, verbose_name="É Reserva")
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
 
     class Meta:
         unique_together = ('escala_militar', 'data')
