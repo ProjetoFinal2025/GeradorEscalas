@@ -154,15 +154,14 @@
                     <label>Data de Início:</label>
                     <input type="date" 
                            name="data_inicio" 
-                           value="{{ request.GET.data_inicio|default:hoje|date:'Y-m-d' }}" 
-                           min="{{ hoje|date:'Y-m-d' }}"
+                           value="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}" 
                            required>
                     
                     <label>Data de Fim:</label>
                     <input type="date" 
                            name="data_fim" 
                            value="{{ data_fim|date:'Y-m-d' }}" 
-                           min="{{ request.GET.data_inicio|default:hoje|date:'Y-m-d' }}"
+                           min="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}"
                            required>
                     
                     <input type="submit" name="gerar_escalas" value="Gerar Previsões" class="default">
