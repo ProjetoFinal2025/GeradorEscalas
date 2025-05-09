@@ -18,6 +18,7 @@ from datetime import date
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
 from .services.escala_service import EscalaService
+from django.contrib.admin.models import LogEntry
 
 @register.filter
 def get_item(dictionary, key):
@@ -683,137 +684,6 @@ class PrevisaoEscalasProxy(Escala):
         verbose_name = "Previsões de Nomeação"
         verbose_name_plural = "Previsões de Nomeação"
 
-class HistoricoEscalasAdmin(VersionAdmin):
-    change_list_template = 'admin/core/escala/historico.html'
-
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        
-        # Obter o serviço selecionado ou o primeiro serviço ativo
-        servico_id = request.GET.get('servico')
-        if servico_id:
-            servico = Servico.objects.get(id=servico_id)
-        else:
-            servico = Servico.objects.filter(ativo=True).first()
-
-        # Obter datas do período
-        hoje = date.today()
-        data_inicio_str = request.GET.get('data_inicio')
-        data_fim_str = request.GET.get('data_fim')
-
-        if data_inicio_str and data_fim_str:
-            try:
-                data_inicio = date.fromisoformat(data_inicio_str)
-                data_fim = date.fromisoformat(data_fim_str)
-            except ValueError:
-                data_inicio = hoje - timedelta(days=30)
-                data_fim = hoje
-        else:
-            data_inicio = hoje - timedelta(days=30)
-            data_fim = hoje
-
-        # Obter feriados no período
-        feriados = obter_feriados(data_inicio, data_fim)
-        
-        # Separar dias por tipo
-        dias_escala = EscalaService.obter_dias_escala(data_inicio, data_fim)
-        
-        # Gerar lista de datas com suas escalas
-        datas = []
-        
-        # Processar ESCALA B primeiro (fins de semana/feriados)
-        for data in dias_escala['escala_b']:
-            # Buscar escala existente para esta data com os militares relacionados
-            escala = (
-                EscalaMilitar.objects
-                .filter(
-                    escala__servico=servico,
-                    escala__e_escala_b=True | False,
-                    data=data
-                )
-                .select_related('escala', 'militar')
-            )
-
-            e_feriado = data in feriados
-            datas.append({
-                'data': data,
-                'escala': escala,
-                'e_fim_semana': not e_feriado,
-                'e_feriado': e_feriado,
-                'tipo_dia': 'feriado' if e_feriado else 'fim_semana'
-            })
-        
-        # Processar ESCALA A depois (dias úteis)
-        for data in dias_escala['escala_a']:
-            # Buscar escala existente para esta data com os militares relacionados
-            escala = (
-                EscalaMilitar.objects
-                .filter(
-                    escala__servico=servico,
-                    escala__e_escala_b=True | False,
-                    data=data
-                )
-                .select_related('escala', 'militar')
-            )
-
-            datas.append({
-                'data': data,
-                'escala': escala,
-                'e_fim_semana': False,
-                'e_feriado': False,
-                'tipo_dia': 'util'
-            })
-
-        # Ordenar por data
-        datas = sorted(datas, key=lambda x: x['data'])
-
-        # Buscar todos os serviços ativos para o seletor
-        servicos = Servico.objects.filter(ativo=True)
-
-        context = {
-            'title': f'Histórico de Nomeações - {servico.nome}',
-            'servico': servico,
-            'servicos': servicos,
-            'datas': datas,
-            'data_inicio': data_inicio,
-            'data_fim': data_fim,
-            'opts': self.model._meta,
-            'cl': self,
-            'is_popup': False,
-            'has_add_permission': self.has_add_permission(request),
-            'has_change_permission': self.has_change_permission(request),
-            'has_delete_permission': self.has_delete_permission(request),
-        }
-
-        return render(request, 'admin/core/escala/historico.html', context)
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return True
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('', self.admin_site.admin_view(self.changelist_view), name='core_historicoescalasproxy_changelist'),
-        ]
-        return custom_urls + urls
-
-    class Meta:
-        verbose_name = "Histórico de Nomeações"
-        verbose_name_plural = "Histórico de Nomeações"
-
-# Proxy model para Histórico de Nomeações
-class HistoricoEscalasProxy(Escala):
-    class Meta:
-        proxy = True
-        verbose_name = "Histórico de Nomeações"
-        verbose_name_plural = "Histórico de Nomeações"
-
 # Configuração do Admin Site
 class GeradorEscalasAdminSite(admin.AdminSite):
     site_header = 'Gerador de Escalas'
@@ -821,8 +691,57 @@ class GeradorEscalasAdminSite(admin.AdminSite):
     index_title = 'Administração do Sistema'
 
     def get_app_list(self, request, app_label=None):
-        app_list = super().get_app_list(request)
+        app_list = super().get_app_list(request, app_label)
+        # Procurar a secção 'CORE' e reordenar os modelos
+        for app in app_list:
+            if app['app_label'] == 'core':
+                # Ordenar modelos, colocando 'Previsões de Nomeação' no fim
+                app['models'].sort(key=lambda m: m['name'] == 'Previsões de Nomeação')
         return app_list
+
+    def index(self, request, extra_context=None):
+        from .models import Servico, Militar, Dispensa, Nomeacao
+        from django.db.models import Count
+        extra_context = extra_context or {}
+
+        # Serviços ativos
+        servicos_ativos = Servico.objects.filter(ativo=True)
+        extra_context['servicos_ativos'] = servicos_ativos
+
+        # Militares por serviço
+        militares_por_servico = {s.nome: s.militares.count() for s in servicos_ativos}
+        extra_context['militares_por_servico'] = militares_por_servico
+        total_militares = sum(militares_por_servico.values())
+        extra_context['total_militares'] = total_militares
+
+        # Militares dispensados (atuais)
+        hoje = timezone.now().date()
+        dispensas_ativas = Dispensa.objects.filter(data_inicio__lte=hoje, data_fim__gte=hoje)
+        total_dispensados = dispensas_ativas.values('militar').distinct().count()
+        extra_context['total_dispensados'] = total_dispensados
+
+        # Top 5 militares com mais serviços realizados (nome + posto)
+        top_militares_qs = (
+            Nomeacao.objects
+            .values('escala_militar__militar__nome', 'escala_militar__militar__posto')
+            .annotate(total=Count('id'))
+            .order_by('-total')[:5]
+        )
+        top_militares = [
+            (f"{item['escala_militar__militar__posto']} {item['escala_militar__militar__nome']}", item['total'])
+            for item in top_militares_qs
+        ]
+        extra_context['top_militares'] = top_militares
+
+        # Adicionar ações recentes ao contexto (últimas 10 ações do utilizador)
+        recent_actions = (
+            LogEntry.objects.filter(user=request.user)
+            .select_related("content_type")
+            .order_by("-action_time")[:10]
+        )
+        extra_context['recent_actions'] = recent_actions
+
+        return super().index(request, extra_context=extra_context)
 
 # Criar instância do admin site customizado
 admin_site = GeradorEscalasAdminSite(name='admin')
@@ -835,11 +754,7 @@ admin_site.register(Escala, EscalaAdmin)
 admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
-
-# Registrar a Previsões de Nomeação como um modelo proxy
+# Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
-
-# Registrar o Histórico de Nomeações como um modelo proxy
-admin_site.register(HistoricoEscalasProxy, HistoricoEscalasAdmin)
 
 
