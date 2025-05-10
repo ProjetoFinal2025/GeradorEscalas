@@ -350,6 +350,11 @@ class DispensaAdmin(VersionAdmin):
                 'resumo': resumo
             }
         
+        if dias:
+            feriados = obter_feriados(min(d['data'] for d in dias), max(d['data'] for d in dias))
+        else:
+            feriados = []
+
         return render(request, 'admin/mapa_dispensas.html', {
             'mapa_dispensas': mapa_dispensas,
             'dias': dias,
@@ -357,7 +362,8 @@ class DispensaAdmin(VersionAdmin):
             'servicos': Servico.objects.filter(ativo=True),
             'servico_selecionado': servico_selecionado,
             'hoje': hoje,
-            'dias_restantes': dias_restantes
+            'dias_restantes': dias_restantes,
+            'feriados': feriados,
         })
 
     def adicionar_dispensa_view(self, request):
@@ -430,10 +436,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
         # serviço activo seleccionado
         servico_id = request.GET.get("servico")
+        servicos_ativos = Servico.objects.filter(ativo=True)
+        
+        if not servicos_ativos.exists():
+            messages.warning(request, "Não há serviços ativos no sistema. Por favor, ative um serviço primeiro.")
+            return redirect("admin:core_servico_changelist")
+            
         servico = (
-            get_object_or_404(Servico, pk=servico_id, ativo=True)
+            servicos_ativos.get(pk=servico_id)
             if servico_id
-            else Servico.objects.filter(ativo=True).first()
+            else servicos_ativos.first()
         )
 
         data_fim_str = request.GET.get("data_fim")
@@ -535,15 +547,17 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
         # ---------- parâmetros GET ----------
         servico_id = request.GET.get("servico")
-        servico = (
-            Servico.objects.get(pk=servico_id)
-            if servico_id
-            else Servico.objects.filter(ativo=True).first()
-        )
-
-        if not servico:
+        servicos_ativos = Servico.objects.filter(ativo=True)
+        
+        if not servicos_ativos.exists():
             messages.warning(request, "Não há serviços ativos no sistema. Por favor, ative um serviço primeiro.")
             return redirect("admin:core_servico_changelist")
+            
+        servico = (
+            servicos_ativos.get(pk=servico_id)
+            if servico_id
+            else servicos_ativos.first()
+        )
 
         hoje = date.today()
         try:
@@ -692,9 +706,16 @@ class GeradorEscalasAdminSite(admin.AdminSite):
 
     def get_app_list(self, request, app_label=None):
         app_list = super().get_app_list(request, app_label)
-        # Procurar a secção 'CORE' e reordenar os modelos
         for app in app_list:
             if app['app_label'] == 'core':
+                # Adiciona o link customizado no fim da lista de modelos
+                app['models'].append({
+                    'name': 'Lista de Serviços',
+                    'object_name': 'ListaServicos',
+                    'admin_url': '/servicos/',  # URL absoluto para a view
+                    'add_url': None,
+                    'view_only': True,
+                })
                 # Ordenar modelos, colocando 'Previsões de Nomeação' no fim
                 app['models'].sort(key=lambda m: m['name'] == 'Previsões de Nomeação')
         return app_list

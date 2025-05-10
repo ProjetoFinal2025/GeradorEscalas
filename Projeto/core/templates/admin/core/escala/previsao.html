@@ -135,7 +135,7 @@
                 {% csrf_token %}
                 <div class="form-row">
                     <label>Serviço:</label>
-                    <select name="servico" onchange="this.form.submit()">
+                    <select name="servico" onchange="window.location.href='{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico=' + this.value + '{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}'">
                         <option value="">Selecione um serviço</option>
                         {% for s in servicos %}
                             <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
@@ -166,8 +166,8 @@
                     <tr>
                         <th>Dia</th>
                         <th>Efetivo</th>
-                        <th>Observações</th>
                         <th>Reserva</th>
+                        <th style="width: 50vw; min-width: 300px;">Observações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -182,22 +182,14 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if item.escala and item.escala.prevista %}
-                                    <span class="prev">Prev</span>
-                                    <a href="{% url 'admin:remover_previsao' item.escala.id %}"
-                                       onclick="return confirm('Tem certeza que deseja remover o status de previsão desta nomeação?')"
-                                       class="remover-previsao">
-                                        <span class="prev-remove">❌</span>
-                                    </a>
-                                {% endif %}
-                                {{ item.escala.observacoes }}
-                            </td>
-                            <td>
                                 {% if item.reserva %}
                                     {{ item.reserva.escala_militar.militar.posto }}
                                     {{ item.reserva.escala_militar.militar.nim|stringformat:"08d" }}
                                     {{ item.reserva.escala_militar.militar.nome }}
                                 {% endif %}
+                            </td>
+                            <td>
+                                {{ item.escala.observacoes }}
                             </td>
                         </tr>
                     {% empty %}

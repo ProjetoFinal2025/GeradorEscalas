@@ -81,11 +81,12 @@ class EscalaService:
     def verificar_conflito_nomeacao(militar: Militar, data: date) -> bool:
         """
         Verifica se existe conflito de nomeação para o militar na data especificada.
-        Considera nomeações no dia anterior e posterior.
+        Impede nomeações em dias consecutivos, independentemente do tipo de escala (A ou B).
+        Ou seja, se o militar for nomeado no dia anterior ou seguinte, não pode ser nomeado neste dia.
         """
         data_anterior = data - timedelta(days=1)
         data_posterior = data + timedelta(days=1)
-        
+        # Verifica nomeações como efetivo ou reserva, em qualquer escala
         return Nomeacao.objects.filter(
             escala_militar__militar=militar,
             data__in=[data_anterior, data_posterior]
@@ -223,14 +224,10 @@ class EscalaService:
         """
         Gera escalas automaticamente para um serviço no período especificado,
         mantendo em memória a última nomeação de cada militar para garantir rotação justa.
-        Processa primeiro as escalas B (fins de semana e feriados) e depois as escalas A (dias úteis).
-        Garante folga mínima de 1 dia entre escalas.
-        O militar de reserva é o efetivo do dia seguinte da mesma escala (A ou B).
-        Se não houver efetivo no dia seguinte, procura o próximo efetivo disponível.
-        Um militar não pode ser reserva se:
-        - Estiver em dispensa
-        - Já estiver nomeado como efetivo ou reserva no mesmo dia
-        - For efetivo de outra escala no dia seguinte
+        Processa primeiro as escalas B (fins de semana e feriados) e só depois as escalas A (dias úteis).
+        Garante folga mínima de 1 dia entre escalas, independentemente do tipo.
+        IMPORTANTE: Todas as nomeações de Escala B são guardadas na base de dados antes de processar Escala A,
+        para garantir que a verificação de conflito impede nomeações em dias consecutivos.
         """
         try:
             hoje = timezone.now().date()
@@ -277,81 +274,87 @@ class EscalaService:
             efetivos_por_dia_a = {}
             efetivos_por_dia_b = {}
 
-            # Processar primeiro as escalas B (fins de semana e feriados)
-            for dia in dias_escala['escala_b']:
-                print(f"\n[DEBUG] Dia: {dia} | Tipo: B")
-                # Ordenar por última nomeação B
-                rotacao_nim = sorted([m.nim for m in militares], key=lambda nim: (ultima_nomeacao_b[nim] or date.min, nim))
-                # Filtrar indisponíveis no próprio dia, mas manter ordem da rotação
-                disponiveis_nim = [nim for nim in rotacao_nim if EscalaService.verificar_disponibilidade_militar(militares_dict[nim], dia)[0]]
-                print("Ordem dos disponíveis para o dia:")
-                for nim in disponiveis_nim:
-                    print(f"  Militar: {nim} | Última nomeação B: {ultima_nomeacao_b[nim]}")
-                n_efetivos = servico.n_elementos
-                n_reservas = servico.n_reservas
-                escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=True)
-                # Nomear efetivo
-                if disponiveis_nim:
-                    nim_efetivo = disponiveis_nim[0]
-                    militar_efetivo = militares_dict[nim_efetivo]
-                    mensagem_obs = ""
-                    if EscalaService.militar_licenca_antes(militar_efetivo, dia):
-                        mensagem_obs = "Entrou na escala. "
-                    if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
-                        # Adicionar observação apenas à nomeação criada neste dia
-                        nomeacao = Nomeacao.objects.get(
-                            escala_militar__escala=escala,
-                            escala_militar__militar=militar_efetivo,
-                            data=dia,
-                            e_reserva=False
-                        )
-                        if mensagem_obs:
-                            nomeacao.observacoes = mensagem_obs
-                            nomeacao.save()
-                        ultima_nomeacao_b[nim_efetivo] = dia
-                        militar_efetivo.ultima_nomeacao_b = dia
-                        militar_efetivo.save()
-                        print(f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação B: {dia}")
-                        rotacao_nim.append(rotacao_nim.pop(rotacao_nim.index(nim_efetivo)))
-                        efetivos_por_dia_b[dia] = militar_efetivo
+            # 1. Processar e GUARDAR todas as nomeações de Escala B primeiro, se permitido
+            if servico.tipo_escalas in ("B", "AB"):
+                dias_b_ordenados = sorted(dias_escala['escala_b'])
+                print("[DEBUG] Ordem dos dias de Escala B:", dias_b_ordenados)
+                for dia in dias_b_ordenados:
+                    print(f"\n[DEBUG] Dia: {dia} | Tipo: B")
+                    # Ordenar por última nomeação B
+                    rotacao_nim = sorted([m.nim for m in militares], key=lambda nim: (ultima_nomeacao_b[nim] or date.min, nim))
+                    # Filtrar indisponíveis no próprio dia, mas manter ordem da rotação
+                    disponiveis_nim = [nim for nim in rotacao_nim if EscalaService.verificar_disponibilidade_militar(militares_dict[nim], dia)[0]]
+                    print("Ordem dos disponíveis para o dia:")
+                    for nim in disponiveis_nim:
+                        print(f"  Militar: {nim} | Última nomeação B: {ultima_nomeacao_b[nim]}")
+                    n_efetivos = servico.n_elementos
+                    n_reservas = servico.n_reservas
+                    escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=True)
+                    # Nomear efetivo
+                    if disponiveis_nim:
+                        nim_efetivo = disponiveis_nim[0]
+                        militar_efetivo = militares_dict[nim_efetivo]
+                        mensagem_obs = ""
+                        if EscalaService.militar_licenca_antes(militar_efetivo, dia):
+                            mensagem_obs = "Entrou na escala. "
+                        if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
+                            # Adicionar observação apenas à nomeação criada neste dia
+                            nomeacao = Nomeacao.objects.get(
+                                escala_militar__escala=escala,
+                                escala_militar__militar=militar_efetivo,
+                                data=dia,
+                                e_reserva=False
+                            )
+                            if mensagem_obs:
+                                nomeacao.observacoes = mensagem_obs
+                                nomeacao.save()
+                            ultima_nomeacao_b[nim_efetivo] = dia
+                            militar_efetivo.ultima_nomeacao_b = dia
+                            militar_efetivo.save()
+                            print(f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação B: {dia}")
+                            rotacao_nim.append(rotacao_nim.pop(rotacao_nim.index(nim_efetivo)))
+                            efetivos_por_dia_b[dia] = militar_efetivo
+                    # Nomear reservas (se necessário, pode ser feito aqui também)
 
-            # Depois processar as escalas A (dias úteis)
-            for dia in dias_escala['escala_a']:
-                print(f"\n[DEBUG] Dia: {dia} | Tipo: A")
-                # Ordenar por última nomeação A
-                rotacao_nim = sorted([m.nim for m in militares], key=lambda nim: (ultima_nomeacao_a[nim] or date.min, nim))
-                # Filtrar indisponíveis no próprio dia, mas manter ordem da rotação
-                disponiveis_nim = [nim for nim in rotacao_nim if EscalaService.verificar_disponibilidade_militar(militares_dict[nim], dia)[0]]
-                print("Ordem dos disponíveis para o dia:")
-                for nim in disponiveis_nim:
-                    print(f"  Militar: {nim} | Última nomeação A: {ultima_nomeacao_a[nim]}")
-                n_efetivos = servico.n_elementos
-                n_reservas = servico.n_reservas
-                escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=False)
-                # Nomear efetivo
-                if disponiveis_nim:
-                    nim_efetivo = disponiveis_nim[0]
-                    militar_efetivo = militares_dict[nim_efetivo]
-                    mensagem_obs = ""
-                    if EscalaService.militar_licenca_antes(militar_efetivo, dia):
-                        mensagem_obs = "Entrou na escala. "
-                    if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
-                        # Adicionar observação apenas à nomeação criada neste dia
-                        nomeacao = Nomeacao.objects.get(
-                            escala_militar__escala=escala,
-                            escala_militar__militar=militar_efetivo,
-                            data=dia,
-                            e_reserva=False
-                        )
-                        if mensagem_obs:
-                            nomeacao.observacoes = mensagem_obs
-                            nomeacao.save()
-                        ultima_nomeacao_a[nim_efetivo] = dia
-                        militar_efetivo.ultima_nomeacao_a = dia
-                        militar_efetivo.save()
-                        print(f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação A: {dia}")
-                        rotacao_nim.append(rotacao_nim.pop(rotacao_nim.index(nim_efetivo)))
-                        efetivos_por_dia_a[dia] = militar_efetivo
+            # 2. Só depois processar e guardar as nomeações de Escala A, se permitido
+            if servico.tipo_escalas in ("A", "AB"):
+                for dia in dias_escala['escala_a']:
+                    print(f"\n[DEBUG] Dia: {dia} | Tipo: A")
+                    # Ordenar por última nomeação A
+                    rotacao_nim = sorted([m.nim for m in militares], key=lambda nim: (ultima_nomeacao_a[nim] or date.min, nim))
+                    # Filtrar indisponíveis no próprio dia, mas manter ordem da rotação
+                    disponiveis_nim = [nim for nim in rotacao_nim if EscalaService.verificar_disponibilidade_militar(militares_dict[nim], dia)[0]]
+                    print("Ordem dos disponíveis para o dia:")
+                    for nim in disponiveis_nim:
+                        print(f"  Militar: {nim} | Última nomeação A: {ultima_nomeacao_a[nim]}")
+                    n_efetivos = servico.n_elementos
+                    n_reservas = servico.n_reservas
+                    escala = EscalaService.criar_ou_obter_escala(servico, e_escala_b=False)
+                    # Nomear efetivo
+                    if disponiveis_nim:
+                        nim_efetivo = disponiveis_nim[0]
+                        militar_efetivo = militares_dict[nim_efetivo]
+                        mensagem_obs = ""
+                        if EscalaService.militar_licenca_antes(militar_efetivo, dia):
+                            mensagem_obs = "Entrou na escala. "
+                        if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
+                            # Adicionar observação apenas à nomeação criada neste dia
+                            nomeacao = Nomeacao.objects.get(
+                                escala_militar__escala=escala,
+                                escala_militar__militar=militar_efetivo,
+                                data=dia,
+                                e_reserva=False
+                            )
+                            if mensagem_obs:
+                                nomeacao.observacoes = mensagem_obs
+                                nomeacao.save()
+                            ultima_nomeacao_a[nim_efetivo] = dia
+                            militar_efetivo.ultima_nomeacao_a = dia
+                            militar_efetivo.save()
+                            print(f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação A: {dia}")
+                            rotacao_nim.append(rotacao_nim.pop(rotacao_nim.index(nim_efetivo)))
+                            efetivos_por_dia_a[dia] = militar_efetivo
+                    # Nomear reservas (se necessário, pode ser feito aqui também)
 
             # Agora nomear os reservas usando os efetivos do dia seguinte da mesma escala
             # Primeiro para escala B

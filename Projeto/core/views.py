@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from datetime import datetime, timedelta, date
-from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar
+from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao
 from .forms import *
 from .services.escala_service import EscalaService
 from .utils import obter_feriados
@@ -89,7 +89,7 @@ def mapa_dispensas_view(request):
         'data_fim': data_fim
     }
     
-    return render(request, 'core/mapa_dispensas.html', context)
+    return render(request, 'admin/mapa_dispensas.html', context)
 
 @login_required
 def escala_servico_view(request, servico_id):
@@ -240,3 +240,44 @@ def nomear_militares(request, escala_id):
         "militares": militares,
     }
     return render(request, "core/nomear_militares.html", context)
+
+@login_required
+def lista_servicos_view(request):
+    servicos = list(Servico.objects.all())
+    # Obter todas as datas com nomeações
+    nomeacoes = Nomeacao.objects.select_related('escala_militar__escala', 'escala_militar__militar')
+    datas_raw = sorted(set(n.data for n in nomeacoes))
+    # Obter feriados para o intervalo das datas
+    if datas_raw:
+        feriados = obter_feriados(min(datas_raw), max(datas_raw))
+        feriados_set = set(feriados)
+    else:
+        feriados = []
+        feriados_set = set()
+    # Construir estrutura: lista de dicts com data e tipo_dia
+    datas = []
+    for d in datas_raw:
+        if d in feriados_set:
+            tipo_dia = 'feriado'
+        elif d.weekday() >= 5:
+            tipo_dia = 'fim_semana'
+        else:
+            tipo_dia = 'util'
+        datas.append({'data': d, 'tipo_dia': tipo_dia})
+    # Construir tabela: {data: {servico: {'efetivo': ..., 'reserva': ...}}}
+    tabela = {}
+    for d in datas_raw:
+        tabela[d] = {}
+        for servico in servicos:
+            tabela[d][servico.id] = {'efetivo': None, 'reserva': None}
+    for n in nomeacoes:
+        servico_id = n.escala_militar.escala.servico_id
+        if n.e_reserva:
+            tabela[n.data][servico_id]['reserva'] = n.escala_militar.militar
+        else:
+            tabela[n.data][servico_id]['efetivo'] = n.escala_militar.militar
+    return render(request, 'core/lista_servicos.html', {
+        'servicos': servicos,
+        'datas': datas,
+        'tabela': tabela,
+    })

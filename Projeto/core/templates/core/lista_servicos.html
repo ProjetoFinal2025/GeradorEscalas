@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load admin_list %}
+{% load i18n %}
+{% load core_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Lista de Serviços e Nomeações</h2>
+    <div class="table-responsive">
+    <table class="table table-bordered table-escalas align-middle" style="table-layout: fixed; width: 100%;">
+        <thead>
+            <tr>
+                <th style="width: 120px; background-color: #4A5D23; color: white;">Data</th>
+                {% for servico in servicos %}
+                    <th colspan="2" class="text-center" style="background-color: #4A5D23; color: white;">{{ servico.nome }}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+                <th style="background-color: #4A5D23; color: white;"></th>
+                {% for servico in servicos %}
+                    <th class="text-center col-nomeacao">Efetivo</th>
+                    <th class="text-center col-nomeacao">Reserva</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in datas %}
+            <tr class="{{ item.tipo_dia }}">
+                <td><span class="{% if item.tipo_dia == 'feriado' or item.tipo_dia == 'fim_semana' %}badge-escala-b{% endif %}">{{ item.data|date:"d/m/Y" }}</span></td>
+                {% for servico in servicos %}
+                    {% with linha=tabela|get_item:item.data %}
+                        {% with celula=linha|get_item:servico.id %}
+                            <td class="col-nomeacao">
+                                {% if celula.efetivo %}
+                                    <span class="militar-info">{{ celula.efetivo.posto }} {{ celula.efetivo.nome }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-nomeacao">
+                                {% if celula.reserva %}
+                                    <span class="militar-info">{{ celula.reserva.posto }} {{ celula.reserva.nome }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        {% endwith %}
+                    {% endwith %}
+                {% endfor %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{{ servicos|length|add:servicos|length|add:'1' }}" class="text-center">Nenhuma nomeação registada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+<style>
+.table-escalas th, .table-escalas td.col-nomeacao {
+    min-width: 220px;
+    max-width: 350px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.table-escalas td.col-nomeacao {
+    font-family: monospace;
+}
+.table-escalas td {
+    vertical-align: middle;
+}
+.table-escalas .militar-info {
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.table-escalas tr.util {
+    background-color: #fff;
+}
+.table-escalas tr.fim_semana,
+.table-escalas tr.feriado {
+    background-color: #e6f2d8 !important;
+}
+.badge-escala-b {
+    background: #4A5D23;
+    color: white;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.95em;
+}
+.table-escalas tr:hover {
+    background-color: #dff2d0;
+}
+</style>
+{% endblock %} 

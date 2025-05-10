@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from django.contrib.auth.views import LogoutView
-from .views import login_view, home_view, mapa_dispensas_view, escala_servico_view, gerar_escalas_view, nomear_militares
+from .views import login_view, home_view, mapa_dispensas_view, escala_servico_view, gerar_escalas_view, nomear_militares, lista_servicos_view
 
 urlpatterns = [
     path('', RedirectView.as_view(url='login/', permanent=False)),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('escala-servico/<int:servico_id>/', escala_servico_view, name='escala_servico_detalhe'),
     path('gerar-escalas/', gerar_escalas_view, name='gerar_escalas'),
     path('nomear-militares/', nomear_militares, name='nomear_militares'),
+    path('servicos/', lista_servicos_view, name='lista_servicos'),
 ]
