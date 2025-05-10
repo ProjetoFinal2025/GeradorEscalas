@@ -18,6 +18,14 @@
                 Período: {{ data_inicio|date:"d/m/Y" }} a {{ data_fim|date:"d/m/Y" }}
             </p>
         </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'exportar_escalas_pdf' servico.id %}" class="btn btn-success" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
         <div class="col-md-4">
             <form method="get" class="mb-3">
                 {% if tipo_visualizacao == 'previsao' %}

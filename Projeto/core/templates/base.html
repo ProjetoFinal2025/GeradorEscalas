@@ -42,25 +42,15 @@
                 padding: 0.75rem;
             }
         }
-        .navbar, .navbar * {
+        /* Garantir contraste e cor branca na navbar */
+        .navbar, .navbar .navbar-brand, .navbar .nav-link, .navbar .navbar-toggler, .navbar .bi {
             color: #fff !important;
         }
-        .navbar .nav-link.btn-link {
-            color: #fff !important;
-        }
-        .navbar .navbar-brand {
-            color: #fff !important;
-            font-weight: bold;
-        }
-        .navbar .nav-link.active, .navbar .nav-link:focus, .navbar .nav-link:hover {
+        .navbar .nav-link:focus, .navbar .nav-link:hover, .navbar .navbar-brand:focus, .navbar .navbar-brand:hover {
             color: #e0e0e0 !important;
-            text-decoration: underline;
         }
-        .navbar-toggler {
-            border-color: #fff;
-        }
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba%28255,255,255,1%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+        .navbar .btn-link {
+            color: #fff !important;
         }
     </style>
     {% block extra_css %}{% endblock %}

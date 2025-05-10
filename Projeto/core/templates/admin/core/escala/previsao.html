@@ -103,6 +103,36 @@
         margin-bottom: 10px;
         background: #f8f8f8;
         border: 1px solid #eee;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        min-height: unset;
+    }
+    .form-row > div {
+        margin-right: 1.2rem;
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+    .form-row label {
+        margin-bottom: 0;
+        margin-right: 0.5rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    .form-row input, .form-row select {
+        margin-bottom: 0;
+        height: 32px;
+        font-size: 1rem;
+    }
+    .form-row > .btns-right {
+        margin-left: auto;
+        margin-right: 0;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
     }
     .submit-row {
         padding: 10px;
@@ -124,6 +154,36 @@
     .prev-remove:hover {
         color: #bd2130;
     }
+    /* Forçar botões iguais para submit e exportar PDF */
+    .btn-admin-pdf, .btn-admin-pdf:visited, .btn-admin-pdf:active, .btn-admin-pdf:focus {
+        background: linear-gradient(135deg, #4A5D23 0%, #6B8E23 100%) !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 6px 16px !important;
+        font-size: 1rem !important;
+        font-weight: 500;
+        box-shadow: none !important;
+        text-decoration: none !important;
+        display: inline-block;
+        vertical-align: middle;
+        transition: background 0.2s;
+    }
+    .btn-admin-pdf:hover {
+        background: linear-gradient(135deg, #6B8E23 0%, #4A5D23 100%) !important;
+        color: #fff !important;
+        text-decoration: none !important;
+    }
+    .btn-admin-pdf i {
+        margin-right: 0.4em;
+    }
+    .btns-right {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+    }
   </style>
 {% endblock %}
 
@@ -134,27 +194,33 @@
             <form method="post" action="{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico={{ servico.id }}{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}" onsubmit="return validarDataInicio();">
                 {% csrf_token %}
                 <div class="form-row">
-                    <label>Serviço:</label>
-                    <select name="servico" onchange="window.location.href='{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico=' + this.value + '{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}'">
-                        <option value="">Selecione um serviço</option>
-                        {% for s in servicos %}
-                            <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
-                                {{ s.nome }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <label>Data de Início:</label>
-                    <input type="date" 
-                           name="data_inicio" 
-                           value="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}" 
-                           required>
-                    <label>Data de Fim:</label>
-                    <input type="date" 
-                           name="data_fim" 
-                           value="{{ data_fim|date:'Y-m-d' }}" 
-                           min="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}"
-                           required>
-                    <input type="submit" name="gerar_escalas" value="Gerar Previsões" class="default">
+                    <div>
+                        <label for="servico_select">Serviço:</label>
+                        <select id="servico_select" name="servico" onchange="window.location.href='{% url 'admin:core_previsaoescalasproxy_changelist' %}?servico=' + this.value + '{% if request.GET.data_fim %}&data_fim={{ request.GET.data_fim }}{% endif %}'">
+                            <option value="">Selecione um serviço</option>
+                            {% for s in servicos %}
+                                <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
+                                    {{ s.nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="data_inicio_input">Data de Início:</label>
+                        <input id="data_inicio_input" type="date" name="data_inicio" value="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}" required>
+                    </div>
+                    <div>
+                        <label for="data_fim_input">Data de Fim:</label>
+                        <input id="data_fim_input" type="date" name="data_fim" value="{{ data_fim|date:'Y-m-d' }}" min="{{ request.GET.data_inicio|default:hoje|add:'1 day'|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="btns-right">
+                        <button type="submit" name="gerar_escalas" class="btn-admin-pdf">
+                            <i class="bi bi-gear"></i> Gerar Previsões
+                        </button>
+                        <a href="{% url 'exportar_previsoes_pdf' servico.id %}" class="btn-admin-pdf" target="_blank">
+                            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>

@@ -14,6 +14,10 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.contrib.admin.models import LogEntry
 from django.db.models import Count
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.units import cm
 
 
 # view de log in
@@ -348,3 +352,190 @@ def previsoes_servico_view(request, servico_id):
         'nomeacoes_por_data': nomeacoes_por_data,
         'observacoes_por_data': observacoes_por_data,
     })
+
+@login_required
+def exportar_previsoes_pdf(request, servico_id):
+    servico = get_object_or_404(Servico, id=servico_id)
+    
+    # Obter todas as nomeações do serviço
+    nomeacoes = Nomeacao.objects.filter(
+        escala_militar__escala__servico=servico
+    ).select_related('escala_militar__militar', 'escala_militar__escala').order_by('data')
+    
+    if not nomeacoes.exists():
+        messages.error(request, "Não existem nomeações para exportar.")
+        return redirect('previsoes_servico', servico_id=servico_id)
+    
+    # Obter data inicial e final das nomeações
+    data_inicio = nomeacoes.first().data
+    data_fim = nomeacoes.last().data
+    
+    # Obter feriados para o intervalo
+    feriados = obter_feriados(data_inicio, data_fim)
+    feriados_set = set(feriados)
+    
+    # Gerar todos os dias do intervalo
+    dias = []
+    data_atual = data_inicio
+    while data_atual <= data_fim:
+        if data_atual in feriados_set:
+            tipo_dia = 'feriado'
+        elif data_atual.weekday() >= 5:
+            tipo_dia = 'fim_semana'
+        else:
+            tipo_dia = 'util'
+        dias.append({'data': data_atual, 'tipo_dia': tipo_dia})
+        data_atual += timedelta(days=1)
+    
+    # Agrupar nomeações por data
+    nomeacoes_por_data = {}
+    observacoes_por_data = {}
+    for n in nomeacoes:
+        nomeacoes_por_data.setdefault(n.data, {'efetivo': None, 'reserva': None})
+        if n.e_reserva:
+            nomeacoes_por_data[n.data]['reserva'] = n.escala_militar.militar
+        else:
+            nomeacoes_por_data[n.data]['efetivo'] = n.escala_militar.militar
+        observacoes_por_data[n.data] = n.escala_militar.escala.observacoes if n.escala_militar.escala else ''
+    
+    # Gerar PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="previsoes_{servico.nome}.pdf"'
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    timestamp = datetime.now().strftime('Exportado em: %d/%m/%Y %H:%M')
+    
+    def draw_header():
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(2*cm, height-2*cm, f"Previsões de Nomeação – {servico.nome}")
+        p.setFont("Helvetica", 8)
+        p.drawRightString(width-2*cm, height-1.5*cm, timestamp)
+        p.setFont("Helvetica", 10)
+    
+    draw_header()
+    y = height-3*cm
+    
+    # Cabeçalho da tabela
+    p.setFillColor(colors.HexColor('#4A5D23'))
+    p.rect(2*cm, y, width-4*cm, 0.7*cm, fill=1)
+    p.setFillColor(colors.white)
+    p.drawString(2.1*cm, y+0.2*cm, "Data")
+    p.drawString(5*cm, y+0.2*cm, "Efetivo")
+    p.drawString(10*cm, y+0.2*cm, "Reserva")
+    p.drawString(15*cm, y+0.2*cm, "Observações")
+    y -= 0.7*cm
+    
+    for dia in dias:
+        if y < 2*cm:
+            p.showPage()
+            draw_header()
+            y = height-2*cm
+            p.setFont("Helvetica", 10)
+            y -= 1*cm
+            p.setFillColor(colors.HexColor('#4A5D23'))
+            p.rect(2*cm, y, width-4*cm, 0.7*cm, fill=1)
+            p.setFillColor(colors.white)
+            p.drawString(2.1*cm, y+0.2*cm, "Data")
+            p.drawString(5*cm, y+0.2*cm, "Efetivo")
+            p.drawString(10*cm, y+0.2*cm, "Reserva")
+            p.drawString(15*cm, y+0.2*cm, "Observações")
+            y -= 0.7*cm
+        
+        data_str = dia['data'].strftime('%d/%m/%Y')
+        nomeacoes = nomeacoes_por_data.get(dia['data'], {})
+        efetivo = nomeacoes.get('efetivo')
+        reserva = nomeacoes.get('reserva')
+        obs = observacoes_por_data.get(dia['data'], '')
+        
+        # Destacar Escala B (fim de semana ou feriado)
+        if dia['tipo_dia'] in ['feriado', 'fim_semana']:
+            p.saveState()
+            p.setFillColor(colors.HexColor('#e6f2d8'))
+            p.rect(2*cm, y, width-4*cm, 0.6*cm, fill=1, stroke=0)
+            p.restoreState()
+            p.setFont("Helvetica-Bold", 9)
+            p.setFillColor(colors.HexColor('#4A5D23'))
+        else:
+            p.setFont("Helvetica", 9)
+            p.setFillColor(colors.black)
+        
+        p.drawString(2.1*cm, y+0.1*cm, data_str)
+        p.drawString(5*cm, y+0.1*cm, f"{efetivo.posto} {efetivo.nome}" if efetivo else "—")
+        p.drawString(10*cm, y+0.1*cm, f"{reserva.posto} {reserva.nome}" if reserva else "—")
+        p.drawString(15*cm, y+0.1*cm, obs[:40])
+        y -= 0.6*cm
+    
+    p.showPage()
+    p.save()
+    return response
+
+@login_required
+def exportar_escalas_pdf(request, servico_id):
+    servico = get_object_or_404(Servico, id=servico_id)
+    hoje = date.today()
+    data_fim = hoje + timedelta(days=30)
+    escalas = Escala.objects.filter(servico=servico).prefetch_related('militares_info__militar').order_by('id')
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="escalas_{servico.nome}.pdf"'
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    timestamp = datetime.now().strftime('Exportado em: %d/%m/%Y %H:%M')
+    def draw_header():
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(2*cm, height-2*cm, f"Escalas do Serviço – {servico.nome}")
+        p.setFont("Helvetica", 8)
+        p.drawRightString(width-2*cm, height-1.5*cm, timestamp)
+        p.setFont("Helvetica", 10)
+    draw_header()
+    y = height-3*cm
+    # Cabeçalho da tabela
+    p.setFillColor(colors.HexColor('#4A5D23'))
+    p.rect(2*cm, y, width-4*cm, 0.7*cm, fill=1)
+    p.setFillColor(colors.white)
+    p.drawString(2.1*cm, y+0.2*cm, "Tipo")
+    p.drawString(4*cm, y+0.2*cm, "Efetivos")
+    p.drawString(10*cm, y+0.2*cm, "Reservas")
+    p.drawString(15*cm, y+0.2*cm, "Observações")
+    y -= 0.7*cm
+    for escala in escalas:
+        if y < 2*cm:
+            p.showPage()
+            draw_header()
+            y = height-2*cm
+            p.setFont("Helvetica", 10)
+            y -= 1*cm
+            p.setFillColor(colors.HexColor('#4A5D23'))
+            p.rect(2*cm, y, width-4*cm, 0.7*cm, fill=1)
+            p.setFillColor(colors.white)
+            p.drawString(2.1*cm, y+0.2*cm, "Tipo")
+            p.drawString(4*cm, y+0.2*cm, "Efetivos")
+            p.drawString(10*cm, y+0.2*cm, "Reservas")
+            p.drawString(15*cm, y+0.2*cm, "Observações")
+            y -= 0.7*cm
+        tipo = "B" if escala.e_escala_b else "A"
+        efetivos = ", ".join([
+            f"{mim.militar.posto} {mim.militar.nome}" for mim in escala.militares_info.all() if not mim.e_reserva
+        ])
+        reservas = ", ".join([
+            f"{mim.militar.posto} {mim.militar.nome}" for mim in escala.militares_info.all() if mim.e_reserva
+        ])
+        obs = escala.observacoes[:40] if escala.observacoes else ""
+        # Destacar Escala B
+        if getattr(escala, 'e_escala_b', False):
+            p.saveState()
+            p.setFillColor(colors.HexColor('#e6f2d8'))
+            p.rect(2*cm, y, width-4*cm, 0.6*cm, fill=1, stroke=0)
+            p.restoreState()
+            p.setFont("Helvetica-Bold", 9)
+            p.setFillColor(colors.HexColor('#4A5D23'))
+        else:
+            p.setFont("Helvetica", 9)
+            p.setFillColor(colors.black)
+        p.drawString(2.1*cm, y+0.1*cm, tipo)
+        p.drawString(4*cm, y+0.1*cm, efetivos if efetivos else "—")
+        p.drawString(10*cm, y+0.1*cm, reservas if reservas else "—")
+        p.drawString(15*cm, y+0.1*cm, obs)
+        y -= 0.6*cm
+    p.showPage()
+    p.save()
+    return response
