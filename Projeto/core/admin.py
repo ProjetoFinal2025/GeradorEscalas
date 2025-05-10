@@ -15,6 +15,7 @@ from django.http import FileResponse, Http404
 from collections import defaultdict
 from django.contrib import admin, messages
 from datetime import date
+from django import forms
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
 from .services.escala_service import EscalaService
@@ -112,7 +113,8 @@ class EscalaMilitarInline(admin.TabularInline):
     readonly_fields = ("display_militar",)
     fields = ("display_militar", "ordem")
     ordering = ("ordem",)
-    sortable_by = ("ordem", "militar")  # Permite ordenar por ordem e militar
+    sortable_by = ("ordem", "militar")
+    max_num = 0
 
     def display_militar(self, obj):
         if not obj.pk:
@@ -131,22 +133,22 @@ def reset_orders_by_nim(modeladmin, request, queryset):
             em.save()
 
 class EscalaAdmin(VersionAdmin):
-    # Adiciona o Inline na view AdminEscala
     inlines = [EscalaMilitarInline]
     actions = [reset_orders_by_nim]
     form = EscalaForm
+
+
     list_display = ("id", "servico", "tipo_de_escala")
     list_filter = ("servico", "e_escala_b")
     search_fields = ("servico__nome",)
-    remove_from_default = ('e_escala_b',)
-
-    change_form_template = "admin/core/escala/change_form.html"
+    change_form_template = "admin/core/escala/militar_escala_change_form.html"
 
     def tipo_de_escala(self, obj):
         return 'B' if obj.e_escala_b else 'A'
 
     tipo_de_escala.short_description = 'Tipo de escala'
     tipo_de_escala.admin_order_field = 'e_escala_b'
+
 
     def get_urls(self):
 
@@ -167,7 +169,6 @@ class EscalaAdmin(VersionAdmin):
         pdf_buffer = gerar_pdf_escala(escala)
         filename = f"escala_{escala.pk}_militares.pdf"
         return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
-
 
     ## Changes the order of Militares by NIm
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
@@ -195,9 +196,6 @@ class EscalaAdmin(VersionAdmin):
 
         return super().changeform_view(request, object_id, form_url,
                                        extra_context)
-
-
-
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
