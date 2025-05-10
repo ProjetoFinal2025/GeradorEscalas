@@ -5,7 +5,7 @@
 <div class="container mt-4">
     <h2>Mapa de Dispensas</h2>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover table-mobile">
             <thead class="table-light">
                 <tr>
                     <th>Militar</th>
@@ -33,4 +33,26 @@
         </table>
     </div>
 </div>
+
+<style>
+@media (max-width: 768px) {
+    .table-mobile td, .table-mobile th {
+        font-size: 0.9em;
+        padding: 0.5rem;
+    }
+    .table-mobile td:first-child {
+        min-width: 200px;
+    }
+    .table-mobile td:nth-child(2) {
+        min-width: 150px;
+    }
+    .table-mobile td:nth-child(3),
+    .table-mobile td:nth-child(4) {
+        min-width: 100px;
+    }
+    .table-mobile td:last-child {
+        min-width: 150px;
+    }
+}
+</style>
 {% endblock %} 

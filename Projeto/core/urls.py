@@ -1,12 +1,18 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from django.contrib.auth.views import LogoutView, PasswordChangeView, PasswordChangeDoneView
+from django.contrib import messages
 from .views import login_view, home_view, mapa_dispensas_view, escala_servico_view, gerar_escalas_view, nomear_militares, lista_servicos_view, previsoes_por_servico_view, previsoes_servico_view
+
+class CustomLogoutView(LogoutView):
+    def dispatch(self, request, *args, **kwargs):
+        messages.success(request, 'Sessão terminada com sucesso.')
+        return super().dispatch(request, *args, **kwargs)
 
 urlpatterns = [
     path('', RedirectView.as_view(url='login/', permanent=False)),
     path('login/', login_view, name='login'),
-    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path('logout/', CustomLogoutView.as_view(next_page='login'), name='logout'),
     path('home/', home_view, name='home'),
     path('mapa-dispensas/', mapa_dispensas_view, name='mapa_dispensas'),
     path('escala-servico/', escala_servico_view, name='escala_servico'),

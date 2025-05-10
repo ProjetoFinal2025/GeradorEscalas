@@ -4,10 +4,12 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Dashboard Geral</h2>
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card mb-3">
-                <div class="card-header bg-success text-white">Serviços Ativos</div>
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-gear"></i> Serviços Ativos
+                </div>
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
                         {% for servico in servicos %}
@@ -22,23 +24,29 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card mb-3">
-                <div class="card-header bg-success text-white">Total de Militares</div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-people"></i> Total de Militares
+                </div>
                 <div class="card-body display-4 text-center">{{ total_militares }}</div>
             </div>
-            <div class="card mb-3">
-                <div class="card-header bg-warning text-dark">Dispensados Hoje</div>
+            <div class="card h-100 mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <i class="bi bi-calendar-x"></i> Dispensados Hoje
+                </div>
                 <div class="card-body display-5 text-center">{{ total_dispensados }}</div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card mb-3">
-                <div class="card-header bg-info text-white">Top 5 Militares (Serviços)</div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <i class="bi bi-trophy"></i> Top 5 Militares (Serviços)
+                </div>
                 <div class="card-body">
                     <ol class="mb-0">
                         {% for nome, total in top_militares %}
-                        <li>{{ nome }} <span class="badge bg-primary">{{ total }}</span></li>
+                        <li class="mb-2">{{ nome }} <span class="badge bg-primary">{{ total }}</span></li>
                         {% empty %}
                         <li>Nenhum registo.</li>
                         {% endfor %}
@@ -48,12 +56,16 @@
         </div>
     </div>
     <div class="card mt-4">
-        <div class="card-header bg-light">Últimas Ações (utilizador)</div>
+        <div class="card-header bg-light">
+            <i class="bi bi-clock-history"></i> Últimas Ações (utilizador)
+        </div>
         <div class="card-body">
             <ul class="list-group list-group-flush">
                 {% for action in recent_actions %}
                 <li class="list-group-item">
-                    {{ action.action_time|date:"d/m/Y H:i" }} — {{ action.get_change_message }} ({{ action.content_type }})
+                    <small class="text-muted">{{ action.action_time|date:"d/m/Y H:i" }}</small><br>
+                    {{ action.get_change_message }}<br>
+                    <small class="text-muted">{{ action.content_type }}</small>
                 </li>
                 {% empty %}
                 <li class="list-group-item">Sem ações recentes.</li>
@@ -62,4 +74,24 @@
         </div>
     </div>
 </div>
+
+<style>
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2.5rem;
+    }
+    .display-5 {
+        font-size: 2rem;
+    }
+    .card {
+        margin-bottom: 1rem;
+    }
+    .list-group-item {
+        padding: 0.75rem;
+    }
+    .badge {
+        font-size: 0.8em;
+    }
+}
+</style>
 {% endblock %} 

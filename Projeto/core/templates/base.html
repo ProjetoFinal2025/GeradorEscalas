@@ -2,13 +2,71 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Sistema de Gestão de Escalas{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        /* Estilos para melhorar a experiência móvel */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .table-responsive {
+                font-size: 14px;
+            }
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            .nav-link {
+                padding: 0.5rem;
+            }
+            .table-mobile {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+            }
+            .btn {
+                padding: 0.5rem 1rem;
+                margin: 0.25rem;
+                min-width: 44px;
+            }
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            input, select, textarea {
+                font-size: 16px;
+            }
+            .alert {
+                margin-bottom: 0.5rem;
+                padding: 0.75rem;
+            }
+        }
+        .navbar, .navbar * {
+            color: #fff !important;
+        }
+        .navbar .nav-link.btn-link {
+            color: #fff !important;
+        }
+        .navbar .navbar-brand {
+            color: #fff !important;
+            font-weight: bold;
+        }
+        .navbar .nav-link.active, .navbar .nav-link:focus, .navbar .nav-link:hover {
+            color: #e0e0e0 !important;
+            text-decoration: underline;
+        }
+        .navbar-toggler {
+            border-color: #fff;
+        }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba%28255,255,255,1%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg" style="background: linear-gradient(135deg, #4A5D23 0%, #6B8E23 100%);">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">Sistema de Escalas</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -17,28 +75,33 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="/home/">Início</a>
+                        <a class="nav-link" href="/home/"><i class="bi bi-house-door"></i> Início</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/mapa-dispensas/">Mapa de Dispensas</a>
+                        <a class="nav-link" href="/mapa-dispensas/"><i class="bi bi-calendar-check"></i> Mapa de Dispensas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/servicos/">Serviços</a>
+                        <a class="nav-link" href="/servicos/"><i class="bi bi-gear"></i> Serviços</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'previsoes_por_servico' %}">Previsões por Serviço</a>
+                        <a class="nav-link" href="{% url 'previsoes_por_servico' %}"><i class="bi bi-calendar3"></i> Previsões por Serviço</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="nav-link">Bem-vindo, {{user.first_name}} {{user.last_name}}</span>
+                        <span class="nav-link"><i class="bi bi-person"></i> {{user.first_name}} {{user.last_name}}</span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'alterar_senha' %}">Alterar Senha</a>
+                        <a class="nav-link" href="{% url 'alterar_senha' %}"><i class="bi bi-key"></i> Alterar Senha</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">Sair</a>
+                        <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link btn btn-link" style="padding: 0; color: inherit; background: none; border: none;">
+                                <i class="bi bi-box-arrow-right"></i> Sair
+                            </button>
+                        </form>
                     </li>
                     {% endif %}
                 </ul>
@@ -49,8 +112,12 @@
     <div class="container mt-4">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <div>{{ message }}</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         {% endif %}
@@ -60,5 +127,22 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Prevenir zoom em inputs numéricos
+            document.querySelectorAll('input[type="number"]').forEach(function(input) {
+                input.addEventListener('focus', function() {
+                    this.style.fontSize = '16px';
+                });
+            });
+
+            // Melhorar navegação em tabelas
+            document.querySelectorAll('.table-mobile').forEach(function(table) {
+                table.addEventListener('touchstart', function() {
+                    this.style.overflowX = 'auto';
+                });
+            });
+        });
+    </script>
 </body>
 </html> 

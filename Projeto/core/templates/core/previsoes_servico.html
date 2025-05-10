@@ -2,9 +2,14 @@
 {% load core_tags %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Previsões de Nomeação – {{ servico.nome }}</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-calendar3"></i> Previsões de Nomeação – {{ servico.nome }}</h2>
+        <a href="{% url 'previsoes_por_servico' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
     <div class="table-responsive">
-        <table class="table table-bordered table-escalas align-middle" style="table-layout: fixed; width: 100%;">
+        <table class="table table-bordered table-escalas table-mobile align-middle" style="table-layout: fixed; width: 100%;">
             <thead>
                 <tr>
                     <th style="width: 120px; background-color: #4A5D23; color: white;">Data</th>
@@ -46,7 +51,28 @@
         </table>
     </div>
 </div>
+
 <style>
+@media (max-width: 768px) {
+    .table-escalas th, .table-escalas td.col-nomeacao {
+        min-width: 150px;
+        max-width: 200px;
+    }
+    .table-escalas .militar-info {
+        font-size: 0.9em;
+    }
+    .badge-escala-b {
+        font-size: 0.85em;
+        padding: 1px 6px;
+    }
+    h2 {
+        font-size: 1.5rem;
+    }
+    .btn {
+        padding: 0.5rem;
+    }
+}
+
 .table-escalas th, .table-escalas td.col-nomeacao {
     min-width: 220px;
     max-width: 350px;
