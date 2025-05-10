@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Mapa de Dispensas</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Militar</th>
+                    <th>Serviço</th>
+                    <th>Data Início</th>
+                    <th>Data Fim</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dispensa in dispensas %}
+                <tr>
+                    <td>{{ dispensa.militar.posto }} {{ dispensa.militar.nome }} ({{ dispensa.militar.nim|stringformat:"08d" }})</td>
+                    <td>{% for s in dispensa.militar.servicos.all %}{{ s.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                    <td>{{ dispensa.data_inicio|date:"d/m/Y" }}</td>
+                    <td>{{ dispensa.data_fim|date:"d/m/Y" }}</td>
+                    <td>{{ dispensa.motivo }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Não existem dispensas para o período selecionado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

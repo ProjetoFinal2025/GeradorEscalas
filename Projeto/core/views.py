@@ -12,6 +12,8 @@ from .services.escala_service import EscalaService
 from .utils import obter_feriados
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.contrib.admin.models import LogEntry
+from django.db.models import Count
 
 
 # view de log in
@@ -39,48 +41,60 @@ from django.http import HttpResponse
 ## Testar se log in foi executado
 @login_required
 def home_view(request):
-    # Obter serviços ativos
+    # Serviços ativos
     servicos = Servico.objects.filter(ativo=True)
-    
-    # Obter escalas do dia
+    militares_por_servico = {s.nome: s.militares.count() for s in servicos}
+    total_militares = sum(militares_por_servico.values())
+
+    # Militares dispensados atualmente
     hoje = date.today()
-    escalas_hoje = Escala.objects.filter(
-        data=hoje
-    ).prefetch_related(
-        'militares_info__militar'
+    dispensas_ativas = Dispensa.objects.filter(data_inicio__lte=hoje, data_fim__gte=hoje)
+    total_dispensados = dispensas_ativas.values('militar').distinct().count()
+
+    # Top 5 militares com mais serviços realizados
+    top_militares_qs = (
+        Nomeacao.objects
+        .values('escala_militar__militar__nome', 'escala_militar__militar__posto')
+        .annotate(total=Count('id'))
+        .order_by('-total')[:5]
     )
-    
-    # Obter feriados do mês
-    data_fim = hoje.replace(day=1) + timedelta(days=32)
-    feriados = obter_feriados(hoje, data_fim)
-    
+    top_militares = [
+        (f"{item['escala_militar__militar__posto']} {item['escala_militar__militar__nome']}", item['total'])
+        for item in top_militares_qs
+    ]
+
+    # Últimas 10 ações do utilizador (opcional)
+    recent_actions = (
+        LogEntry.objects.filter(user=request.user)
+        .select_related("content_type")
+        .order_by("-action_time")[:10]
+    )
+
     context = {
         'servicos': servicos,
-        'escalas_hoje': escalas_hoje,
-        'feriados': feriados,
-        'hoje': hoje
+        'militares_por_servico': militares_por_servico,
+        'total_militares': total_militares,
+        'total_dispensados': total_dispensados,
+        'top_militares': top_militares,
+        'recent_actions': recent_actions,
+        'hoje': hoje,
     }
-    
     return render(request, 'core/home.html', context)
 
 @login_required
 def mapa_dispensas_view(request):
     # Obter serviços ativos
     servicos = Servico.objects.filter(ativo=True)
-    
     # Obter período
     hoje = date.today()
     data_fim = hoje + timedelta(days=30)
-    
     # Obter feriados
     feriados = obter_feriados(hoje, data_fim)
-    
     # Obter dispensas
     dispensas = Dispensa.objects.filter(
         data_inicio__lte=data_fim,
         data_fim__gte=hoje
     ).select_related('militar')
-    
     context = {
         'servicos': servicos,
         'dispensas': dispensas,
@@ -88,8 +102,7 @@ def mapa_dispensas_view(request):
         'hoje': hoje,
         'data_fim': data_fim
     }
-    
-    return render(request, 'admin/mapa_dispensas.html', context)
+    return render(request, 'core/mapa_dispensas.html', context)
 
 @login_required
 def escala_servico_view(request, servico_id):
@@ -280,4 +293,58 @@ def lista_servicos_view(request):
         'servicos': servicos,
         'datas': datas,
         'tabela': tabela,
+    })
+
+@login_required
+def previsoes_por_servico_view(request):
+    servicos = Servico.objects.filter(ativo=True)
+    if request.method == 'POST':
+        servico_id = request.POST.get('servico_id')
+        if servico_id:
+            return redirect('previsoes_servico', servico_id=servico_id)
+    return render(request, 'core/previsoes_por_servico.html', {'servicos': servicos})
+
+@login_required
+def previsoes_servico_view(request, servico_id):
+    servico = get_object_or_404(Servico, id=servico_id)
+    hoje = date.today()
+    # Definir intervalo: próximo mês
+    data_fim = (hoje.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    # Obter feriados
+    feriados = obter_feriados(hoje, data_fim)
+    feriados_set = set(feriados)
+    # Gerar todos os dias do intervalo
+    dias = []
+    data_atual = hoje
+    while data_atual <= data_fim:
+        if data_atual in feriados_set:
+            tipo_dia = 'feriado'
+        elif data_atual.weekday() >= 5:
+            tipo_dia = 'fim_semana'
+        else:
+            tipo_dia = 'util'
+        dias.append({'data': data_atual, 'tipo_dia': tipo_dia})
+        data_atual += timedelta(days=1)
+    # Obter nomeações futuras para o serviço
+    nomeacoes = Nomeacao.objects.filter(
+        escala_militar__escala__servico=servico,
+        data__gte=hoje,
+        data__lte=data_fim
+    ).select_related('escala_militar__militar', 'escala_militar__escala').order_by('data')
+    # Agrupar por data
+    nomeacoes_por_data = {}
+    observacoes_por_data = {}
+    for n in nomeacoes:
+        nomeacoes_por_data.setdefault(n.data, {'efetivo': None, 'reserva': None})
+        if n.e_reserva:
+            nomeacoes_por_data[n.data]['reserva'] = n.escala_militar.militar
+        else:
+            nomeacoes_por_data[n.data]['efetivo'] = n.escala_militar.militar
+        # Guardar observações da escala
+        observacoes_por_data[n.data] = n.escala_militar.escala.observacoes if n.escala_militar.escala else ''
+    return render(request, 'core/previsoes_servico.html', {
+        'servico': servico,
+        'dias': dias,
+        'nomeacoes_por_data': nomeacoes_por_data,
+        'observacoes_por_data': observacoes_por_data,
     })

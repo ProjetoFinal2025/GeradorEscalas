@@ -2,116 +2,64 @@
 {% load static %}
 
 {% block content %}
-<!-- Debug: Template home.html está sendo carregado -->
 <div class="container mt-4">
-    <div class="alert alert-info">Debug: Template carregado com sucesso!</div>
-    
-    {% if servico %}
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="d-flex align-items-center">
-                    <h2 class="mb-0 me-3">{{ servico.nome }}</h2>
-                    <div class="btn-group">
-                        <a href="?tipo=atual{% if servico_id %}&servico_id={{ servico.id }}{% endif %}" 
-                           class="btn btn-outline-primary {% if tipo_visualizacao != 'previsao' %}active{% endif %}">
-                            Mês Atual
-                        </a>
-                        <a href="?tipo=previsao{% if servico_id %}&servico_id={{ servico.id }}{% endif %}" 
-                           class="btn btn-outline-primary {% if tipo_visualizacao == 'previsao' %}active{% endif %}">
-                            Próximo Mês
-                        </a>
-                    </div>
-                </div>
-                <p class="text-muted mt-2">
-                    {% if tipo_visualizacao == 'previsao' %}
-                        Previsão de Escalas
-                    {% else %}
-                        Escalas Atuais
-                    {% endif %}
-                    - Período: {{ data_inicio|date:"d/m/Y" }} a {{ data_fim|date:"d/m/Y" }}
-                </p>
-            </div>
-            <div class="col-md-6">
-                <form method="get" class="d-flex align-items-center justify-content-end">
-                    {% if tipo_visualizacao == 'previsao' %}
-                        <input type="hidden" name="tipo" value="previsao">
-                    {% endif %}
-                    <label for="servico_select" class="me-2">Serviço:</label>
-                    <select id="servico_select" name="servico_id" class="form-select" style="max-width: 300px;" onchange="this.form.submit()">
-                        {% for s in servicos_ativos %}
-                            <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
-                                {{ s.nome }}
-                            </option>
+    <h2>Dashboard Geral</h2>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">Serviços Ativos</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for servico in servicos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ servico.nome }}
+                            <span class="badge bg-secondary">{{ militares_por_servico|get_item:servico.nome }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">Nenhum serviço ativo.</li>
                         {% endfor %}
-                    </select>
-                </form>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 100px;">Dia</th>
-                        <th>Efetivo</th>
-                        <th>Observações</th>
-                        <th>Reserva</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for escala in escalas %}
-                    <tr>
-                        <td>{{ escala.militar.posto }} {{ escala.militar.nome }}</td>
-                        <td>{{ escala.servico.nome }}</td>
-                        <td>{{ escala.data|date:"d/m/Y" }}</td>
-                        <td>
-                            {% if escala.e_escala_b %}
-                                <span class="badge bg-primary">B</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center">
-                            {% if tipo_visualizacao == 'previsao' %}
-                                Não existem escalas previstas para este período.
-                            {% else %}
-                                Não existem escalas para este período.
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Legenda</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-inline">
-                            <li class="list-inline-item"><span class="badge bg-primary">B</span> - Escala B</li>
-                        </ul>
-                    </div>
+                    </ul>
                 </div>
             </div>
         </div>
-    {% else %}
-        <div class="alert alert-warning">
-            Não existem serviços ativos no sistema.
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">Total de Militares</div>
+                <div class="card-body display-4 text-center">{{ total_militares }}</div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header bg-warning text-dark">Dispensados Hoje</div>
+                <div class="card-body display-5 text-center">{{ total_dispensados }}</div>
+            </div>
         </div>
-    {% endif %}
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">Top 5 Militares (Serviços)</div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        {% for nome, total in top_militares %}
+                        <li>{{ nome }} <span class="badge bg-primary">{{ total }}</span></li>
+                        {% empty %}
+                        <li>Nenhum registo.</li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mt-4">
+        <div class="card-header bg-light">Últimas Ações (utilizador)</div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for action in recent_actions %}
+                <li class="list-group-item">
+                    {{ action.action_time|date:"d/m/Y H:i" }} — {{ action.get_change_message }} ({{ action.content_type }})
+                </li>
+                {% empty %}
+                <li class="list-group-item">Sem ações recentes.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
-
-<style>
-    .table td {
-        vertical-align: middle;
-    }
-    .badge {
-        font-size: 0.8rem;
-    }
-</style>
 {% endblock %} 

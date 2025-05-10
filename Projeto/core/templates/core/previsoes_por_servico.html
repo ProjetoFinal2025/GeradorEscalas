@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Consultar Previsões por Serviço</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="servico_id" class="form-label">Selecione o Serviço:</label>
+            <select name="servico_id" id="servico_id" class="form-select" required>
+                <option value="">-- Escolha um serviço --</option>
+                {% for servico in servicos %}
+                <option value="{{ servico.id }}">{{ servico.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Ver Previsões</button>
+    </form>
+</div>
+{% endblock %} 

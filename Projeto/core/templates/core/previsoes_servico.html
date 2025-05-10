@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load core_tags %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Previsões de Nomeação – {{ servico.nome }}</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered table-escalas align-middle" style="table-layout: fixed; width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 120px; background-color: #4A5D23; color: white;">Data</th>
+                    <th class="text-center col-nomeacao">Efetivo</th>
+                    <th class="text-center col-nomeacao">Reserva</th>
+                    <th style="width: 300px; min-width: 200px;">Observações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dia in dias %}
+                <tr class="{{ dia.tipo_dia }}">
+                    <td><span class="{% if dia.tipo_dia == 'feriado' or dia.tipo_dia == 'fim_semana' %}badge-escala-b{% endif %}">{{ dia.data|date:"d/m/Y" }}</span></td>
+                    {% with nomeacoes=nomeacoes_por_data|get_item:dia.data %}
+                        <td class="col-nomeacao">
+                            {% if nomeacoes and nomeacoes.efetivo %}
+                                <span class="militar-info">{{ nomeacoes.efetivo.posto }} {{ nomeacoes.efetivo.nome }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-nomeacao">
+                            {% if nomeacoes and nomeacoes.reserva %}
+                                <span class="militar-info">{{ nomeacoes.reserva.posto }} {{ nomeacoes.reserva.nome }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    {% endwith %}
+                    <td>
+                        {{ observacoes_por_data|get_item:dia.data|default:"" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">Não existem previsões para este serviço.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<style>
+.table-escalas th, .table-escalas td.col-nomeacao {
+    min-width: 220px;
+    max-width: 350px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.table-escalas td.col-nomeacao {
+    font-family: monospace;
+}
+.table-escalas td {
+    vertical-align: middle;
+}
+.table-escalas .militar-info {
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.table-escalas tr.util {
+    background-color: #fff;
+}
+.table-escalas tr.fim_semana,
+.table-escalas tr.feriado {
+    background-color: #e6f2d8 !important;
+}
+.badge-escala-b {
+    background: #4A5D23;
+    color: white;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.95em;
+}
+.table-escalas tr:hover {
+    background-color: #dff2d0;
+}
+</style>
+{% endblock %} 
