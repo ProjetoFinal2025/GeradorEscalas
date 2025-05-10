@@ -1,6 +1,6 @@
 from django.urls import path
 from django.views.generic import RedirectView
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LogoutView, PasswordChangeView, PasswordChangeDoneView
 from .views import login_view, home_view, mapa_dispensas_view, escala_servico_view, gerar_escalas_view, nomear_militares, lista_servicos_view, previsoes_por_servico_view, previsoes_servico_view
 
 urlpatterns = [
@@ -16,4 +16,6 @@ urlpatterns = [
     path('servicos/', lista_servicos_view, name='lista_servicos'),
     path('previsoes-por-servico/', previsoes_por_servico_view, name='previsoes_por_servico'),
     path('previsoes-servico/<int:servico_id>/', previsoes_servico_view, name='previsoes_servico'),
+    path('alterar-senha/', PasswordChangeView.as_view(template_name='core/alterar_senha.html'), name='alterar_senha'),
+    path('senha-alterada/', PasswordChangeDoneView.as_view(template_name='core/senha_alterada.html'), name='senha_alterada'),
 ]
