@@ -375,3 +375,29 @@ class RegraNomeacao(models.Model):
     def __str__(self):
         return f"{self.servico.nome} - {self.get_tipo_folga_display()}"
 
+
+class TrocaServico(models.Model):
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('APROVADA', 'Aprovada'),
+        ('REJEITADA', 'Rejeitada'),
+        ('CONCLUIDA', 'Concluída'),
+    ]
+
+    militar_solicitante = models.ForeignKey('Militar', on_delete=models.CASCADE, related_name='trocas_solicitadas')
+    militar_trocado = models.ForeignKey('Militar', on_delete=models.CASCADE, related_name='trocas_recebidas')
+    data_troca = models.DateField()
+    data_solicitacao = models.DateTimeField(auto_now_add=True)
+    data_aprovacao = models.DateTimeField(null=True, blank=True)
+    data_destroca = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDENTE')
+    observacoes = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Troca de Serviço"
+        verbose_name_plural = "Trocas de Serviço"
+        ordering = ['-data_solicitacao']
+
+    def __str__(self):
+        return f"Troca: {self.militar_solicitante} ↔ {self.militar_trocado} ({self.data_troca})"
+

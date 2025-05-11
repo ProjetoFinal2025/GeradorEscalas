@@ -121,7 +121,10 @@ def log_logout(sender, request, user, **kwargs):
 def criar_user_para_militar(sender, instance, created, **kwargs):
     if created and not instance.user:
         username = str(instance.nim)
-        password = config('USER_PASSWORD')
+        try:
+            password = config('USER_PASSWORD')
+        except:
+            password = '123456'  # Senha padrão caso a variável de ambiente não esteja definida
 
         # Evita duplicação
         if not User.objects.filter(username=username).exists():

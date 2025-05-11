@@ -14,11 +14,12 @@ from .services.pdf_exports import gerar_pdf_escala
 from django.http import FileResponse, Http404
 from collections import defaultdict
 from django.contrib import admin, messages
-from datetime import date
+from datetime import date, datetime, timedelta
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
 from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
+from .services.troca_service import TrocaService
 
 @register.filter
 def get_item(dictionary, key):
@@ -592,14 +593,10 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         for dia, nomeacoes in nomeacoes_por_dia.items():
             e_feriado = dia in feriados
             e_fim_semana = dia.weekday() >= 5
-            efetivo = next((n for n in nomeacoes if not n.e_reserva), None)
-            reserva = next((n for n in nomeacoes if n.e_reserva), None)
             datas.append(
                 {
                     "data": dia,
                     "nomeacoes": nomeacoes,
-                    "efetivo": efetivo,
-                    "reserva": reserva,
                     "e_fim_semana": e_fim_semana and not e_feriado,
                     "e_feriado": e_feriado,
                     "tipo_dia": "feriado" if e_feriado else ("fim_semana" if e_fim_semana else "util"),
@@ -621,15 +618,12 @@ class PrevisaoEscalasAdmin(VersionAdmin):
                     data=dia
                 ).select_related("escala_militar__militar")
 
-            efetivo = next((n for n in nomeacoes if not n.e_reserva), None)
-            reserva = next((n for n in nomeacoes if n.e_reserva), None)
             e_feriado = dia in feriados
             datas.append(
                 {
                     "data": dia,
                     "escala": escala,
-                    "efetivo": efetivo,
-                    "reserva": reserva,
+                    "nomeacoes": nomeacoes,
                     "e_fim_semana": not e_feriado,
                     "e_feriado": e_feriado,
                     "tipo_dia": "fim_semana" if not e_feriado else "feriado",
@@ -651,14 +645,11 @@ class PrevisaoEscalasAdmin(VersionAdmin):
                     data=dia
                 ).select_related("escala_militar__militar")
 
-            efetivo = next((n for n in nomeacoes if not n.e_reserva), None)
-            reserva = next((n for n in nomeacoes if n.e_reserva), None)
             datas.append(
                 {
                     "data": dia,
                     "escala": escala,
-                    "efetivo": efetivo,
-                    "reserva": reserva,
+                    "nomeacoes": nomeacoes,
                     "e_fim_semana": False,
                     "e_feriado": False,
                     "tipo_dia": "util",
@@ -777,5 +768,67 @@ admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
 # Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
+
+@admin.register(TrocaServico)
+class TrocaServicoAdmin(VersionAdmin):
+    list_display = ('militar_solicitante', 'militar_trocado', 'data_troca', 'status', 'data_solicitacao', 'data_aprovacao', 'data_destroca')
+    list_filter = ('status', 'data_troca', 'data_solicitacao')
+    search_fields = ('militar_solicitante__nome', 'militar_trocado__nome', 'militar_solicitante__nim', 'militar_trocado__nim')
+    date_hierarchy = 'data_troca'
+    change_list_template = 'admin/core/troca/change_list.html'
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('<int:troca_id>/aprovar/', self.admin_site.admin_view(self.aprovar_troca), name='core_trocasservicoproxy_aprovar'),
+            path('<int:troca_id>/rejeitar/', self.admin_site.admin_view(self.rejeitar_troca), name='core_trocasservicoproxy_rejeitar'),
+            path('<int:troca_id>/agendar-destroca/', self.admin_site.admin_view(self.agendar_destroca), name='core_trocasservicoproxy_agendar_destroca'),
+        ]
+        return custom_urls + urls
+
+    def aprovar_troca(self, request, troca_id):
+        troca = get_object_or_404(TrocaServico, id=troca_id)
+        troca_service = TrocaService()
+        sucesso, mensagem = troca_service.aprovar_troca(troca)
+        
+        if sucesso:
+            self.message_user(request, mensagem, messages.SUCCESS)
+        else:
+            self.message_user(request, mensagem, messages.ERROR)
+            
+        return redirect('admin:core_trocasservico_changelist')
+
+    def rejeitar_troca(self, request, troca_id):
+        troca = get_object_or_404(TrocaServico, id=troca_id)
+        troca_service = TrocaService()
+        sucesso, mensagem = troca_service.rejeitar_troca(troca)
+        
+        if sucesso:
+            self.message_user(request, mensagem, messages.SUCCESS)
+        else:
+            self.message_user(request, mensagem, messages.ERROR)
+            
+        return redirect('admin:core_trocasservico_changelist')
+
+    def agendar_destroca(self, request, troca_id):
+        troca = get_object_or_404(TrocaServico, id=troca_id)
+        
+        if request.method == 'POST':
+            data_destroca_str = request.POST.get('data_destroca')
+            
+            try:
+                data_destroca = datetime.strptime(data_destroca_str, '%Y-%m-%d').date()
+                troca_service = TrocaService()
+                sucesso, mensagem = troca_service.agendar_destroca(troca, data_destroca)
+                
+                if sucesso:
+                    self.message_user(request, mensagem, messages.SUCCESS)
+                else:
+                    self.message_user(request, mensagem, messages.ERROR)
+                    
+            except ValueError:
+                self.message_user(request, "Data inválida", messages.ERROR)
+                
+        return redirect('admin:core_trocasservico_changelist')
 
 

@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from datetime import datetime, timedelta, date
-from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao
+from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao, TrocaServico
 from .forms import *
 from .services.escala_service import EscalaService
 from .utils import obter_feriados
@@ -18,6 +18,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.units import cm
+from .services.troca_service import TrocaService
 
 
 # view de log in
@@ -539,3 +540,105 @@ def exportar_escalas_pdf(request, servico_id):
     p.showPage()
     p.save()
     return response
+
+@login_required
+def solicitar_troca_view(request):
+    if request.method == 'POST':
+        militar_trocado_id = request.POST.get('militar_trocado')
+        data_troca_str = request.POST.get('data_troca')
+        
+        try:
+            militar_solicitante = request.user.militar
+            militar_trocado = Militar.objects.get(nim=militar_trocado_id)
+            data_troca = datetime.strptime(data_troca_str, '%Y-%m-%d').date()
+            
+            troca_service = TrocaService()
+            sucesso, mensagem = troca_service.solicitar_troca(
+                militar_solicitante,
+                militar_trocado,
+                data_troca
+            )
+            
+            if sucesso:
+                messages.success(request, mensagem)
+            else:
+                messages.error(request, mensagem)
+                
+        except (Militar.DoesNotExist, ValueError):
+            messages.error(request, "Dados inválidos")
+            
+        return redirect('solicitar_troca')
+    
+    # Obter militares disponíveis para troca
+    militares_disponiveis = Militar.objects.filter(
+        servicos__in=request.user.militar.servicos.all()
+    ).exclude(
+        nim=request.user.militar.nim
+    ).distinct()
+    
+    # Obter trocas pendentes e aprovadas
+    trocas_pendentes = TrocaService.obter_trocas_pendentes()
+    trocas_aprovadas = TrocaService.obter_trocas_por_militar(request.user.militar).filter(
+        status='APROVADA'
+    )
+    
+    context = {
+        'militares_disponiveis': militares_disponiveis,
+        'trocas_pendentes': trocas_pendentes,
+        'trocas_aprovadas': trocas_aprovadas
+    }
+    
+    return render(request, 'core/solicitar_troca.html', context)
+
+@login_required
+def aprovar_troca_view(request, troca_id):
+    troca = get_object_or_404(TrocaServico, id=troca_id)
+    
+    if request.method == 'POST':
+        troca_service = TrocaService()
+        sucesso, mensagem = troca_service.aprovar_troca(troca)
+        
+        if sucesso:
+            messages.success(request, mensagem)
+        else:
+            messages.error(request, mensagem)
+            
+    return redirect('solicitar_troca')
+
+@login_required
+def rejeitar_troca_view(request, troca_id):
+    troca = get_object_or_404(TrocaServico, id=troca_id)
+    
+    if request.method == 'POST':
+        troca_service = TrocaService()
+        sucesso, mensagem = troca_service.rejeitar_troca(troca)
+        
+        if sucesso:
+            messages.success(request, mensagem)
+        else:
+            messages.error(request, mensagem)
+            
+    return redirect('solicitar_troca')
+
+@login_required
+def agendar_destroca_view(request, troca_id):
+    troca = get_object_or_404(TrocaServico, id=troca_id)
+    
+    if request.method == 'POST':
+        data_destroca_str = request.POST.get('data_destroca')
+        
+        try:
+            data_destroca = datetime.strptime(data_destroca_str, '%Y-%m-%d').date()
+            
+            troca_service = TrocaService()
+            sucesso, mensagem = troca_service.agendar_destroca(troca, data_destroca)
+            
+            if sucesso:
+                messages.success(request, mensagem)
+            else:
+                messages.error(request, mensagem)
+                
+        except ValueError:
+            messages.error(request, "Data inválida")
+            
+    return redirect('solicitar_troca')
