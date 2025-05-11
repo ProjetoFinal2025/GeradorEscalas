@@ -1,28 +1,42 @@
 {% extends "admin/change_form.html" %}
-{% load i18n %}
-
+{% load i18n admin_urls %}
 
 {% block submit_buttons_bottom %}
-    {{ block.super }}
+  <div class="submit-row">
 
+    {# --- Botão "Gravar" (verde) ---------------------------------------- #}
+    <input type="submit"
+           value="{% trans 'Gravar' %}"
+           name="_save"
+           class="button"
+           style="background-color:#4c6721; border-color:#4c6721; color:#fff;">
+
+    {# --- Link de remoção -------------------------------------------------- #}
+    <a href="{% url 'admin:core_escala_delete' original.id %}"
+       class="deletelink">{% trans 'Remover' %}</a>
+
+    {# --- Acção «Reset ordem por NIM» ------------------------------------- #}
     {% if custom_reset_button %}
-        <form method="post" style="display:inline">
-            {% csrf_token %}
-            <input type="submit" class="button"
-                   name="_reset_ordem"
-                   value="Reset ordem por NIM" />
-        </form>
+      <form method="post" style="display:inline">
+        {% csrf_token %}
+        <input type="submit" class="button"
+               name="_reset_ordem"
+               value="{% trans 'Reset ordem por NIM' %}">
+      </form>
     {% endif %}
 
-
+    {# --- Acção «Exportar lista de Militares (PDF)» ----------------------- #}
     {% if export_pdf_url %}
-        <form method="get" action="{{ export_pdf_url }}" style="display:inline">
-            <input type="submit" class="button" value="Exportar lista de Militares (PDF)">
-        </form>
+      <form method="get" action="{{ export_pdf_url }}" style="display:inline">
+        <input type="submit" class="button"
+               value="{% trans 'Exportar lista de Militares (PDF)' %}">
+      </form>
     {% endif %}
+
+  </div>
 {% endblock %}
 
-
+{# Mantemos o bloco object‑tools padrão (Histórico, etc.). #}
 {% block object-tools %}
   {{ block.super }}
 {% endblock %}
