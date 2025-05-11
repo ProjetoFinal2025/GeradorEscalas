@@ -282,18 +282,18 @@ def lista_servicos_view(request):
         else:
             tipo_dia = 'util'
         datas.append({'data': d, 'tipo_dia': tipo_dia})
-    # Construir tabela: {data: {servico: {'efetivo': ..., 'reserva': ...}}}
+    # Construir tabela: {data: {servico: {'efetivo': [], 'reserva': []}}}
     tabela = {}
     for d in datas_raw:
         tabela[d] = {}
         for servico in servicos:
-            tabela[d][servico.id] = {'efetivo': None, 'reserva': None}
+            tabela[d][servico.id] = {'efetivo': [], 'reserva': []}
     for n in nomeacoes:
         servico_id = n.escala_militar.escala.servico_id
         if n.e_reserva:
-            tabela[n.data][servico_id]['reserva'] = n.escala_militar.militar
+            tabela[n.data][servico_id]['reserva'].append(n.escala_militar.militar)
         else:
-            tabela[n.data][servico_id]['efetivo'] = n.escala_militar.militar
+            tabela[n.data][servico_id]['efetivo'].append(n.escala_militar.militar)
     return render(request, 'core/lista_servicos.html', {
         'servicos': servicos,
         'datas': datas,
@@ -340,11 +340,11 @@ def previsoes_servico_view(request, servico_id):
     nomeacoes_por_data = {}
     observacoes_por_data = {}
     for n in nomeacoes:
-        nomeacoes_por_data.setdefault(n.data, {'efetivo': None, 'reserva': None})
+        nomeacoes_por_data.setdefault(n.data, {'efetivos': [], 'reservas': []})
         if n.e_reserva:
-            nomeacoes_por_data[n.data]['reserva'] = n.escala_militar.militar
+            nomeacoes_por_data[n.data]['reservas'].append(n.escala_militar.militar)
         else:
-            nomeacoes_por_data[n.data]['efetivo'] = n.escala_militar.militar
+            nomeacoes_por_data[n.data]['efetivos'].append(n.escala_militar.militar)
         # Guardar observações da escala
         observacoes_por_data[n.data] = n.escala_militar.escala.observacoes if n.escala_militar.escala else ''
     return render(request, 'core/previsoes_servico.html', {

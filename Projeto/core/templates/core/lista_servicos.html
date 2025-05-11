@@ -33,14 +33,18 @@
                             {% with celula=linha|get_item:servico.id %}
                                 <td class="col-nomeacao">
                                     {% if celula.efetivo %}
-                                        <span class="militar-info">{{ celula.efetivo.posto }} {{ celula.efetivo.nome }}</span>
+                                        {% for militar in celula.efetivo %}
+                                            <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                        {% endfor %}
                                     {% else %}
                                         <span class="text-muted">—</span>
                                     {% endif %}
                                 </td>
                                 <td class="col-nomeacao">
                                     {% if celula.reserva %}
-                                        <span class="militar-info">{{ celula.reserva.posto }} {{ celula.reserva.nome }}</span>
+                                        {% for militar in celula.reserva %}
+                                            <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                        {% endfor %}
                                     {% else %}
                                         <span class="text-muted">—</span>
                                     {% endif %}
@@ -76,9 +80,9 @@
 .table-escalas th, .table-escalas td.col-nomeacao {
     min-width: 220px;
     max-width: 350px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 .table-escalas td.col-nomeacao {
     font-family: monospace;
@@ -88,9 +92,9 @@
 }
 .table-escalas .militar-info {
     font-family: monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 .table-escalas tr.util {
     background-color: #fff;

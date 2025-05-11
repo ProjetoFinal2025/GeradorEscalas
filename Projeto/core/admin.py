@@ -14,12 +14,8 @@ from .services.pdf_exports import gerar_pdf_escala
 from django.http import FileResponse, Http404
 from collections import defaultdict
 from django.contrib import admin, messages
-<<<<<<< HEAD
 from datetime import date, datetime, timedelta
-=======
-from datetime import date
 from django import forms
->>>>>>> 289378d9d2f46382c06f0957b1f03be45b53aff9
 # Permite alterar os seguintes modelos na admin view
 from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
 from .services.escala_service import EscalaService

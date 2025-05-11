@@ -254,43 +254,37 @@
                 </thead>
                 <tbody>
                     {% for item in datas %}
-                        <tr class="{{ item.tipo_dia }}">
-                            <td class="dia-col">
-                                {{ item.data|date:"d-M-y" }} ({{ item.data|date:"D"|title }})
-                                {% if item.tipo_dia == 'feriado' %}
-                                    <span class="prev-badge">Feriado</span>
+                    <tr class="{{ item.tipo_dia }}">
+                        <td class="dia-col">
+                            {{ item.data|date:"d/m/Y" }} ({{ item.data|date:"l" }})
+                            {% if item.e_feriado %}
+                                <span class="badge badge-danger">Feriado</span>
+                            {% elif item.e_fim_semana %}
+                                <span class="badge badge-warning">Fim de Semana</span>
+                            {% endif %}
+                        </td>
+                        <td class="efetivo-col">
+                            {% for nomeacao in item.nomeacoes %}
+                                {% if not nomeacao.e_reserva %}
+                                    {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})<br>
                                 {% endif %}
-                            </td>
-                            <td class="efetivo-col">
-                                {% if item.nomeacoes %}
-                                    {% for nomeacao in item.nomeacoes %}
-                                        {% if not nomeacao.e_reserva %}
-                                            <div>
-                                                {{ nomeacao.escala_militar.militar.posto }}
-                                                {{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }}
-                                                {{ nomeacao.escala_militar.militar.nome }}
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
+                            {% endfor %}
+                        </td>
+                        <td class="reserva-col">
+                            {% for nomeacao in item.nomeacoes %}
+                                {% if nomeacao.e_reserva %}
+                                    {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})<br>
                                 {% endif %}
-                            </td>
-                            <td class="reserva-col">
-                                {% if item.nomeacoes %}
-                                    {% for nomeacao in item.nomeacoes %}
-                                        {% if nomeacao.e_reserva %}
-                                            <div>
-                                                {{ nomeacao.escala_militar.militar.posto }}
-                                                {{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }}
-                                                {{ nomeacao.escala_militar.militar.nome }}
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
+                            {% endfor %}
+                        </td>
+                        <td class="observacoes-col">
+                            {% for nomeacao in item.nomeacoes %}
+                                {% if nomeacao.observacoes %}
+                                    <div>{{ nomeacao.observacoes }}</div>
                                 {% endif %}
-                            </td>
-                            <td class="observacoes-col">
-                                {{ item.escala.observacoes }}
-                            </td>
-                        </tr>
+                            {% endfor %}
+                        </td>
+                    </tr>
                     {% empty %}
                         <tr>
                             <td colspan="4" style="text-align: center;">

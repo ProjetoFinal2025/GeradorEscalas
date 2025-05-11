@@ -27,20 +27,26 @@
                 {% for dia in dias %}
                 <tr class="{{ dia.tipo_dia }}">
                     <td><span class="{% if dia.tipo_dia == 'feriado' or dia.tipo_dia == 'fim_semana' %}badge-escala-b{% endif %}">{{ dia.data|date:"d/m/Y" }}</span></td>
-                    {% with nomeacoes=nomeacoes_por_data|get_item:dia.data %}
+                    {% with efetivos=nomeacoes_por_data|get_item:dia.data|default:{} %}
                         <td class="col-nomeacao">
-                            {% if nomeacoes and nomeacoes.efetivo %}
-                                <span class="militar-info">{{ nomeacoes.efetivo.posto }} {{ nomeacoes.efetivo.nome }}</span>
+                            {% if efetivos.efetivos %}
+                                {% for militar in efetivos.efetivos %}
+                                    <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                {% endfor %}
                             {% else %}
                                 <span class="text-muted">—</span>
                             {% endif %}
                         </td>
                         <td class="col-nomeacao">
-                            {% if nomeacoes and nomeacoes.reserva %}
-                                <span class="militar-info">{{ nomeacoes.reserva.posto }} {{ nomeacoes.reserva.nome }}</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
+                            {% with reservas=nomeacoes_por_data|get_item:dia.data|default:{} %}
+                                {% if reservas.reservas %}
+                                    {% for militar in reservas.reservas %}
+                                        <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            {% endwith %}
                         </td>
                     {% endwith %}
                     <td>
@@ -81,9 +87,9 @@
 .table-escalas th, .table-escalas td.col-nomeacao {
     min-width: 220px;
     max-width: 350px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 .table-escalas td.col-nomeacao {
     font-family: monospace;
@@ -93,9 +99,9 @@
 }
 .table-escalas .militar-info {
     font-family: monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 .table-escalas tr.util {
     background-color: #fff;
