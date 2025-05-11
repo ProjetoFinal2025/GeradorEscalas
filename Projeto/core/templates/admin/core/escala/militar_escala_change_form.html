@@ -4,19 +4,19 @@
 {% block submit_buttons_bottom %}
   <div class="submit-row">
 
-    {# --- Botão "Gravar" (verde) ---------------------------------------- #}
     <input type="submit"
            value="{% trans 'Gravar' %}"
            name="_save"
            class="button"
            style="background-color:#4c6721; border-color:#4c6721; color:#fff;">
 
-    {# --- Link de remoção -------------------------------------------------- #}
-    <a href="{% url 'admin:core_escala_delete' original.id %}"
-       class="deletelink">{% trans 'Remover' %}</a>
 
-    {# --- Acção «Reset ordem por NIM» ------------------------------------- #}
-    {% if custom_reset_button %}
+    {% if original and original.pk %}
+    <a href="{% url 'admin:core_escala_delete' original.pk %}" class="deletelink"> {% trans 'Remover' %}</a>
+    {% endif %}
+
+
+    {% if custom_reset_button and change %}
       <form method="post" style="display:inline">
         {% csrf_token %}
         <input type="submit" class="button"
@@ -25,7 +25,6 @@
       </form>
     {% endif %}
 
-    {# --- Acção «Exportar lista de Militares (PDF)» ----------------------- #}
     {% if export_pdf_url %}
       <form method="get" action="{{ export_pdf_url }}" style="display:inline">
         <input type="submit" class="button"
