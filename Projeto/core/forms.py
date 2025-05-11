@@ -54,11 +54,23 @@ class EscalaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Determina o serviço
-        servico = None
-        has_errors = self.errors and len(self.errors) > 0  # Check if form has errors
+        # if we're editing an existing Escala, never show the radios,
+        # and don't require it — just carry over the old value
+        if self.instance and self.instance.pk:
+            # 1) hide
+            self.fields["e_escala_b"].widget = forms.HiddenInput()
+            # 2) not required
+            self.fields["e_escala_b"].required = False
+            # 3) seed with the current value ('0' or '1')
+            self.initial["e_escala_b"] = "1" if self.instance.e_escala_b else "0"
+            # and we can stop here: no need to re‐apply the service logic below
+            return
 
-        if not has_errors:  # Only modify widget if there are no validation errors
+        # — only reach this code on *add* or when there are validation errors —
+        servico = None
+        has_errors = bool(self.errors)  # True if form already has validation errors
+
+        if not has_errors:
             if "servico" in self.data:
                 try:
                     servico = Servico.objects.get(pk=self.data["servico"])
@@ -67,17 +79,14 @@ class EscalaForm(forms.ModelForm):
             elif self.instance and self.instance.pk:
                 servico = self.instance.servico
 
-            # Ajusta o campo consoante o serviço
             if servico:
                 if servico.tipo_escalas == "A":
-                    # bloqueia em A
                     self.fields["e_escala_b"].widget = forms.HiddenInput()
                     self.initial["e_escala_b"] = "0"
                 elif servico.tipo_escalas == "B":
-                    # bloqueia em B
                     self.fields["e_escala_b"].widget = forms.HiddenInput()
                     self.initial["e_escala_b"] = "1"
-                # para "AB" mantemos o radio-button
+                # if tipo_escalas == "AB", leave the radio buttons up and required
 
     # converte
     def clean_e_escala_b(self):
