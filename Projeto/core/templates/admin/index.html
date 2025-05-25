@@ -8,16 +8,6 @@
         <div style="margin-top: 2.5rem; background: #f8faf7; border-radius: 8px; padding: 2rem;">
             <h2 style="margin-top: 0;">Dashboard</h2>
             <div style="margin-bottom: 2rem;">
-                <h4>Serviços Ativos</h4>
-                <ul>
-                    {% for servico in servicos_ativos %}
-                        <li><strong>{{ servico.nome }}</strong></li>
-                    {% empty %}
-                        <li>Nenhum serviço ativo.</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div style="margin-bottom: 2rem;">
                 <h4>Militares por Serviço</h4>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
@@ -36,7 +26,7 @@
                 </table>
             </div>
             <div style="margin-bottom: 2rem;">
-                <h4>Militares Dispensados por Serviço</h4>
+                <h4>Militares Dispensados por Serviço (hoje)
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr style="background: #e9ecef;"><th style='text-align:left;'>Serviço</th><th style='text-align:right;'>Dispensados</th></tr>

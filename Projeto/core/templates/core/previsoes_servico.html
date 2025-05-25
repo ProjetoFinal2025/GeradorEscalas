@@ -2,9 +2,6 @@
 {% load core_tags %}
 
 {% block content %}
-<div style="background: red; color: white; font-size: 2em; padding: 10px; text-align: center;">TESTE: ESTE TEMPLATE ESTÁ A SER USADO?</div>
-<div id="debug-log" style="background:#fff3cd; color:#333; padding:5px; font-size:0.9em; margin-bottom:10px;"></div>
-<button id="forcar-scroll" style="margin-bottom:10px;">Forçar scroll para hoje</button>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-calendar3"></i> Previsões de Nomeação – {{ servico.nome }}</h2>
@@ -29,10 +26,12 @@
             </thead>
             <tbody>
                 {% for dia in dias %}
-                <tr class="{{ dia.tipo_dia }}">
-                    <td><span class="{% if dia.tipo_dia == 'feriado' or dia.tipo_dia == 'fim_semana' %}badge-escala-b{% endif %}">{{ dia.data|date:"d/m/Y" }}</span></td>
+                <tr>
+                    <td style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
+                        <span>{{ dia.data|date:"d/m/Y" }}</span>
+                    </td>
                     {% with efetivos=nomeacoes_por_data|get_item:dia.data %}
-                        <td class="col-nomeacao">
+                        <td class="col-nomeacao" style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                             {% if efetivos and efetivos.efetivos %}
                                 {% for militar in efetivos.efetivos %}
                                     <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
@@ -41,19 +40,19 @@
                                 <span class="text-muted">—</span>
                             {% endif %}
                         </td>
-                        <td class="col-nomeacao">
+                        <td class="col-nomeacao" style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                             {% with reservas=nomeacoes_por_data|get_item:dia.data %}
                                 {% if reservas and reservas.reservas %}
                                     {% for militar in reservas.reservas %}
                                         <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
                                     {% endfor %}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
                             {% endwith %}
                         </td>
                     {% endwith %}
-                    <td>
+                    <td style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                         {{ observacoes_por_data|get_item:dia.data|default:"" }}
                     </td>
                 </tr>
@@ -75,10 +74,6 @@
     }
     .table-escalas .militar-info {
         font-size: 0.9em;
-    }
-    .badge-escala-b {
-        font-size: 0.85em;
-        padding: 1px 6px;
     }
     h2 {
         font-size: 1.5rem;
@@ -107,22 +102,8 @@
     overflow: visible;
     text-overflow: unset;
 }
-.table-escalas tr.util {
-    background-color: #fff;
-}
-.table-escalas tr.fim_semana,
-.table-escalas tr.feriado {
-    background-color: #e6f2d8 !important;
-}
-.badge-escala-b {
-    background: #4A5D23;
-    color: white;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 0.95em;
-}
 .table-escalas tr:hover {
-    background-color:rgb(226, 70, 43);
+    background-color: #dff2d0 !important;
 }
 .linha-atual {
     background-color: #fff3cd !important;
@@ -130,14 +111,9 @@
 }
 </style>
 
-<!-- Adicionar jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script type="text/javascript">
-function logDebug(msg) {
-    $('#debug-log').append($('<div>').text(msg));
-}
-
 function scrollParaHoje() {
     var container = $('#container-previsoes');
     var tabela = $('#tabela-previsoes');
@@ -155,13 +131,10 @@ function scrollParaHoje() {
                 if (dataLinha.getDate() === hoje.getDate() && 
                     dataLinha.getMonth() === hoje.getMonth() && 
                     dataLinha.getFullYear() === hoje.getFullYear()) {
-                    logDebug('Encontrou linha de hoje: ' + textoData);
                     $(this).addClass('linha-atual');
-                    // Scroll puro JS
                     var linhaElem = this;
                     var containerElem = container[0];
                     var offset = linhaElem.offsetTop - containerElem.offsetTop;
-                    logDebug('Offset calculado: ' + offset);
                     containerElem.scrollTop = offset;
                     encontrou = true;
                     return false;
@@ -169,27 +142,10 @@ function scrollParaHoje() {
             }
         }
     });
-    if (!encontrou) {
-        logDebug('Não encontrou linha para hoje: ' + hoje.toLocaleDateString());
-    }
 }
 
 $(document).ready(function() {
-    $('#forcar-scroll').on('click', function() {
-        $('#debug-log').empty();
-        scrollParaHoje();
-    });
-    // Tentar automaticamente ao carregar
     setTimeout(scrollParaHoje, 500);
 });
-</script>
-
-<!-- Verificação se jQuery está carregado -->
-<script type="text/javascript">
-if (typeof jQuery === 'undefined') {
-    alert('jQuery não está carregado!');
-} else {
-    alert('jQuery está carregado!');
-}
 </script>
 {% endblock %} 

@@ -262,8 +262,9 @@ def nomear_militares(request, escala_id):
 @login_required
 def lista_servicos_view(request):
     servicos = list(Servico.objects.all())
-    # Obter todas as datas com nomeações
-    nomeacoes = Nomeacao.objects.select_related('escala_militar__escala', 'escala_militar__militar')
+    hoje = date.today()
+    # Obter todas as nomeações a partir de hoje
+    nomeacoes = Nomeacao.objects.filter(data__gte=hoje).select_related('escala_militar__escala', 'escala_militar__militar')
     datas_raw = sorted(set(n.data for n in nomeacoes))
     # Obter feriados para o intervalo das datas
     if datas_raw:
@@ -313,11 +314,29 @@ def previsoes_por_servico_view(request):
 def previsoes_servico_view(request, servico_id):
     servico = get_object_or_404(Servico, id=servico_id)
     hoje = date.today()
-    # Definir intervalo: próximo mês
-    data_fim = (hoje.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    
+    # Obter todas as nomeações futuras para o serviço
+    nomeacoes = Nomeacao.objects.filter(
+        escala_militar__escala__servico=servico,
+        data__gte=hoje
+    ).select_related('escala_militar__militar', 'escala_militar__escala').order_by('data')
+    
+    # Se não houver nomeações, retornar lista vazia
+    if not nomeacoes.exists():
+        return render(request, 'core/previsoes_servico.html', {
+            'servico': servico,
+            'dias': [],
+            'nomeacoes_por_data': {},
+            'observacoes_por_data': {},
+        })
+    
+    # Obter a data da última nomeação
+    data_fim = nomeacoes.last().data
+    
     # Obter feriados
     feriados = obter_feriados(hoje, data_fim)
     feriados_set = set(feriados)
+    
     # Gerar todos os dias do intervalo
     dias = []
     data_atual = hoje
@@ -330,12 +349,7 @@ def previsoes_servico_view(request, servico_id):
             tipo_dia = 'util'
         dias.append({'data': data_atual, 'tipo_dia': tipo_dia})
         data_atual += timedelta(days=1)
-    # Obter nomeações futuras para o serviço
-    nomeacoes = Nomeacao.objects.filter(
-        escala_militar__escala__servico=servico,
-        data__gte=hoje,
-        data__lte=data_fim
-    ).select_related('escala_militar__militar', 'escala_militar__escala').order_by('data')
+    
     # Agrupar por data
     nomeacoes_por_data = {}
     observacoes_por_data = {}
@@ -347,6 +361,7 @@ def previsoes_servico_view(request, servico_id):
             nomeacoes_por_data[n.data]['efetivos'].append(n.escala_militar.militar)
         # Guardar observações da escala
         observacoes_por_data[n.data] = n.escala_militar.escala.observacoes if n.escala_militar.escala else ''
+    
     return render(request, 'core/previsoes_servico.html', {
         'servico': servico,
         'dias': dias,

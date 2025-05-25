@@ -26,12 +26,12 @@
             </thead>
             <tbody>
                 {% for item in datas %}
-                <tr class="{{ item.tipo_dia }}">
-                    <td><span class="{% if item.tipo_dia == 'feriado' or item.tipo_dia == 'fim_semana' %}badge-escala-b{% endif %}">{{ item.data|date:"d/m/Y" }}</span></td>
+                <tr>
+                    <td style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}"><span>{{ item.data|date:"d/m/Y" }}</span></td>
                     {% for servico in servicos %}
                         {% with linha=tabela|get_item:item.data %}
                             {% with celula=linha|get_item:servico.id %}
-                                <td class="col-nomeacao">
+                                <td class="col-nomeacao" style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                                     {% if celula.efetivo %}
                                         {% for militar in celula.efetivo %}
                                             <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
@@ -40,7 +40,7 @@
                                         <span class="text-muted">—</span>
                                     {% endif %}
                                 </td>
-                                <td class="col-nomeacao">
+                                <td class="col-nomeacao" style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                                     {% if celula.reserva %}
                                         {% for militar in celula.reserva %}
                                             <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
@@ -95,13 +95,6 @@
     white-space: normal;
     overflow: visible;
     text-overflow: unset;
-}
-.table-escalas tr.util {
-    background-color: #fff;
-}
-.table-escalas tr.fim_semana,
-.table-escalas tr.feriado {
-    background-color: #e6f2d8 !important;
 }
 .badge-escala-b {
     background: #4A5D23;
