@@ -39,7 +39,7 @@ class Role(models.Model):
 
 class Militar(models.Model):
     # Campos Gerais
-    nim = models.IntegerField(primary_key=True)
+    nim = models.CharField(max_length=8, primary_key=True)
     # Liga ao user login
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     nome = models.CharField(max_length=100)
@@ -74,14 +74,14 @@ class Militar(models.Model):
     listar_dispensas.short_description = "Dispensas"
 
     def __str__(self):
-        return f"{self.posto} {self.nome} ({str(self.nim).zfill(8)})"
+        return f"{self.posto} {self.nome} ({self.nim})"
 
     def clean(self):
         super().clean()
         # Verifica se o NIM tem 8 digitos.
         if self.nim is not None:
-            if not (10000000 <= self.nim <= 99999999):
-                raise ValidationError({'nim': "O NIM deve ter exatamente 8 dígitos."})
+            if not self.nim.isdigit() or len(self.nim) != 8:
+                raise ValidationError({'nim': "O NIM deve ter exatamente 8 dígitos numéricos."})
 
         # Verifica se o numero de telefone tem 9 digitos.
         if self.telefone is not None:

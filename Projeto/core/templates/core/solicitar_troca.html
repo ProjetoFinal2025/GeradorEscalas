@@ -14,7 +14,7 @@
                         <option value="">Selecione um militar</option>
                         {% for militar in militares_disponiveis %}
                             <option value="{{ militar.nim }}">
-                                {{ militar.posto }} {{ militar.nome }} ({{ militar.nim|stringformat:"08d" }})
+                                {{ militar.posto }} {{ militar.nome }} ({{ militar.nim }})
                             </option>
                         {% endfor %}
                     </select>

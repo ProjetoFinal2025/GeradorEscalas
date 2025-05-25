@@ -18,7 +18,7 @@
             <tbody>
                 {% for dispensa in dispensas %}
                 <tr>
-                    <td>{{ dispensa.militar.posto }} {{ dispensa.militar.nome }} ({{ dispensa.militar.nim|stringformat:"08d" }})</td>
+                    <td>{{ dispensa.militar.posto }} {{ dispensa.militar.nome }} ({{ dispensa.militar.nim }})</td>
                     <td>{% for s in dispensa.militar.servicos.all %}{{ s.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
                     <td>{{ dispensa.data_inicio|date:"d/m/Y" }}</td>
                     <td>{{ dispensa.data_fim|date:"d/m/Y" }}</td>

@@ -17,10 +17,19 @@ class MilitarForm(forms.ModelForm):
                 'style': 'width: 200px;',
                 'inputmode': 'numeric',
                 'pattern': '[0-9]*',
+                'maxlength': '8',
+                'minlength': '8',
+                'placeholder': '00000000',
             }),
             'user': forms.Select(attrs={'style': 'width: 200px;'}),
         }
 
+    def clean_nim(self):
+        nim = self.cleaned_data.get('nim')
+        if nim:
+            # Garante que o NIM tenha 8 dígitos preenchendo com zeros à esquerda
+            nim = nim.zfill(8)
+        return nim
 
 # Modifica a forma como Serviço e exposto na view Admin
 
