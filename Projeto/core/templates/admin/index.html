@@ -36,8 +36,19 @@
                 </table>
             </div>
             <div style="margin-bottom: 2rem;">
-                <h4>Militares Dispensados</h4>
-                <p><strong>{{ total_dispensados }}</strong> militares atualmente dispensados.</p>
+                <h4>Militares Dispensados por Serviço</h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #e9ecef;"><th style='text-align:left;'>Serviço</th><th style='text-align:right;'>Dispensados</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for servico, total in dispensados_por_servico.items %}
+                        <tr><td style='text-align:left;'>{{ servico }}</td><td style='text-align:right;'>{{ total }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="2">Sem dados.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
             <div>
                 <h4>Top 5 Militares com Mais Serviços Realizados</h4>

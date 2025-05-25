@@ -724,11 +724,17 @@ class GeradorEscalasAdminSite(admin.AdminSite):
         total_militares = sum(militares_por_servico.values())
         extra_context['total_militares'] = total_militares
 
-        # Militares dispensados (atuais)
+        # Militares dispensados por serviço (atuais)
         hoje = timezone.now().date()
-        dispensas_ativas = Dispensa.objects.filter(data_inicio__lte=hoje, data_fim__gte=hoje)
-        total_dispensados = dispensas_ativas.values('militar').distinct().count()
-        extra_context['total_dispensados'] = total_dispensados
+        dispensados_por_servico = {}
+        for servico in servicos_ativos:
+            militares = servico.militares.all()
+            count = militares.filter(
+                dispensas__data_inicio__lte=hoje,
+                dispensas__data_fim__gte=hoje
+            ).distinct().count()
+            dispensados_por_servico[servico.nome] = count
+        extra_context['dispensados_por_servico'] = dispensados_por_servico
 
         # Top 5 militares com mais serviços realizados (nome + posto)
         top_militares_qs = (
