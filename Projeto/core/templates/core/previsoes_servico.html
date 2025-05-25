@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load core_tags %}
+
 {% block content %}
+<div style="background: red; color: white; font-size: 2em; padding: 10px; text-align: center;">TESTE: ESTE TEMPLATE ESTÁ A SER USADO?</div>
+<div id="debug-log" style="background:#fff3cd; color:#333; padding:5px; font-size:0.9em; margin-bottom:10px;"></div>
+<button id="forcar-scroll" style="margin-bottom:10px;">Forçar scroll para hoje</button>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-calendar3"></i> Previsões de Nomeação – {{ servico.nome }}</h2>
@@ -13,8 +17,8 @@
             </a>
         </div>
     </div>
-    <div class="table-responsive">
-        <table class="table table-bordered table-escalas table-mobile align-middle" style="table-layout: fixed; width: 100%;">
+    <div id="container-previsoes" class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
+        <table id="tabela-previsoes" class="table table-bordered table-escalas table-mobile align-middle" style="table-layout: fixed; width: 100%;">
             <thead>
                 <tr>
                     <th style="width: 120px; background-color: #4A5D23; color: white;">Data</th>
@@ -118,7 +122,74 @@
     font-size: 0.95em;
 }
 .table-escalas tr:hover {
-    background-color: #dff2d0;
+    background-color:rgb(226, 70, 43);
+}
+.linha-atual {
+    background-color: #fff3cd !important;
+    border: 2px solid #ffc107;
 }
 </style>
+
+<!-- Adicionar jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script type="text/javascript">
+function logDebug(msg) {
+    $('#debug-log').append($('<div>').text(msg));
+}
+
+function scrollParaHoje() {
+    var container = $('#container-previsoes');
+    var tabela = $('#tabela-previsoes');
+    var hoje = new Date();
+    var linhas = tabela.find('tr');
+    var encontrou = false;
+
+    linhas.each(function() {
+        var celulaData = $(this).find('td').first();
+        if (celulaData.length > 0) {
+            var textoData = celulaData.text().trim();
+            var partesData = textoData.split('/');
+            if (partesData.length === 3) {
+                var dataLinha = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+                if (dataLinha.getDate() === hoje.getDate() && 
+                    dataLinha.getMonth() === hoje.getMonth() && 
+                    dataLinha.getFullYear() === hoje.getFullYear()) {
+                    logDebug('Encontrou linha de hoje: ' + textoData);
+                    $(this).addClass('linha-atual');
+                    // Scroll puro JS
+                    var linhaElem = this;
+                    var containerElem = container[0];
+                    var offset = linhaElem.offsetTop - containerElem.offsetTop;
+                    logDebug('Offset calculado: ' + offset);
+                    containerElem.scrollTop = offset;
+                    encontrou = true;
+                    return false;
+                }
+            }
+        }
+    });
+    if (!encontrou) {
+        logDebug('Não encontrou linha para hoje: ' + hoje.toLocaleDateString());
+    }
+}
+
+$(document).ready(function() {
+    $('#forcar-scroll').on('click', function() {
+        $('#debug-log').empty();
+        scrollParaHoje();
+    });
+    // Tentar automaticamente ao carregar
+    setTimeout(scrollParaHoje, 500);
+});
+</script>
+
+<!-- Verificação se jQuery está carregado -->
+<script type="text/javascript">
+if (typeof jQuery === 'undefined') {
+    alert('jQuery não está carregado!');
+} else {
+    alert('jQuery está carregado!');
+}
+</script>
 {% endblock %} 

@@ -342,32 +342,32 @@ class EscalaService:
                     for i in range(n_efetivos):
                         if i < len(disponiveis_nim):
                             nim_efetivo = disponiveis_nim[i]
-                            militar_efetivo = militares_dict[nim_efetivo]
-                            mensagem_obs = ""
-                            if EscalaService.militar_licenca_antes(
-                                    militar_efetivo, dia):
-                                mensagem_obs = "Entrou na escala. "
-                            if EscalaService.nomear_efetivo(
-                                    escala, militar_efetivo, dia):
-                                # Adicionar observação apenas à nomeação criada
-                                # neste dia
-                                nomeacao = Nomeacao.objects.get(
-                                    escala_militar__escala=escala,
-                                    escala_militar__militar=militar_efetivo,
-                                    data=dia,
-                                    e_reserva=False
-                                )
-                                if mensagem_obs:
-                                    nomeacao.observacoes = mensagem_obs
-                                    nomeacao.save()
-                                ultima_nomeacao_b[nim_efetivo] = dia
-                                militar_efetivo.ultima_nomeacao_b = dia
-                                militar_efetivo.save()
-                                print(
-                                    f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação B: {dia}")
-                                rotacao_nim.append(rotacao_nim.pop(
-                                    rotacao_nim.index(nim_efetivo)))
-                                efetivos_por_dia_b[dia].append(militar_efetivo)
+                        militar_efetivo = militares_dict[nim_efetivo]
+                        mensagem_obs = ""
+                        if EscalaService.militar_licenca_antes(
+                                militar_efetivo, dia):
+                            mensagem_obs = "Entrou na escala. "
+                        if EscalaService.nomear_efetivo(
+                                escala, militar_efetivo, dia):
+                            # Adicionar observação apenas à nomeação criada
+                            # neste dia
+                            nomeacao = Nomeacao.objects.get(
+                                escala_militar__escala=escala,
+                                escala_militar__militar=militar_efetivo,
+                                data=dia,
+                                e_reserva=False
+                            )
+                            if mensagem_obs:
+                                nomeacao.observacoes = mensagem_obs
+                                nomeacao.save()
+                            ultima_nomeacao_b[nim_efetivo] = dia
+                            militar_efetivo.ultima_nomeacao_b = dia
+                            militar_efetivo.save()
+                            print(
+                                f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação B: {dia}")
+                            rotacao_nim.append(rotacao_nim.pop(
+                                rotacao_nim.index(nim_efetivo)))
+                            efetivos_por_dia_b[dia].append(militar_efetivo)
                     print(f"[DEBUG] Militares nomeados para o dia {dia}:")
                     for militar in efetivos_por_dia_b[dia]:
                         print(f"  - {militar.nome} ({militar.nim})")
@@ -398,32 +398,32 @@ class EscalaService:
                     for i in range(n_efetivos):
                         if i < len(disponiveis_nim):
                             nim_efetivo = disponiveis_nim[i]
-                            militar_efetivo = militares_dict[nim_efetivo]
-                            mensagem_obs = ""
-                            if EscalaService.militar_licenca_antes(
-                                    militar_efetivo, dia):
-                                mensagem_obs = "Entrou na escala. "
-                            if EscalaService.nomear_efetivo(
-                                    escala, militar_efetivo, dia):
-                                # Adicionar observação apenas à nomeação criada
-                                # neste dia
-                                nomeacao = Nomeacao.objects.get(
-                                    escala_militar__escala=escala,
-                                    escala_militar__militar=militar_efetivo,
-                                    data=dia,
-                                    e_reserva=False
-                                )
-                                if mensagem_obs:
-                                    nomeacao.observacoes = mensagem_obs
-                                    nomeacao.save()
-                                ultima_nomeacao_a[nim_efetivo] = dia
-                                militar_efetivo.ultima_nomeacao_a = dia
-                                militar_efetivo.save()
-                                print(
-                                    f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação A: {dia}")
-                                rotacao_nim.append(rotacao_nim.pop(
-                                    rotacao_nim.index(nim_efetivo)))
-                                efetivos_por_dia_a[dia].append(militar_efetivo)
+                        militar_efetivo = militares_dict[nim_efetivo]
+                        mensagem_obs = ""
+                        if EscalaService.militar_licenca_antes(
+                                militar_efetivo, dia):
+                            mensagem_obs = "Entrou na escala. "
+                        if EscalaService.nomear_efetivo(
+                                escala, militar_efetivo, dia):
+                            # Adicionar observação apenas à nomeação criada
+                            # neste dia
+                            nomeacao = Nomeacao.objects.get(
+                                escala_militar__escala=escala,
+                                escala_militar__militar=militar_efetivo,
+                                data=dia,
+                                e_reserva=False
+                            )
+                            if mensagem_obs:
+                                nomeacao.observacoes = mensagem_obs
+                                nomeacao.save()
+                            ultima_nomeacao_a[nim_efetivo] = dia
+                            militar_efetivo.ultima_nomeacao_a = dia
+                            militar_efetivo.save()
+                            print(
+                                f"[DEBUG] Militar nomeado EFETIVO: {nim_efetivo} | Nova última nomeação A: {dia}")
+                            rotacao_nim.append(rotacao_nim.pop(
+                                rotacao_nim.index(nim_efetivo)))
+                            efetivos_por_dia_a[dia].append(militar_efetivo)
                     print(f"[DEBUG] Militares nomeados para o dia {dia}:")
                     for militar in efetivos_por_dia_a[dia]:
                         print(f"  - {militar.nome} ({militar.nim})")
