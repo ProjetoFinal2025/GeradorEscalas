@@ -254,37 +254,37 @@
                 </thead>
                 <tbody>
                     {% for item in datas %}
-                    <tr class="{{ item.tipo_dia }}">
-                        <td class="dia-col">
+                        <tr class="{{ item.tipo_dia }}">
+                            <td class="dia-col">
                             {{ item.data|date:"d/m/Y" }} ({{ item.data|date:"l" }})
                             {% if item.e_feriado %}
                                 <span class="badge badge-danger">Feriado</span>
                             {% elif item.e_fim_semana %}
                                 <span class="badge badge-warning">Fim de Semana</span>
-                            {% endif %}
-                        </td>
-                        <td class="efetivo-col">
+                                {% endif %}
+                            </td>
+                            <td class="efetivo-col">
                             {% for nomeacao in item.nomeacoes %}
                                 {% if not nomeacao.e_reserva %}
                                     {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})<br>
                                 {% endif %}
                             {% endfor %}
-                        </td>
-                        <td class="reserva-col">
+                            </td>
+                            <td class="reserva-col">
                             {% for nomeacao in item.nomeacoes %}
                                 {% if nomeacao.e_reserva %}
                                     {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})<br>
                                 {% endif %}
                             {% endfor %}
-                        </td>
-                        <td class="observacoes-col">
+                            </td>
+                            <td class="observacoes-col">
                             {% for nomeacao in item.nomeacoes %}
                                 {% if nomeacao.observacoes %}
                                     <div>{{ nomeacao.observacoes }}</div>
                                 {% endif %}
                             {% endfor %}
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
                     {% empty %}
                         <tr>
                             <td colspan="4" style="text-align: center;">

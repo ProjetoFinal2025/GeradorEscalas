@@ -27,9 +27,9 @@
                 {% for dia in dias %}
                 <tr class="{{ dia.tipo_dia }}">
                     <td><span class="{% if dia.tipo_dia == 'feriado' or dia.tipo_dia == 'fim_semana' %}badge-escala-b{% endif %}">{{ dia.data|date:"d/m/Y" }}</span></td>
-                    {% with efetivos=nomeacoes_por_data|get_item:dia.data|default:{} %}
+                    {% with efetivos=nomeacoes_por_data|get_item:dia.data %}
                         <td class="col-nomeacao">
-                            {% if efetivos.efetivos %}
+                            {% if efetivos and efetivos.efetivos %}
                                 {% for militar in efetivos.efetivos %}
                                     <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
                                 {% endfor %}
@@ -38,14 +38,14 @@
                             {% endif %}
                         </td>
                         <td class="col-nomeacao">
-                            {% with reservas=nomeacoes_por_data|get_item:dia.data|default:{} %}
-                                {% if reservas.reservas %}
+                            {% with reservas=nomeacoes_por_data|get_item:dia.data %}
+                                {% if reservas and reservas.reservas %}
                                     {% for militar in reservas.reservas %}
                                         <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
                                     {% endfor %}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
                             {% endwith %}
                         </td>
                     {% endwith %}
