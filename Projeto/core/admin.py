@@ -21,6 +21,8 @@ from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMili
 from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
 from .services.troca_service import TrocaService
+from django.contrib.admin.views.decorators import staff_member_required
+from .views import ERRO_PREVISAO_DIA_ATUAL
 
 @register.filter
 def get_item(dictionary, key):
@@ -408,6 +410,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
+        extra_context['ERRO_PREVISAO_DIA_ATUAL'] = ERRO_PREVISAO_DIA_ATUAL
 
         # processar POST de geração rápida
         if request.method == "POST" and "gerar_escalas" in request.POST:
@@ -422,7 +425,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
                 ok = EscalaService.gerar_escalas_automaticamente(servico, data_inicio, data_fim)
                 if not ok and data_inicio <= date.today():
-                    messages.error(request, "Não é permitido gerar previsões para o dia de hoje. Por favor, escolha uma data futura.")
+                    messages.error(request, ERRO_PREVISAO_DIA_ATUAL)
                 else:
                     msg = "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões."
                     (messages.success if ok else messages.error)(request, msg)
@@ -530,15 +533,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
             try:
                 servico = Servico.objects.get(pk=servico_id)
-                ok = EscalaService.gerar_escalas_automaticamente(
-                    servico,
-                    date.fromisoformat(data_inicio),
-                    date.fromisoformat(data_fim),
-                )
-                (messages.success if ok else messages.error)(
-                    request,
-                    "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões.",
-                )
+                data_inicio = date.fromisoformat(data_inicio)
+                data_fim = date.fromisoformat(data_fim)
+
+                ok = EscalaService.gerar_escalas_automaticamente(servico, data_inicio, data_fim)
+                if not ok and data_inicio <= date.today():
+                    messages.error(request, ERRO_PREVISAO_DIA_ATUAL)
+                else:
+                    msg = "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões."
+                    (messages.success if ok else messages.error)(request, msg)
+
             except Exception as exc:  # pylint: disable=broad-except
                 messages.error(request, f"Erro: {exc}")
 

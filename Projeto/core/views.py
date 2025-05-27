@@ -19,7 +19,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.units import cm
 from .services.troca_service import TrocaService
+import json
 
+# Mensagens de erro constantes
+ERRO_PREVISAO_DIA_ATUAL = "Não é permitido gerar previsões para o dia de hoje. Por favor, escolha uma data futura."
 
 # view de log in
 def login_view(request):
@@ -314,6 +317,16 @@ def previsoes_por_servico_view(request):
 def previsoes_servico_view(request, servico_id):
     servico = get_object_or_404(Servico, id=servico_id)
     hoje = date.today()
+    
+    # Verificar se há nomeações para o dia atual
+    nomeacoes_hoje = Nomeacao.objects.filter(
+        escala_militar__escala__servico=servico,
+        data=hoje
+    ).exists()
+    
+    if nomeacoes_hoje:
+        messages.error(request, ERRO_PREVISAO_DIA_ATUAL)
+        return redirect('previsoes_por_servico')
     
     # Obter todas as nomeações futuras para o serviço
     nomeacoes = Nomeacao.objects.filter(
@@ -657,3 +670,155 @@ def agendar_destroca_view(request, troca_id):
             messages.error(request, "Data inválida")
             
     return redirect('solicitar_troca')
+
+@login_required
+def obter_militar(request, militar_nim):
+    try:
+        militar = Militar.objects.get(nim=militar_nim)
+        return JsonResponse({
+            'success': True,
+            'nim': militar.nim,
+            'nome': militar.nome,
+            'posto': militar.posto
+        })
+    except Militar.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Militar não encontrado'
+        }, status=404)
+
+@login_required
+def obter_militares_disponiveis(request, servico_id, data):
+    try:
+        servico = Servico.objects.get(id=servico_id)
+        data = datetime.strptime(data, '%Y-%m-%d').date()
+        
+        # Obter militares que já estão nomeados como efetivos para esta data
+        militares_efetivos = Nomeacao.objects.filter(
+            data=data,
+            escala_militar__escala__servico=servico,
+            e_reserva=False
+        ).values_list('escala_militar__militar__nim', flat=True)
+        
+        # Obter militares disponíveis (que não estão nomeados como efetivos)
+        militares_disponiveis = Militar.objects.filter(
+            servicos=servico
+        ).exclude(
+            nim__in=militares_efetivos
+        ).values('nim', 'nome', 'posto')
+        
+        return JsonResponse({
+            'success': True,
+            'militares': list(militares_disponiveis)
+        })
+    except (Servico.DoesNotExist, ValueError):
+        return JsonResponse({
+            'success': False,
+            'message': 'Dados inválidos'
+        }, status=400)
+
+@login_required
+def substituir_militar(request):
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método não permitido'
+        }, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        militar_atual = Militar.objects.get(nim=data['militar_atual'])
+        novo_militar = Militar.objects.get(nim=data['novo_militar'])
+        servico = Servico.objects.get(id=data['servico'])
+        data_substituicao = datetime.strptime(data['data'], '%Y-%m-%d').date()
+        e_reserva = data['e_reserva']
+        observacoes = data.get('observacoes', '')
+        
+        # Remover nomeação atual
+        nomeacao_atual = Nomeacao.objects.get(
+            escala_militar__militar=militar_atual,
+            escala_militar__escala__servico=servico,
+            data=data_substituicao,
+            e_reserva=e_reserva
+        )
+        
+        # Obter a primeira escala do serviço
+        escala = Escala.objects.filter(servico=servico).order_by('id').first()
+        escala_militar = EscalaMilitar.objects.get_or_create(
+            escala=escala,
+            militar=novo_militar
+        )[0]
+        
+        nova_nomeacao = Nomeacao.objects.create(
+            escala_militar=escala_militar,
+            data=data_substituicao,
+            e_reserva=e_reserva,
+            observacoes=observacoes
+        )
+        
+        # Remover nomeação antiga
+        nomeacao_atual.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Substituição realizada com sucesso'
+        })
+    except (Militar.DoesNotExist, Servico.DoesNotExist, Nomeacao.DoesNotExist, ValueError, KeyError) as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)
+
+@login_required
+def obter_nomeacao_atual(request, servico_id, data, tipo):
+    try:
+        servico = Servico.objects.get(id=servico_id)
+        data = datetime.strptime(data, '%Y-%m-%d').date()
+        e_reserva = tipo.lower() == 'true'
+        
+        nomeacao = Nomeacao.objects.filter(
+            escala_militar__escala__servico=servico,
+            data=data,
+            e_reserva=e_reserva
+        ).select_related('escala_militar__militar').first()
+        
+        if nomeacao:
+            return JsonResponse({
+                'success': True,
+                'militar': {
+                    'nim': nomeacao.escala_militar.militar.nim,
+                    'nome': nomeacao.escala_militar.militar.nome,
+                    'posto': nomeacao.escala_militar.militar.posto
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'militar': None
+            })
+    except (Servico.DoesNotExist, ValueError):
+        return JsonResponse({
+            'success': False,
+            'message': 'Dados inválidos'
+        }, status=400)
+
+@login_required
+def editar_observacao_nomeacao(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    try:
+        data = json.loads(request.body)
+        servico = Servico.objects.get(id=data['servico'])
+        data_nomeacao = datetime.strptime(data['data'], '%Y-%m-%d').date()
+        observacoes = data.get('observacoes', '')
+
+        nomeacoes = Nomeacao.objects.filter(
+            escala_militar__escala__servico=servico,
+            data=data_nomeacao
+        )
+        if not nomeacoes.exists():
+            return JsonResponse({'success': False, 'message': 'Nomeação não encontrada.'}, status=404)
+        nomeacoes.update(observacoes=observacoes)
+        return JsonResponse({'success': True, 'message': 'Observação atualizada com sucesso.'})
+    except (Servico.DoesNotExist, ValueError, KeyError) as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)

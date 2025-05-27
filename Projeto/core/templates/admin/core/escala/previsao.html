@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="{% static "admin/css/changelists.css" %}">
   <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     :root {
       --primary-color: #4A5D23;
@@ -146,7 +147,6 @@
       background-color: var(--hover-color);
     }
 
-
     .escala-table th, .escala-table td {
       border-right: 1px solid var(--border-color);
       border-left: 1px solid var(--border-color);
@@ -206,6 +206,25 @@
       background-color: #fff3cd !important;
       border: 2px solid #ffc107;
     }
+
+    /* Estilos para o botão de substituição */
+    .btn-substituir {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1em;
+      margin-left: 20px;
+    }
+
+    .btn-substituir:hover {
+      background: var(--hover-color);
+    }
   </style>
 {% endblock %}
 
@@ -242,6 +261,12 @@
                         <a href="{% url 'exportar_previsoes_pdf' servico.id %}" class="btn-admin-pdf" target="_blank">
                             <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
                         </a>
+                        <button type="button" class="btn-substituir" onclick="abrirModalSubstituicao()">
+                            <i class="bi bi-arrow-left-right"></i> Substituir Militar
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="abrirModalObservacao()">
+                            <i class="bi bi-chat-left-text"></i> Editar Observação
+                        </button>
                     </div>
                 </div>
             </form>
@@ -271,23 +296,27 @@
                             <td class="efetivo-col">
                             {% for nomeacao in item.nomeacoes %}
                                 {% if not nomeacao.e_reserva %}
-                                    {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})<br>
+                                    <div>
+                                        {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})
+                                    </div>
                                 {% endif %}
                             {% endfor %}
                             </td>
                             <td class="reserva-col">
                             {% for nomeacao in item.nomeacoes %}
                                 {% if nomeacao.e_reserva %}
-                                    {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})<br>
+                                    <div>
+                                        {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})
+                                    </div>
                                 {% endif %}
                             {% endfor %}
                             </td>
                             <td class="observacoes-col">
-                            {% for nomeacao in item.nomeacoes %}
-                                {% if nomeacao.observacoes %}
-                                    <div>{{ nomeacao.observacoes }}</div>
-                                {% endif %}
-                            {% endfor %}
+                                {% with obs=item.nomeacoes.0.observacoes %}
+                                    {% if obs %}
+                                        <div>{{ obs }}</div>
+                                    {% endif %}
+                                {% endwith %}
                             </td>
                         </tr>
                     {% empty %}
@@ -303,14 +332,94 @@
     </div>
 </div>
 
-<style>
-.linha-atual {
-    background-color: #fff3cd !important;
-    border: 2px solid #ffc107;
-}
-</style>
+<!-- Modal de Substituição -->
+<div class="modal fade" id="modalSubstituicao" tabindex="-1" aria-labelledby="modalSubstituicaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSubstituicaoLabel">Substituir Militar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formSubstituicao">
+                    <div class="mb-3">
+                        <label for="dataSubstituicao" class="form-label">Data</label>
+                        <input type="date" class="form-control" id="dataSubstituicao" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipoSubstituicao" class="form-label">Tipo</label>
+                        <select class="form-select" id="tipoSubstituicao" required>
+                            <option value="false">Efetivo</option>
+                            <option value="true">Reserva</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Militar Atual</label>
+                        <div id="militarAtual" class="form-control-plaintext"></div>
+                        <input type="hidden" id="militarAtualNim">
+                    </div>
+                    <div class="mb-3">
+                        <label for="novoMilitar" class="form-label">Novo Militar</label>
+                        <select class="form-select" id="novoMilitar" required>
+                            <option value="">Selecione um militar...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacoesSubstituicao" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoesSubstituicao" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarSubstituicao()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Modal de Observação -->
+<div class="modal fade" id="modalObservacao" tabindex="-1" aria-labelledby="modalObservacaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalObservacaoLabel">Editar Observação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formObservacao">
+                    <div class="mb-3">
+                        <label for="dataObservacao" class="form-label">Data</label>
+                        <input type="date" class="form-control" id="dataObservacao" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observação</label>
+                        <textarea class="form-control" id="textoObservacao" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarObservacao()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+function validarDataInicio() {
+    const dataInicio = new Date(document.getElementById('data_inicio_input').value);
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    if (dataInicio <= hoje) {
+        alert("{{ ERRO_PREVISAO_DIA_ATUAL }}");
+        return false;
+    }
+    return true;
+}
+
 window.addEventListener('load', function() {
     var container = document.getElementById('tabela-scroll-container');
     var tabela = document.getElementById('tabela-previsao');
@@ -337,5 +446,164 @@ window.addEventListener('load', function() {
         }
     }
 });
+
+function abrirModalSubstituicao() {
+    const modal = new bootstrap.Modal(document.getElementById('modalSubstituicao'));
+    document.getElementById('formSubstituicao').reset();
+    document.getElementById('militarAtual').textContent = '';
+    document.getElementById('novoMilitar').innerHTML = '<option value="">Selecione um militar...</option>';
+    modal.show();
+}
+
+function atualizarMilitarAtual() {
+    const data = document.getElementById('dataSubstituicao').value;
+    const tipo = document.getElementById('tipoSubstituicao').value;
+    const servicoId = document.getElementById('servico_select').value;
+
+    if (!data || !servicoId) return;
+
+    fetch(`/api/nomeacao/atual/${servicoId}/${data}/${tipo}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const militarAtual = document.getElementById('militarAtual');
+                const militarAtualNim = document.getElementById('militarAtualNim');
+                if (data.militar) {
+                    militarAtual.textContent = `${data.militar.posto} ${data.militar.nome} (${data.militar.nim})`;
+                    militarAtualNim.value = data.militar.nim;
+                } else {
+                    militarAtual.textContent = 'Nenhum militar nomeado';
+                    militarAtualNim.value = '';
+                }
+            }
+        })
+        .catch(error => console.error('Erro:', error));
+}
+
+function atualizarMilitaresDisponiveis() {
+    const data = document.getElementById('dataSubstituicao').value;
+    const servicoId = document.getElementById('servico_select').value;
+
+    if (!data || !servicoId) return;
+
+    fetch(`/api/militares/disponiveis/${servicoId}/${data}/`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('novoMilitar');
+            select.innerHTML = '<option value="">Selecione um militar...</option>';
+            
+            if (data.success && data.militares) {
+                data.militares.forEach(militar => {
+                    const option = document.createElement('option');
+                    option.value = militar.nim;
+                    option.textContent = `${militar.posto} ${militar.nome} (${militar.nim})`;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Erro:', error));
+}
+
+function confirmarSubstituicao() {
+    const data = document.getElementById('dataSubstituicao').value;
+    const tipo = document.getElementById('tipoSubstituicao').value;
+    const servicoId = document.getElementById('servico_select').value;
+    const novoMilitarNim = document.getElementById('novoMilitar').value;
+    const observacoes = document.getElementById('observacoesSubstituicao').value;
+    const militarAtualNim = document.getElementById('militarAtualNim').value;
+
+    if (!data || !servicoId || !novoMilitarNim || !militarAtualNim) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+
+    const dados = {
+        servico: servicoId,
+        data: data,
+        e_reserva: tipo === 'true',
+        militar_atual: militarAtualNim,
+        novo_militar: novoMilitarNim,
+        observacoes: observacoes
+    };
+
+    fetch('/api/nomeacao/substituir/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalSubstituicao')).hide();
+            location.reload();
+        } else {
+            alert(data.message || 'Erro ao realizar a substituição.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao realizar a substituição.');
+    });
+}
+
+// Atualizar tanto o militar atual quanto a lista de disponíveis quando mudar a data ou tipo
+document.getElementById('dataSubstituicao').addEventListener('change', function() {
+    atualizarMilitarAtual();
+    atualizarMilitaresDisponiveis();
+});
+
+document.getElementById('tipoSubstituicao').addEventListener('change', function() {
+    atualizarMilitarAtual();
+    atualizarMilitaresDisponiveis();
+});
+
+function abrirModalObservacao() {
+    const modal = new bootstrap.Modal(document.getElementById('modalObservacao'));
+    document.getElementById('formObservacao').reset();
+    document.getElementById('textoObservacao').value = '';
+    modal.show();
+}
+
+function guardarObservacao() {
+    const data = document.getElementById('dataObservacao').value;
+    const servicoId = document.getElementById('servico_select').value;
+    const texto = document.getElementById('textoObservacao').value;
+
+    if (!data || !servicoId) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+
+    const dados = {
+        servico: servicoId,
+        data: data,
+        observacoes: texto
+    };
+
+    fetch('/api/nomeacao/editar_observacao/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalObservacao')).hide();
+            location.reload();
+        } else {
+            alert(data.message || 'Erro ao guardar a observação.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao guardar a observação.');
+    });
+}
 </script>
 {% endblock %} 
