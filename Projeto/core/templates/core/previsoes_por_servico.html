@@ -5,7 +5,7 @@
         <div class="col-12 col-md-8 col-lg-6">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <i class="bi bi-calendar3"></i> Consultar Previsões por Serviço
+                    <i class="bi bi-calendar3"></i> Consultar Nomeações por Serviço
                 </div>
                 <div class="card-body">
                     <form method="post">
@@ -22,8 +22,8 @@
                             </select>
                         </div>
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-search"></i> Ver Previsões
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Ver Nomeações
                             </button>
                         </div>
                     </form>
@@ -32,6 +32,15 @@
         </div>
     </div>
 </div>
+
+<!-- Mensagem de erro -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-info mt-3" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
 
 <style>
 @media (max-width: 768px) {

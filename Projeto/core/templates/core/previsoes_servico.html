@@ -25,13 +25,13 @@
                 </tr>
             </thead>
             <tbody>
-                {% for dia in dias %}
-                <tr>
-                    <td style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
-                        <span>{{ dia.data|date:"d/m/Y" }}</span>
+                {% for item in dias %}
+                <tr class="{{ item.tipo_dia }}">
+                    <td style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
+                        <span>{{ item.data|date:"d/m/Y" }}</span>
                     </td>
-                    {% with efetivos=nomeacoes_por_data|get_item:dia.data %}
-                        <td class="col-nomeacao" style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
+                    {% with efetivos=nomeacoes_por_data|get_item:item.data %}
+                        <td class="col-nomeacao" style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                             {% if efetivos and efetivos.efetivos %}
                                 {% for militar in efetivos.efetivos %}
                                     <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
@@ -40,8 +40,8 @@
                                 <span class="text-muted">—</span>
                             {% endif %}
                         </td>
-                        <td class="col-nomeacao" style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
-                            {% with reservas=nomeacoes_por_data|get_item:dia.data %}
+                        <td class="col-nomeacao" style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
+                            {% with reservas=nomeacoes_por_data|get_item:item.data %}
                                 {% if reservas and reservas.reservas %}
                                     {% for militar in reservas.reservas %}
                                         <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
@@ -52,8 +52,8 @@
                             {% endwith %}
                         </td>
                     {% endwith %}
-                    <td style="{% if dia.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif dia.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
-                        {{ observacoes_por_data|get_item:dia.data|default:"" }}
+                    <td style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
+                        {{ observacoes_por_data|get_item:item.data|default:"" }}
                     </td>
                 </tr>
                 {% empty %}

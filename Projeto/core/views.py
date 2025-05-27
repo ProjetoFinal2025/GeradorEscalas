@@ -317,64 +317,45 @@ def previsoes_por_servico_view(request):
 def previsoes_servico_view(request, servico_id):
     servico = get_object_or_404(Servico, id=servico_id)
     hoje = date.today()
-    
-    # Verificar se há nomeações para o dia atual
-    nomeacoes_hoje = Nomeacao.objects.filter(
-        escala_militar__escala__servico=servico,
-        data=hoje
-    ).exists()
-    
-    if nomeacoes_hoje:
-        messages.error(request, ERRO_PREVISAO_DIA_ATUAL)
-        return redirect('previsoes_por_servico')
-    
-    # Obter todas as nomeações futuras para o serviço
     nomeacoes = Nomeacao.objects.filter(
         escala_militar__escala__servico=servico,
         data__gte=hoje
     ).select_related('escala_militar__militar', 'escala_militar__escala').order_by('data')
-    
-    # Se não houver nomeações, retornar lista vazia
-    if not nomeacoes.exists():
-        return render(request, 'core/previsoes_servico.html', {
-            'servico': servico,
-            'dias': [],
-            'nomeacoes_por_data': {},
-            'observacoes_por_data': {},
-        })
-    
-    # Obter a data da última nomeação
-    data_fim = nomeacoes.last().data
-    
-    # Obter feriados
-    feriados = obter_feriados(hoje, data_fim)
-    feriados_set = set(feriados)
-    
-    # Gerar todos os dias do intervalo
-    dias = []
-    data_atual = hoje
-    while data_atual <= data_fim:
-        if data_atual in feriados_set:
-            tipo_dia = 'feriado'
-        elif data_atual.weekday() >= 5:
-            tipo_dia = 'fim_semana'
-        else:
-            tipo_dia = 'util'
-        dias.append({'data': data_atual, 'tipo_dia': tipo_dia})
-        data_atual += timedelta(days=1)
-    
-    # Agrupar por data
+
     nomeacoes_por_data = {}
     observacoes_por_data = {}
+    datas_set = set()
     for n in nomeacoes:
         nomeacoes_por_data.setdefault(n.data, {'efetivos': [], 'reservas': []})
         if n.e_reserva:
             nomeacoes_por_data[n.data]['reservas'].append(n.escala_militar.militar)
         else:
             nomeacoes_por_data[n.data]['efetivos'].append(n.escala_militar.militar)
-        # Guardar observações da escala
-        observacoes_por_data[n.data] = n.escala_militar.escala.observacoes if n.escala_militar.escala else ''
-    
+        # Juntar observações das nomeações do dia
+        if n.data not in observacoes_por_data:
+            observacoes_por_data[n.data] = set()
+        if n.observacoes:
+            observacoes_por_data[n.data].add(n.observacoes)
+        datas_set.add(n.data)
+
+    # Junta as observações em string
+    observacoes_por_data = {k: ' | '.join(v) for k, v in observacoes_por_data.items()}
+
+    # Identificar feriados e fins de semana
+    if datas_set:
+        feriados = set(obter_feriados(min(datas_set), max(datas_set)))
+    else:
+        feriados = set()
+    dias = []
+    for d in sorted(datas_set):
+        if d in feriados:
+            tipo_dia = 'feriado'
+        elif d.weekday() >= 5:
+            tipo_dia = 'fim_semana'
+        else:
+            tipo_dia = 'util'
+        dias.append({'data': d, 'tipo_dia': tipo_dia})
+
     return render(request, 'core/previsoes_servico.html', {
         'servico': servico,
         'dias': dias,
