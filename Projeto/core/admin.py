@@ -17,7 +17,7 @@ from django.contrib import admin, messages
 from datetime import date, datetime, timedelta
 from django import forms
 # Permite alterar os seguintes modelos na admin view
-from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
+from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao, ConfiguracaoUnidade
 from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
 from .services.troca_service import TrocaService
@@ -691,6 +691,15 @@ class PrevisaoEscalasProxy(Escala):
         verbose_name = "Previsões de Nomeação"
         verbose_name_plural = "Previsões de Nomeação"
 
+class ConfiguracaoUnidadeAdmin(VersionAdmin):
+    list_display = ('nome_unidade', 'nome_subunidade')
+    fieldsets = (
+        ('Configuração da Unidade', {
+            'fields': ('nome_unidade', 'nome_subunidade'),
+            'description': 'Configure o nome da unidade e da subunidade que aparecerão nos documentos exportados.'
+        }),
+    )
+
 # Configuração do Admin Site
 class GeradorEscalasAdminSite(admin.AdminSite):
     site_header = 'Gerador de Escalas'
@@ -774,6 +783,7 @@ admin_site.register(Escala, EscalaAdmin)
 admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
+admin_site.register(ConfiguracaoUnidade, ConfiguracaoUnidadeAdmin)
 # Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
 

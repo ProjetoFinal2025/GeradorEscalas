@@ -401,3 +401,17 @@ class TrocaServico(models.Model):
     def __str__(self):
         return f"Troca: {self.militar_solicitante} ↔ {self.militar_trocado} ({self.data_troca})"
 
+
+class ConfiguracaoUnidade(models.Model):
+    nome_unidade = models.CharField("Nome da Unidade", max_length=200)
+    nome_subunidade = models.CharField("Nome da Subunidade", max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        if self.nome_subunidade:
+            return f"{self.nome_unidade} - {self.nome_subunidade}"
+        return self.nome_unidade
+
+    class Meta:
+        verbose_name = "Configuração da Unidade"
+        verbose_name_plural = "Configuração da Unidade"
+

@@ -4,6 +4,7 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 import io
+from ..models import ConfiguracaoUnidade
 
 def gerar_pdf_escala(escala):
     militares_info = escala.militares_info.select_related('militar').order_by('ordem_semana')
@@ -13,7 +14,20 @@ def gerar_pdf_escala(escala):
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"Militares da Escala: {escala}", styles['Title']))
+    # Obter nome da unidade e subunidade
+    config = ConfiguracaoUnidade.objects.first()
+    if config:
+        if config.nome_subunidade:
+            nome_cabecalho = f"{config.nome_unidade} - {config.nome_subunidade}"
+        else:
+            nome_cabecalho = config.nome_unidade
+    else:
+        nome_cabecalho = "Unidade Militar"
+
+    # Adicionar cabeçalho com nome da unidade e subunidade
+    elements.append(Paragraph(nome_cabecalho, styles['Title']))
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph(f"Militares da Escala: {escala}", styles['Heading1']))
     elements.append(Spacer(1, 20))
 
     data = [["NIM", "Posto", "Nome", "Ordem Semana", "Ordem FDS"]]
