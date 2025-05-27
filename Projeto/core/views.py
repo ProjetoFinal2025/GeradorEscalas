@@ -20,6 +20,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import cm
 from .services.troca_service import TrocaService
 import json
+from django.views.generic import TemplateView
+
 
 # Mensagens de erro constantes
 ERRO_PREVISAO_DIA_ATUAL = "Não é permitido gerar previsões para o dia de hoje. Por favor, escolha uma data futura."
@@ -176,6 +178,12 @@ def gerar_escalas_view(request, servico_id):
     }
     
     return render(request, 'core/gerar_escalas.html', context)
+
+
+guia_view = staff_member_required(
+    TemplateView.as_view(template_name='admin/guia.html')
+)
+
 
 @staff_member_required
 def nomear_militares_view(request):

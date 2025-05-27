@@ -256,11 +256,6 @@ nav.toplinks a.date-back {
     font-weight: bold;
 }
 
-/* Hide defaultswitcher button */
-button.theme-toggle {
-    display: none !important;
-}
-
 #content-main .module caption {
     background-color: #4A5D23 !important; /* Dark olive green */
     color: white !important;
@@ -306,3 +301,6 @@ button.theme-toggle {
 #recent-actions-module .mini.quiet {
     color: #4A5D23 !important;
 }
+
+
+
