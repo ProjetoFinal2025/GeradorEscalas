@@ -68,19 +68,25 @@
                         <a class="nav-link" href="/home/"><i class="bi bi-house-door"></i> Início</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/mapa-dispensas/"><i class="bi bi-calendar-check"></i> Mapa de Dispensas</a>
+                        <a class="nav-link" href="/mapa-dispensas/"><i class="bi bi-calendar3"></i> Mapa de Dispensas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'lista_servicos' %}">Serviços</a>
+                        <a class="nav-link" href="{% url 'lista_servicos' %}"><i class="bi bi-calendar-x"></i> Previsões</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'previsoes_por_servico' %}"><i class="bi bi-calendar3"></i> Previsões por Serviço</a>
+                        <a class="nav-link" href="{% url 'previsoes_por_servico' %}"><i class="bi bi-binoculars"></i> Previsões por Serviço</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="nav-link"><i class="bi bi-person"></i> {{user.first_name}} {{user.last_name}}</span>
+                        <span class="nav-link"><i class="bi bi-person"></i> 
+                            {% if user.first_name or user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                {{ user.username }}
+                            {% endif %}
+                        </span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'alterar_senha' %}"><i class="bi bi-key"></i> Alterar Senha</a>

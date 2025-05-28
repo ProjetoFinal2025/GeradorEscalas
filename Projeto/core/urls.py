@@ -34,6 +34,7 @@ urlpatterns = [
     path('escala-servico/<int:servico_id>/exportar_pdf/', exportar_escalas_pdf, name='exportar_escalas_pdf'),
     path('alterar-senha/', PasswordChangeView.as_view(template_name='core/alterar_senha.html'), name='alterar_senha'),
     path('senha-alterada/', PasswordChangeDoneView.as_view(template_name='core/senha_alterada.html'), name='senha_alterada'),
+    path('senha-alterada/', PasswordChangeDoneView.as_view(template_name='core/senha_alterada.html'), name='password_change_done'),
     path('solicitar-troca/', solicitar_troca_view, name='solicitar_troca'),
     path('aprovar-troca/<int:troca_id>/', aprovar_troca_view, name='aprovar_troca'),
     path('rejeitar-troca/<int:troca_id>/', rejeitar_troca_view, name='rejeitar_troca'),

@@ -54,8 +54,8 @@ def home_view(request):
     militares_por_servico = {s.nome: s.militares.count() for s in servicos}
     total_militares = sum(militares_por_servico.values())
 
-    # Militares dispensados atualmente
     hoje = date.today()
+    amanha = hoje + timedelta(days=1)
     dispensas_ativas = Dispensa.objects.filter(data_inicio__lte=hoje, data_fim__gte=hoje)
     total_dispensados = dispensas_ativas.values('militar').distinct().count()
 
@@ -71,20 +71,55 @@ def home_view(request):
         for item in top_militares_qs
     ]
 
-    # Últimas 10 ações do utilizador (opcional)
-    recent_actions = (
-        LogEntry.objects.filter(user=request.user)
-        .select_related("content_type")
-        .order_by("-action_time")[:10]
-    )
+    # Calcular dispensados hoje e nomeados para hoje/amanhã por serviço
+    servicos_info = []
+    for servico in servicos:
+        # Dispensados hoje neste serviço
+        dispensados_hoje = Dispensa.objects.filter(
+            militar__servicos=servico,
+            data_inicio__lte=hoje,
+            data_fim__gte=hoje
+        ).values('militar').distinct().count()
+        # Nomeado para hoje
+        nomeacao_hoje = Nomeacao.objects.filter(
+            escala_militar__escala__servico=servico,
+            data=hoje,
+            e_reserva=False
+        ).select_related('escala_militar__militar').first()
+        militar_hoje = nomeacao_hoje.escala_militar.militar if nomeacao_hoje else None
+        # Nomeado para amanhã
+        nomeacao_amanha = Nomeacao.objects.filter(
+            escala_militar__escala__servico=servico,
+            data=amanha,
+            e_reserva=False
+        ).select_related('escala_militar__militar').first()
+        militar_amanha = nomeacao_amanha.escala_militar.militar if nomeacao_amanha else None
+        # Cor do banner conforme regras fornecidas
+        nome_lower = servico.nome.lower()
+        if "oficial" in nome_lower:
+            cor_banner = "bg-danger text-white"  # vermelho
+        elif "sargento" in nome_lower or "comandante" in nome_lower:
+            cor_banner = "bg-success text-white"  # verde
+        elif "cabo" in nome_lower:
+            cor_banner = "bg-primary text-white"  # azul
+        elif "graduado" in nome_lower:
+            cor_banner = "bg-secondary text-white"  # roxo/cinzento
+        else:
+            cor_banner = "bg-warning text-dark"  # amarelo (praças)
+        servicos_info.append({
+            'obj': servico,
+            'total_militares': militares_por_servico.get(servico.nome, 0),
+            'dispensados_hoje': dispensados_hoje,
+            'militar_hoje': militar_hoje,
+            'militar_amanha': militar_amanha,
+            'cor_banner': cor_banner,
+        })
 
     context = {
-        'servicos': servicos,
-        'militares_por_servico': militares_por_servico,
+        'servicos_info': servicos_info,
         'total_militares': total_militares,
         'total_dispensados': total_dispensados,
         'top_militares': top_militares,
-        'recent_actions': recent_actions,
         'hoje': hoje,
     }
     return render(request, 'core/home.html', context)
@@ -95,8 +130,6 @@ def mapa_dispensas_view(request):
     servico_id = request.GET.get('servico')
     servico_selecionado = None
     servicos = Servico.objects.filter(ativo=True)
-    
-    print("Serviços encontrados:", servicos.count())  # Debug
     
     if servico_id:
         servico_selecionado = get_object_or_404(Servico, id=servico_id, ativo=True)
@@ -135,14 +168,9 @@ def mapa_dispensas_view(request):
         dias.append(dia_info)
         data_atual += timedelta(days=1)
     
-    print("Total de dias gerados:", len(dias))  # Debug
-    
     mapa_dispensas = {}
     for servico in servicos:
-        print(f"Processando serviço: {servico.nome}")  # Debug
         militares = servico.militares.all().select_related('user').order_by('posto', 'nim')
-        print(f"Total de militares no serviço: {militares.count()}")  # Debug
-        
         dispensas_servico = {}
         resumo = {
             'dispensados': {},
@@ -156,8 +184,6 @@ def mapa_dispensas_view(request):
                 data_inicio__lte=ultimo_dia_ano,
                 data_fim__gte=hoje
             )
-            print(f"Dispensas encontradas para {militar.nome}: {dispensas_periodo.count()}")  # Debug
-            
             for dia in dias:
                 dispensa = next(
                     (d for d in dispensas_periodo if d.data_inicio <= dia['data'] <= d.data_fim),
@@ -174,24 +200,18 @@ def mapa_dispensas_view(request):
                     resumo['total'][dia['data']] = 0
                 resumo['total'][dia['data']] += 1
             dispensas_servico[militar] = dispensas
-        
         for dia in dias:
             total = resumo['total'].get(dia['data'], 0)
             dispensados = resumo['dispensados'].get(dia['data'], 0)
             resumo['disponiveis'][dia['data']] = total - dispensados
-        
         mapa_dispensas[servico] = {
             'militares': dispensas_servico,
             'resumo': resumo
         }
-    
-    print("Mapa de dispensas gerado:", bool(mapa_dispensas))  # Debug
-    
     if dias:
         feriados = obter_feriados(min(d['data'] for d in dias), max(d['data'] for d in dias))
     else:
         feriados = []
-    
     context = {
         'mapa_dispensas': mapa_dispensas,
         'dias': dias,
@@ -202,11 +222,6 @@ def mapa_dispensas_view(request):
         'dias_restantes': dias_restantes,
         'feriados': feriados,
     }
-    
-    print("Context gerado com sucesso")  # Debug
-    print("Tem mapa_dispensas?", 'mapa_dispensas' in context)  # Debug
-    print("Tem dias?", bool(context['dias']))  # Debug
-    
     return render(request, 'core/mapa_dispensas_publica.html', context)
 
 @login_required
