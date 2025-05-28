@@ -91,26 +91,123 @@ def home_view(request):
 
 @login_required
 def mapa_dispensas_view(request):
-    # Obter serviços ativos
+    # Obter o serviço selecionado do filtro
+    servico_id = request.GET.get('servico')
+    servico_selecionado = None
     servicos = Servico.objects.filter(ativo=True)
-    # Obter período
+    
+    print("Serviços encontrados:", servicos.count())  # Debug
+    
+    if servico_id:
+        servico_selecionado = get_object_or_404(Servico, id=servico_id, ativo=True)
+        servicos = [servico_selecionado]
+    
     hoje = date.today()
-    data_fim = hoje + timedelta(days=30)
-    # Obter feriados
-    feriados = obter_feriados(hoje, data_fim)
-    # Obter dispensas
-    dispensas = Dispensa.objects.filter(
-        data_inicio__lte=data_fim,
-        data_fim__gte=hoje
-    ).select_related('militar')
+    # Calcular dias até ao final do ano
+    ultimo_dia_ano = date(hoje.year, 12, 31)
+    dias_restantes = (ultimo_dia_ano - hoje).days
+    
+    # Obter lista de feriados
+    feriados = obter_feriados(hoje, ultimo_dia_ano)
+    
+    # Agrupar dias por mês
+    dias_por_mes = {}
+    dias = []
+    data_atual = hoje
+    
+    while data_atual <= ultimo_dia_ano:
+        mes = data_atual.replace(day=1)
+        if mes not in dias_por_mes:
+            dias_por_mes[mes] = []
+        
+        e_fim_semana = data_atual.weekday() >= 5  # 5 = Sábado, 6 = Domingo
+        e_feriado = data_atual in feriados
+        
+        dia_info = {
+            'data': data_atual, 
+            'mes': mes,
+            'dia_semana': data_atual.strftime('%A'),
+            'e_fim_semana': e_fim_semana,
+            'e_feriado': e_feriado
+        }
+        
+        dias_por_mes[mes].append(dia_info)
+        dias.append(dia_info)
+        data_atual += timedelta(days=1)
+    
+    print("Total de dias gerados:", len(dias))  # Debug
+    
+    mapa_dispensas = {}
+    for servico in servicos:
+        print(f"Processando serviço: {servico.nome}")  # Debug
+        militares = servico.militares.all().select_related('user').order_by('posto', 'nim')
+        print(f"Total de militares no serviço: {militares.count()}")  # Debug
+        
+        dispensas_servico = {}
+        resumo = {
+            'dispensados': {},
+            'disponiveis': {},
+            'total': {}
+        }
+        for militar in militares:
+            dispensas = {}
+            dispensas_periodo = Dispensa.objects.filter(
+                militar=militar,
+                data_inicio__lte=ultimo_dia_ano,
+                data_fim__gte=hoje
+            )
+            print(f"Dispensas encontradas para {militar.nome}: {dispensas_periodo.count()}")  # Debug
+            
+            for dia in dias:
+                dispensa = next(
+                    (d for d in dispensas_periodo if d.data_inicio <= dia['data'] <= d.data_fim),
+                    None
+                )
+                if dispensa:
+                    dispensas[dia['data']] = {
+                        'motivo': dispensa.motivo
+                    }
+                    if dia['data'] not in resumo['dispensados']:
+                        resumo['dispensados'][dia['data']] = 0
+                    resumo['dispensados'][dia['data']] += 1
+                if dia['data'] not in resumo['total']:
+                    resumo['total'][dia['data']] = 0
+                resumo['total'][dia['data']] += 1
+            dispensas_servico[militar] = dispensas
+        
+        for dia in dias:
+            total = resumo['total'].get(dia['data'], 0)
+            dispensados = resumo['dispensados'].get(dia['data'], 0)
+            resumo['disponiveis'][dia['data']] = total - dispensados
+        
+        mapa_dispensas[servico] = {
+            'militares': dispensas_servico,
+            'resumo': resumo
+        }
+    
+    print("Mapa de dispensas gerado:", bool(mapa_dispensas))  # Debug
+    
+    if dias:
+        feriados = obter_feriados(min(d['data'] for d in dias), max(d['data'] for d in dias))
+    else:
+        feriados = []
+    
     context = {
-        'servicos': servicos,
-        'dispensas': dispensas,
-        'feriados': feriados,
+        'mapa_dispensas': mapa_dispensas,
+        'dias': dias,
+        'dias_por_mes': dias_por_mes,
+        'servicos': Servico.objects.filter(ativo=True),
+        'servico_selecionado': servico_selecionado,
         'hoje': hoje,
-        'data_fim': data_fim
+        'dias_restantes': dias_restantes,
+        'feriados': feriados,
     }
-    return render(request, 'core/mapa_dispensas.html', context)
+    
+    print("Context gerado com sucesso")  # Debug
+    print("Tem mapa_dispensas?", 'mapa_dispensas' in context)  # Debug
+    print("Tem dias?", bool(context['dias']))  # Debug
+    
+    return render(request, 'core/mapa_dispensas_publica.html', context)
 
 @login_required
 def escala_servico_view(request, servico_id):

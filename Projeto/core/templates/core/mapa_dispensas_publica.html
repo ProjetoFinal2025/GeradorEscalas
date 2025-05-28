@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n static custom_filters %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/grelha_dispensas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="actions-bar">
+    <form method="get" class="filtro-servico" style="margin: 0;">
+        <label for="servico">Filtrar por Serviço:</label>
+        <select name="servico" id="servico" onchange="this.form.submit()">
+            <option value="">Todos os Serviços</option>
+            {% for servico in servicos %}
+            <option value="{{ servico.id }}" {% if servico_selecionado and servico.id == servico_selecionado.id %}selected{% endif %}>
+                {{ servico.nome }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if mapa_dispensas %}
+    {% for servico, dados in mapa_dispensas.items %}
+    <div class="dispensa-grid">
+        <h3>{{ servico.nome }}</h3>
+        <div style="overflow-x:auto;">
+            <div class="grid-container" style="--num-dias:{{ dias|length }};">
+                <!-- Cabeçalho com meses -->
+                <div class="grid-header">Nome</div>
+                {% regroup dias by mes as dias_por_mes %}
+                {% for mes in dias_por_mes %}
+                    <div class="month-header" style="--span-days: {{ mes.list|length }}">
+                        {{ mes.grouper|date:"F Y" }}
+                    </div>
+                {% endfor %}
+
+                <!-- Cabeçalho com dias -->
+                <div class="grid-header"></div>
+                {% for dia in dias %}
+                    <div class="grid-day-header {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                        {{ dia.data|date:"d" }}
+                    </div>
+                {% endfor %}
+
+                <!-- Linhas de militares -->
+                {% for militar, dispensas in dados.militares.items %}
+                    <div class="militar-cell">
+                        {{ militar.posto }} {{ militar.nome }} ({{ militar.nim }})
+                    </div>
+                    {% for dia in dias %}
+                        <div class="grid-cell {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %} {% if dia.data in dispensas %}dispensado{% endif %}">
+                            {% if dia.data in dispensas %}
+                                <span title="{{ dispensas|get_item:dia.data|get_item:'motivo' }}">{{ dispensas|get_item:dia.data|get_item:'motivo'|first|upper }}</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+
+                <!-- Linha de totais -->
+                <div class="total-label">Total</div>
+                {% for dia in dias %}
+                    <div class="total-cell total {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                        {{ dados.resumo.total|get_item:dia.data|default:0 }}
+                    </div>
+                {% endfor %}
+
+                <div class="total-label">Dispensados</div>
+                {% for dia in dias %}
+                    <div class="total-cell dispensados {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                        {{ dados.resumo.dispensados|get_item:dia.data|default:0 }}
+                    </div>
+                {% endfor %}
+
+                <div class="total-label">Disponíveis</div>
+                {% for dia in dias %}
+                    <div class="total-cell disponiveis {% if dia.e_fim_semana %}fim-semana{% endif %} {% if dia.e_feriado %}feriado{% endif %}">
+                        {{ dados.resumo.disponiveis|get_item:dia.data|default:0 }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">
+        Não existem dispensas para exibir.
+    </div>
+{% endif %}
+{% endblock %} 

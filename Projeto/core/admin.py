@@ -67,9 +67,16 @@ class ServicoAdmin(VersionAdmin):
     # Shows Escalas in Service View
     def escalas_col(self, obj):
         if hasattr(obj, "escalas"):
-            qs = obj.escalas.all()  # related_name='escalas'
+            qs = obj.escalas.all()
         else:
-            qs = Escala.objects.filter(servico=obj)  # related_name='+' (no reverse)
+            qs = Escala.objects.filter(servico=obj)
+
+        # Filtrar conforme o tipo de escalas do serviço
+        if obj.tipo_escalas == "A":
+            qs = qs.filter(e_escala_b=False)
+        elif obj.tipo_escalas == "B":
+            qs = qs.filter(e_escala_b=True)
+        # Se for "AB" mostra ambas
 
         if not qs.exists():
             return "—"
