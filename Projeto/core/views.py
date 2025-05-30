@@ -182,7 +182,7 @@ def mapa_dispensas_view(request):
             dispensas_periodo = Dispensa.objects.filter(
                 militar=militar,
                 data_inicio__lte=ultimo_dia_ano,
-                data_fim__gte=hoje
+        data_fim__gte=hoje
             )
             for dia in dias:
                 dispensa = next(
@@ -378,9 +378,19 @@ def nomear_militares(request, escala_id):
 def lista_servicos_view(request):
     servicos = list(Servico.objects.all())
     hoje = date.today()
+    
+    # Obter o índice inicial dos serviços a mostrar
+    pagina = int(request.GET.get('pagina', 1))
+    servicos_por_pagina = 2
+    total_paginas = (len(servicos) + servicos_por_pagina - 1) // servicos_por_pagina
+    pagina = min(max(1, pagina), total_paginas)
+    inicio = (pagina - 1) * servicos_por_pagina
+    servicos_paginados = servicos[inicio:inicio + servicos_por_pagina]
+    
     # Obter todas as nomeações a partir de hoje
     nomeacoes = Nomeacao.objects.filter(data__gte=hoje).select_related('escala_militar__escala', 'escala_militar__militar')
     datas_raw = sorted(set(n.data for n in nomeacoes))
+    
     # Obter feriados para o intervalo das datas
     if datas_raw:
         feriados = obter_feriados(min(datas_raw), max(datas_raw))
@@ -388,6 +398,7 @@ def lista_servicos_view(request):
     else:
         feriados = []
         feriados_set = set()
+    
     # Construir estrutura: lista de dicts com data e tipo_dia
     datas = []
     for d in datas_raw:
@@ -398,22 +409,28 @@ def lista_servicos_view(request):
         else:
             tipo_dia = 'util'
         datas.append({'data': d, 'tipo_dia': tipo_dia})
+    
     # Construir tabela: {data: {servico: {'efetivo': [], 'reserva': []}}}
     tabela = {}
     for d in datas_raw:
         tabela[d] = {}
-        for servico in servicos:
+        for servico in servicos_paginados:
             tabela[d][servico.id] = {'efetivo': [], 'reserva': []}
+    
     for n in nomeacoes:
         servico_id = n.escala_militar.escala.servico_id
-        if n.e_reserva:
-            tabela[n.data][servico_id]['reserva'].append(n.escala_militar.militar)
-        else:
-            tabela[n.data][servico_id]['efetivo'].append(n.escala_militar.militar)
+        if servico_id in [s.id for s in servicos_paginados]:
+            if n.e_reserva:
+                tabela[n.data][servico_id]['reserva'].append(n.escala_militar.militar)
+            else:
+                tabela[n.data][servico_id]['efetivo'].append(n.escala_militar.militar)
+    
     return render(request, 'core/lista_servicos.html', {
-        'servicos': servicos,
+        'servicos': servicos_paginados,
         'datas': datas,
         'tabela': tabela,
+        'pagina_atual': pagina,
+        'total_paginas': total_paginas,
     })
 
 @login_required

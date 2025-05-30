@@ -7,6 +7,28 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Lista de Serviços e Nomeações</h2>
+    
+    <!-- Navegação entre páginas -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            {% if pagina_atual > 1 %}
+                <a href="?pagina={{ pagina_atual|add:'-1' }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Serviços Anteriores
+                </a>
+            {% endif %}
+        </div>
+        <div class="text-center">
+            <span class="badge bg-primary">Página {{ pagina_atual }} de {{ total_paginas }}</span>
+        </div>
+        <div>
+            {% if pagina_atual < total_paginas %}
+                <a href="?pagina={{ pagina_atual|add:'1' }}" class="btn btn-outline-primary">
+                    Próximos Serviços <i class="bi bi-arrow-right"></i>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="table-responsive">
         <table class="table table-bordered table-escalas table-mobile align-middle" style="table-layout: fixed; width: 100%;">
             <thead>
@@ -27,14 +49,16 @@
             <tbody>
                 {% for item in datas %}
                 <tr>
-                    <td style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}"><span>{{ item.data|date:"d/m/Y" }}</span></td>
+                    <td style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
+                        <span {% if item.tipo_dia in 'feriado,fim_semana' %}class="fw-bold"{% endif %}>{{ item.data|date:"d/m/Y" }}</span>
+                    </td>
                     {% for servico in servicos %}
                         {% with linha=tabela|get_item:item.data %}
                             {% with celula=linha|get_item:servico.id %}
                                 <td class="col-nomeacao" style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                                     {% if celula.efetivo %}
                                         {% for militar in celula.efetivo %}
-                                            <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                            <span class="militar-info {% if item.tipo_dia in 'feriado,fim_semana' %}fw-bold{% endif %}">{{ militar.posto }} {{ militar.nome }}</span><br>
                                         {% endfor %}
                                     {% else %}
                                         <span class="text-muted">—</span>
@@ -43,7 +67,7 @@
                                 <td class="col-nomeacao" style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                                     {% if celula.reserva %}
                                         {% for militar in celula.reserva %}
-                                            <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                            <span class="militar-info {% if item.tipo_dia in 'feriado,fim_semana' %}fw-bold{% endif %}">{{ militar.posto }} {{ militar.nome }}</span><br>
                                         {% endfor %}
                                     {% else %}
                                         <span class="text-muted">—</span>
@@ -65,21 +89,21 @@
 <style>
 @media (max-width: 768px) {
     .table-escalas th, .table-escalas td.col-nomeacao {
-        min-width: 150px;
-        max-width: 200px;
+        min-width: 120px;
+        max-width: 150px;
     }
     .table-escalas .militar-info {
-        font-size: 0.9em;
+        font-size: 0.85em;
     }
     .badge-escala-b {
-        font-size: 0.85em;
-        padding: 1px 6px;
+        font-size: 0.8em;
+        padding: 1px 4px;
     }
 }
 
 .table-escalas th, .table-escalas td.col-nomeacao {
-    min-width: 220px;
-    max-width: 350px;
+    min-width: 180px;
+    max-width: 250px;
     white-space: normal;
     overflow: visible;
     text-overflow: unset;
@@ -105,6 +129,32 @@
 }
 .table-escalas tr:hover {
     background-color: #dff2d0;
+}
+
+/* Estilos para a navegação */
+.btn-outline-primary {
+    color: #4A5D23;
+    border-color: #4A5D23;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4A5D23;
+    color: white;
+}
+
+.badge {
+    background-color: #4A5D23 !important;
+    font-size: 1em;
+    padding: 8px 16px;
+}
+
+.bi {
+    margin: 0 4px;
+}
+
+/* Estilos para texto em negrito */
+.fw-bold {
+    font-weight: bold !important;
 }
 </style>
 {% endblock %} 
