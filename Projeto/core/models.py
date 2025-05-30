@@ -6,24 +6,24 @@ from django.utils.translation import gettext_lazy as _
 
 # Lista de postos do Exército Português (excluindo oficiais generais)
 POSTOS_CHOICES = [
-    ('COR', 'Coronel'),
-    ('TCOR', 'Tenente-Coronel'),
-    ('MAJ', 'Major'),
-    ('CAP', 'Capitão'),
-    ('TEN', 'Tenente'),
-    ('ALF', 'Alferes'),
-    ('ASP', 'Aspirante'),
-    ('SCH', 'Sargento-Chefe'),
-    ('SAJ', 'Sargento-Ajudante'),
-    ('1SARG', 'Primeiro-Sargento'),
-    ('2SARG', 'Segundo-Sargento'),
-    ('FUR', 'Furriel'),
-    ('2FUR', '2ºFurriel'),
-    ('CABSEC', 'Cabo de Secção'),
-    ('CADJ', 'Cabo-Ajunto'),
-    ('1CAB', 'Primeiro-Cabo'),
-    ('2CAB', 'Segundo-Cabo'),
-    ('SOL', 'Soldado')
+    ('Cor', 'Coronel'),
+    ('TCor', 'Tenente-Coronel'),
+    ('Maj', 'Major'),
+    ('Cap', 'Capitão'),
+    ('Ten', 'Tenente'),
+    ('Alf', 'Alferes'),
+    ('AspOf', 'Aspirante'),
+    ('SCh', 'Sargento-Chefe'),
+    ('SAj', 'Sargento-Ajudante'),
+    ('1Sarg', 'Primeiro-Sargento'),
+    ('2Sarg', 'Segundo-Sargento'),
+    ('Furr', 'Furriel'),
+    ('2Fur', '2ºFurriel'),
+    ('CabSec', 'Cabo de Secção'),
+    ('CAdj', 'Cabo-Ajunto'),
+    ('1Cb', 'Primeiro-Cabo'),
+    ('2Cb', 'Segundo-Cabo'),
+    ('Sold', 'Soldado'),
 ]
 
 

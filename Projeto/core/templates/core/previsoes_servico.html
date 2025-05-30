@@ -1,3 +1,4 @@
+<h1>DEBUG TEMPLATE</h1>
 {% extends 'base.html' %}
 {% load core_tags %}
 
@@ -34,7 +35,7 @@
                         <td class="col-nomeacao" style="{% if item.tipo_dia == 'feriado' %}background-color: #ffe6e6;{% elif item.tipo_dia == 'fim_semana' %}background-color: #e6f2d8;{% else %}background-color: #f9fff6;{% endif %}">
                             {% if efetivos and efetivos.efetivos %}
                                 {% for militar in efetivos.efetivos %}
-                                    <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                    <span class="militar-info">{{ militar }}</span>
                                 {% endfor %}
                             {% else %}
                                 <span class="text-muted">—</span>
@@ -44,7 +45,7 @@
                             {% with reservas=nomeacoes_por_data|get_item:item.data %}
                                 {% if reservas and reservas.reservas %}
                                     {% for militar in reservas.reservas %}
-                                        <span class="militar-info">{{ militar.posto }} {{ militar.nome }}</span><br>
+                                        <span class="militar-info">{{ militar }}</span>
                                     {% endfor %}
                                 {% else %}
                                     <span class="text-muted">—</span>

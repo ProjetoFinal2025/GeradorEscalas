@@ -456,10 +456,15 @@ def previsoes_servico_view(request, servico_id):
     datas_set = set()
     for n in nomeacoes:
         nomeacoes_por_data.setdefault(n.data, {'efetivos': [], 'reservas': []})
-        if n.e_reserva:
-            nomeacoes_por_data[n.data]['reservas'].append(n.escala_militar.militar)
+        militar_obj = n.escala_militar.militar
+        if militar_obj:
+            militar_str = f"DEBUG {militar_obj.posto} {militar_obj.nome} {militar_obj.nim}"
         else:
-            nomeacoes_por_data[n.data]['efetivos'].append(n.escala_militar.militar)
+            militar_str = "N/A"
+        if n.e_reserva:
+            nomeacoes_por_data[n.data]['reservas'].append(militar_str)
+        else:
+            nomeacoes_por_data[n.data]['efetivos'].append(militar_str)
         # Juntar observações das nomeações do dia
         if n.data not in observacoes_por_data:
             observacoes_por_data[n.data] = set()

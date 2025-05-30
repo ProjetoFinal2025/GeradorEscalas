@@ -33,9 +33,14 @@ class MilitarForm(forms.ModelForm):
 
 # Modifica a forma como Serviço e exposto na view Admin
 
+class MilitarComEscalasMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        escalas = obj.listar_escalas()
+        return f"{obj.posto} {obj.nome} ({obj.nim}) - Escalas: {escalas}"
+
 class ServicoForm(forms.ModelForm):
     # Mantém FilteredSelectMultiple para exibir os militares
-    militares = forms.ModelMultipleChoiceField(
+    militares = MilitarComEscalasMultipleChoiceField(
         queryset=Militar.objects.all(),
         widget=FilteredSelectMultiple("Militares", is_stacked=False),
         required=False
