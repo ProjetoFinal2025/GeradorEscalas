@@ -730,7 +730,7 @@ class GeradorEscalasAdminSite(admin.AdminSite):
         return app_list
 
     def index(self, request, extra_context=None):
-        from .models import Servico, Militar, Dispensa, Nomeacao
+        from .models import Servico, Militar, Dispensa, Nomeacao, EscalaMilitar
         from django.db.models import Count
         extra_context = extra_context or {}
 
@@ -768,6 +768,12 @@ class GeradorEscalasAdminSite(admin.AdminSite):
             for item in top_militares_qs
         ]
         extra_context['top_militares'] = top_militares
+
+        # Militares sem escala
+        todos_nims = set(Militar.objects.values_list('nim', flat=True))
+        nims_com_escala = set(EscalaMilitar.objects.values_list('militar__nim', flat=True))
+        total_sem_escala = len(todos_nims - nims_com_escala)
+        extra_context['total_militares_sem_escala'] = total_sem_escala
 
         # Adicionar ações recentes ao contexto (últimas 10 ações do utilizador)
         recent_actions = (
