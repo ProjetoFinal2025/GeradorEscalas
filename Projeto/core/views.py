@@ -51,8 +51,8 @@ from django.http import HttpResponse
 ## Testar se log in foi executado
 @login_required
 def home_view(request):
-    # Serviços ativos
-    servicos = Servico.objects.filter(ativo=True)
+    # Serviços
+    servicos = Servico.objects.all()
     militares_por_servico = {s.nome: s.militares.count() for s in servicos}
     total_militares = sum(militares_por_servico.values())
 
@@ -131,10 +131,10 @@ def mapa_dispensas_view(request):
     # Obter o serviço selecionado do filtro
     servico_id = request.GET.get('servico')
     servico_selecionado = None
-    servicos = Servico.objects.filter(ativo=True)
+    servicos = Servico.objects.all()
     
     if servico_id:
-        servico_selecionado = get_object_or_404(Servico, id=servico_id, ativo=True)
+        servico_selecionado = get_object_or_404(Servico, id=servico_id)
         servicos = [servico_selecionado]
     
     hoje = date.today()
@@ -218,7 +218,7 @@ def mapa_dispensas_view(request):
         'mapa_dispensas': mapa_dispensas,
         'dias': dias,
         'dias_por_mes': dias_por_mes,
-        'servicos': Servico.objects.filter(ativo=True),
+        'servicos': Servico.objects.all(),
         'servico_selecionado': servico_selecionado,
         'hoje': hoje,
         'dias_restantes': dias_restantes,
@@ -299,7 +299,7 @@ guia_view = staff_member_required(
 
 @staff_member_required
 def nomear_militares_view(request):
-    servicos = Servico.objects.filter(ativo=True)
+    servicos = Servico.objects.all()
     servico = None
     data = None
     militares_disponiveis = []
@@ -443,7 +443,7 @@ def lista_servicos_view(request):
 
 @login_required
 def previsoes_por_servico_view(request):
-    servicos = Servico.objects.filter(ativo=True)
+    servicos = Servico.objects.all()
     if request.method == 'POST':
         servico_id = request.POST.get('servico_id')
         if servico_id:

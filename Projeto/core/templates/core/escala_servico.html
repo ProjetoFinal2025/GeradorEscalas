@@ -33,7 +33,7 @@
                 {% endif %}
                 <select name="servico_id" class="form-select" onchange="this.form.submit()">
                     <option value="">Selecione um serviço...</option>
-                    {% for s in servicos_ativos %}
+                    {% for s in servicos %}
                         <option value="{{ s.id }}" {% if s.id == servico.id %}selected{% endif %}>
                             {{ s.nome }}
                         </option>

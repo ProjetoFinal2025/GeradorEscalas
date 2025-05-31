@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from .models import Escala, EscalaMilitar, RegraNomeacao, Dispensa, Feriado
+from .models import Feriado
 from typing import List
 
 def calcular_pascoa(ano: int) -> date:
