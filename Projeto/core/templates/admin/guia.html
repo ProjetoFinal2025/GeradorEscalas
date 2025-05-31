@@ -3,19 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-
     {% extends "admin/base_site.html" %}
+    {% load static %}
     {% block content %}
-      <h1>Guia do Sistema</h1>
-      <p>Bem-vindo ao Gerador de Escalas. Aqui está um guia rápido:</p>
+        <style>
+          .accordion {
+            list-style: none;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
 
-      <ul>
-        <li><strong>Escalas</strong>: onde adiciona os serviços atribuídos aos militares.</li>
-        <li><strong>Dispensas</strong>: registre os dias em que os militares estão indisponíveis.</li>
-        <li><strong>Lista de Serviços</strong>: cadastre os tipos de serviço disponíveis.</li>
-        <!-- Adicione mais instruções aqui -->
-      </ul>
+          .accordion details {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .accordion summary {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .ul {
+            padding: 0! important;
+            }
+        </style>
+
+      <h1>Guia do Sistema</h1>
+      <p>Bem-vindo ao nosso gerador de escalas.</p>
+
+
+      <h3>Dados e a sua organização: </h3>
+
+        <ul class="accordion">
+
+            <details>
+              <summary><strong>Dispensas</strong></summary>
+              <p>
+                Uma dispensa é o período em que o militar está oficialmente <strong>indisponível</strong> para prestar serviço, por exemplo: férias, afastamento médico ou licença especial.
+              </p>
+              <p>
+                Cada dispensa deve incluir obrigatoriamente:
+              </p>
+              <ul>
+                <li><strong>Data inicial:</strong> o primeiro dia da ausência.</li>
+                <li><strong>Data final:</strong> o último dia da ausência.</li>
+                <li><strong>Motivo:</strong> justificativa clara e objetiva (ex.: “férias regulamentares”, “licença médica – fratura”).</li>
+              </ul>
+              <p>
+                <strong>Importante:</strong> preencha sempre o campo <em>Motivo</em> para garantir rastreabilidade e facilitar o planejamento das escalas.
+              </p>
+            </details>
+
+            <details>
+              <summary><strong>Escalas</strong></summary>
+                <p>
+                  No serviço militar, uma escala é a organização formal dos turnos de serviço atribuídos aos militares duma unidade,
+                    indicando quem deverá cumprir determinada função, em que dia. Garante a distribuição equilibrada das responsabilidades entre os
+                    membros da unidade, respeitando critérios como a disponibilidade de cada militar, a natureza da função, e a necessidade de rotação.
+                </p>
+                <p>
+                    Existem dois tipos de escala:
+                </p>
+                <ul>
+                <li><strong>A:</strong> Equivale aos dias da semana.</li>
+                <li><strong>B:</strong> Equivale a fins de semana e feriados.</li>
+                </ul>
+                <p> Cada escala necessita obrigatóriamente de pertencer a <strong>só um</strong> serviço. Uma escala não pode existir sem serviço.</p>
+            </details>
+
+            <details>
+              <summary><strong>Feriados</strong></summary>
+              <p>No contexto de geração de escalas, um feriado representa um dia em que a uma escala A não é utilizada. Em vez disso, aplica-se uma escala B.</p>
+               <p> Existem dois tipos de Feriado:</p>
+                <ul>
+                    <li><strong>Fixo:</strong> ocorre sempre na mesma data todos os anos, como o Natal (25 de dezembro) ou o Dia da Independência (7 de setembro).</li>
+                    <li><strong>Movel:</strong> a data varia a cada ano, como a Páscoa ou o Carnaval.</li>
+                </ul>
+
+            </details>
+
+            <details>
+              <summary><strong>Logs</strong></summary>
+              <p>Logs são registros de cada ação tomada por administradores, sempre que um administrador realiza uma operação, como por exemplo,
+              remover um militar duma escala, um log é construido, mantendo assim um histórico das ações tomadas.</p>
+            </details>
+
+            <details>
+              <summary><strong>Militares</strong></summary>
+              <p>Cada militar é um indivíduo participante na organização militar disponivel. Sendo este identificado pelo seu Numero de Identificação Militar(NIM).</p>
+
+                <p>Cada Militar necessita de obrigatóriamente ter:</p>
+                <ul>
+                    <li><strong>NIM: </strong> Um número de identificação Militar unico, e válido consoante os parametros exigidos pelo exército portugues.</li>
+                    <li><strong>Nome: </strong>O seu nome.</li>
+                    <li><strong>Posto: </strong>O seu posto.</li>
+                    <li><strong>Posto: </strong>A sua função.</li>
+                    <li><strong>Telefone: </strong>Um numero de telefone válido, sem o identificador nacional(+351/00351).</li>
+                    <li><strong>Email: </strong>O seu endereço eletrónico.</li>
+                </ul>
+            </details>
+
+            <details>
+              <summary><strong>Configurações da Unidade</strong></summary>
+              <p>Uma Configuração de unidade guarda ambos os nomes da unidade, e da subunidade presente.</p>
+            </details>
+
+            <details>
+              <summary><strong> Serviço</strong></summary>
+              <p>
+               Um serviço é a ação que cada militar precisa de executar num determinado dia e hora.
+              </p>
+
+              <p>Um serviço necessita de ter:</p>
+                <ul>
+                    <li><strong>Nome: </strong> Como o seu identificador, idealmente relevante á tarefa que representa.</li>
+                    <li><strong>Hora de início/fim: </strong>A hora em que começa e acaba o serviço.</li>
+                    <li><strong>Número de elementos: </strong>O número de elementos que realizam o serviço por dia.</li>
+                    <li><strong>Numero de Reservas: </strong>O número de Reservas que o serviço precisa de ter por dia, idealmente igual ao número de elementos.</li>
+                    <li><strong>Tipo De escala: </strong>O serviço poderá ter apenas escala A(apenas dias da semana), escala B(apenas fins de semana), ou ambos.</li>
+                    <li><strong>Militares: </strong>Os individuos que irão realizar o serviço.</li>
+                </ul>
+
+
+            </details>
+
+            <details>
+                <summary><strong> Utilizadores e Administradores</strong></summary>
+                <p>Sempre que um militar é adicionado ao sistema, é criado automaticamente um utilizador, podende este autenticar-se com o respetivo NIM e uma
+                    senha ‘default’, que depois do seu primeiro acesso necessita de ser modificada.</p>
+                <p></p>
+
+                <p>Existem três tipos de utilizador.</p>
+                <ul>
+                    <li><strong>Utilizador: </strong>Possui a habilidade de ver as escalas atuais, os serviços atuais e as respectivas dispensas.</li>
+                    <li><strong>Administrador: </strong>Possui a habilidade de criar militares, dispensas, escalas e serviços. Podendo realizar as respetivas ações necessárias para a administração duma unidade militar. </li>
+                    <li><strong>Número de elementos: </strong>Possui as mesmas habilidades que o administrador, adicionalmente pode modificar as permissões dum administrador. Pode tambem remover ou adicionar administradores.</li>
+                </ul>
+
+            </details>
+
+        </ul>
+
+
+
+      <h3>Como utilizar o programa:</h3>
+      <p>Para a boa utilização do gerador de escalas é aconselhável a seguinte ordem de ações.</p>
+
+        <ul class="steps">
+          <li>
+            <h4><strong>1 - Criação de Militares</strong></h4>
+            <p>Adicione os respetivos militares da sua unidade, inserindo os seus dados.</p>
+          </li>
+
+          <li>
+            <h4><strong>2 - Criação de Serviços</strong></h4>
+            <p>Crie os serviços necessários para a sua unidade, não se esqueça de selecionar o tipo de escala que cada serviço possui.</p>
+          </li>
+
+          <li>
+            <h4><strong>3 - Criação de Escalas</strong></h4>
+            <p>Crie as equivalentes escalas necessárias para os serviços disponíveis.</p>
+          </li>
+
+          <li>
+            <h4><strong>4 - Gestão de Feriados/Dispensas</strong></h4>
+            <p>Antes de gerar as previsões de escala, insira feriados e/ou dispensas já presentes atualmente.</p>
+          </li>
+
+          <li>
+            <h4><strong>5 - Gire as respetivas previsões</strong></h4>
+            <p>Selecione "Previsões de Nomeação"(Só visivel para administradores), insira o serviço que pretende e as respetivas datas, e pressione "Gerar Previsões".</p>
+            <p>Adicionalmente, é possível substituir manualmente militares em dias específicos e exportar para PDF as previsões geradas.</p>
+          </li>
+        </ul>
+
+      <h3>Outras ações possiveis:</h3>
+        <ul class="accordion">
+
+            <details>
+              <summary><strong>Visualisar Dispensas</strong></summary>
+              <p> Em "Dispensas" existe a possiblidade de visualizar um calendário para cada serviço, mostrando as dispensas presentes para cada soldado.</p>
+              <p><strong>Por favor note, existe a possiblidade de adicionar uma dispensa diretamente, clicando no dia inicial e no dia final </strong></p>
+              <img src="{% static 'core/images/exemplo_mapa_dispesa.gif' %}" alt="Exemplo de Mapa de Dispensa", width="800", height="300">
+            </details>
+
+
+        </ul>
+
+
+
     {% endblock %}
+
 
 
 </head>
