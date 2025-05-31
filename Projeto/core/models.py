@@ -6,24 +6,24 @@ from django.utils.translation import gettext_lazy as _
 
 # Lista de postos do Exército Português (excluindo oficiais generais)
 POSTOS_CHOICES = [
-    ('COR', 'Coronel'),
-    ('TCOR', 'Tenente-Coronel'),
-    ('MAJ', 'Major'),
-    ('CAP', 'Capitão'),
-    ('TEN', 'Tenente'),
-    ('ALF', 'Alferes'),
-    ('ASP', 'Aspirante'),
-    ('SCH', 'Sargento-Chefe'),
-    ('SAJ', 'Sargento-Ajudante'),
-    ('1SARG', 'Primeiro-Sargento'),
-    ('2SARG', 'Segundo-Sargento'),
-    ('FUR', 'Furriel'),
-    ('2FUR', '2ºFurriel'),
-    ('CABSEC', 'Cabo de Secção'),
-    ('CADJ', 'Cabo-Ajunto'),
-    ('1CAB', 'Primeiro-Cabo'),
-    ('2CAB', 'Segundo-Cabo'),
-    ('SOL', 'Soldado')
+    ('Cor', 'Coronel'),
+    ('TCor', 'Tenente-Coronel'),
+    ('Maj', 'Major'),
+    ('Cap', 'Capitão'),
+    ('Ten', 'Tenente'),
+    ('Alf', 'Alferes'),
+    ('AspOf', 'Aspirante'),
+    ('SCh', 'Sargento-Chefe'),
+    ('SAj', 'Sargento-Ajudante'),
+    ('1Sarg', 'Primeiro-Sargento'),
+    ('2Sarg', 'Segundo-Sargento'),
+    ('Furr', 'Furriel'),
+    ('2Fur', '2ºFurriel'),
+    ('CabSec', 'Cabo de Secção'),
+    ('CAdj', 'Cabo-Ajunto'),
+    ('1Cb', 'Primeiro-Cabo'),
+    ('2Cb', 'Segundo-Cabo'),
+    ('Sold', 'Soldado'),
 ]
 
 
@@ -92,49 +92,21 @@ class Militar(models.Model):
         """
         Verifica se o militar está disponível para serviço em uma determinada data
         """
-        # Verifica se está de licença
-        if self.licencas.filter(
-                data_inicio__lte=data,
-                data_fim__gte=data
-        ).exists():
-            return False
-
-        # Verifica se está dispensado
-        if self.dispensas.filter(
-                data_inicio__lte=data,
-                data_fim__gte=data
-        ).exists():
-            return False
-
-        # Verifica dia útil antes da entrada de licença
-        dia_anterior = data - timedelta(days=1)
-        if self.licencas.filter(
-                data_inicio=dia_anterior
-        ).exists():
-            return False
-
-        # Verifica dia da apresentação de licença
-        if self.licencas.filter(
-                data_fim=data
-        ).exists():
-            return False
-
-        return True
+        from .services.escala_service import EscalaService
+        disponivel, _ = EscalaService.verificar_disponibilidade_militar(self, data)
+        return disponivel
 
     def obter_ultimo_servico(self, servico=None):
         """
         Devolve a última *data* em que o militar serviu.
         """
         qs = (
-            EscalaMilitar.objects
-            .filter(militar=self, data__lt=date.today())
-            .select_related('escala')
+            Nomeacao.objects
+            .filter(escala_militar__militar=self)
             .order_by('-data')
         )
-
         if servico:
-            qs = qs.filter(escala__servico=servico)
-
+            qs = qs.filter(escala_militar__escala__servico=servico)
         ultimo = qs.first()
         return ultimo.data if ultimo else None
 
@@ -400,4 +372,18 @@ class TrocaServico(models.Model):
 
     def __str__(self):
         return f"Troca: {self.militar_solicitante} ↔ {self.militar_trocado} ({self.data_troca})"
+
+
+class ConfiguracaoUnidade(models.Model):
+    nome_unidade = models.CharField("Nome da Unidade", max_length=200)
+    nome_subunidade = models.CharField("Nome da Subunidade", max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        if self.nome_subunidade:
+            return f"{self.nome_unidade} - {self.nome_subunidade}"
+        return self.nome_unidade
+
+    class Meta:
+        verbose_name = "Configuração da Unidade"
+        verbose_name_plural = "Configuração da Unidade"
 

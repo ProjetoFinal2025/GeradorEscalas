@@ -1,0 +1,158 @@
+/* CSS dedicado para grelha de dispensas pública */
+.dispensa-grid {
+    margin-bottom: 20px;
+    overflow-x: auto;
+    max-width: 100%;
+    background-color: white;
+}
+.servico-header {
+    background-color: #f0f0f0;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.servico-header h3 {
+    margin: 0;
+    font-size: 1em;
+}
+.filtro-servico {
+    margin-bottom: 20px;
+    background-color: white;
+    padding: 10px;
+}
+.grid-container {
+    display: grid;
+    grid-template-columns: 250px repeat(var(--num-dias, 30), 20px);
+    gap: 0;
+    border: 1px solid #ccc;
+    min-width: 1200px;
+    background: white;
+}
+.grid-header {
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+    font-weight: normal;
+}
+.grid-cell {
+    background-color: white;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    height: 20px;
+    font-size: 0.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.grid-cell span {
+    display: block;
+    text-align: center;
+    width: 100%;
+}
+.dispensado {
+    background-color: yellow;
+}
+.month-header {
+    background-color: #f0f0f0;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    font-weight: normal;
+    padding: 2px;
+    grid-column: span var(--span-days);
+}
+.grid-day-header {
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    text-align: center;
+    font-weight: normal;
+    font-size: 0.8em;
+    padding: 2px;
+}
+.militar-cell {
+    background-color: white;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ddd;
+    padding: 2px 5px;
+    text-align: left;
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+.militar-nim {
+    color: #666;
+    margin-right: 5px;
+}
+.month-group {
+    border-right: 2px solid #999;
+}
+.month-label {
+    text-transform: lowercase;
+}
+.total-row {
+    background-color: #f0f0f0;
+    border-top: 2px solid #999;
+}
+.total-label {
+    background-color: #f0f0f0;
+    border-right: 1px solid #ccc;
+    padding: 2px 5px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+.total-cell {
+    background-color: #f0f0f0;
+    border-right: 1px solid #ddd;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.8em;
+    padding: 2px;
+}
+.total-cell.disponiveis {
+    color: green;
+}
+.total-cell.dispensados {
+    color: red;
+}
+.total-cell.total {
+    color: #666;
+    border-bottom: 1px solid #999;
+}
+.actions-bar {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: white;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.grid-cell.fim-semana {
+    background-color: #ffebeb;
+}
+.grid-cell.feriado {
+    background-color: #ffebeb;
+}
+.grid-day-header.fim-semana {
+    background-color: #ffebeb;
+    font-weight: bold;
+}
+.grid-day-header.feriado {
+    background-color: #ffebeb;
+    font-weight: bold;
+}
+.grid-cell.dispensado.fim-semana {
+    background-color: #ffffa6;
+}
+.grid-cell.dispensado.feriado {
+    background-color: #ffffa6;
+}
+.total-cell.fim-semana {
+    background-color: #ffebeb;
+}
+.total-cell.feriado {
+    background-color: #ffebeb;
+} 

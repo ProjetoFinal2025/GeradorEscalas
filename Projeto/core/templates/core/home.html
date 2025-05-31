@@ -3,75 +3,47 @@
 
 {% block content %}
 <div class="container mt-4">
+    <div class="alert alert-success mb-4">
+        <h4 class="alert-heading"><i class="bi bi-emoji-smile"></i> Bem-vindo ao Sistema de Gestão de Escalas!</h4>
+        <p class="mb-0">Aqui podes ver todas as escalas e nomeações de serviço.</p>
+    </div>
     <h2>Dashboard Geral</h2>
     <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+        {% for s in servicos_info %}
         <div class="col">
             <div class="card h-100">
-                <div class="card-header bg-success text-white">
-                    <i class="bi bi-gear"></i> Serviços Ativos
+                <div class="card-header {{ s.cor_banner }}">
+                    <i class="bi bi-gear"></i> {{ s.obj.nome }}
                 </div>
                 <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        {% for servico in servicos %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ servico.nome }}
-                            <span class="badge bg-secondary">{{ militares_por_servico|get_item:servico.nome }}</span>
-                        </li>
-                        {% empty %}
-                        <li class="list-group-item">Nenhum serviço ativo.</li>
-                        {% endfor %}
-                    </ul>
+                    <p><b>Total de Militares:</b> {{ s.total_militares }}</p>
+                    <p><b>Dispensados Hoje:</b> {{ s.dispensados_hoje }}</p>
+                    <p><b>Nomeado hoje:</b>
+                        {% if s.militar_hoje %}
+                            {{ s.militar_hoje.posto }} {{ s.militar_hoje.nome }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </p>
+                    <p><b>Nomeado amanhã:</b>
+                        {% if s.militar_amanha %}
+                            {{ s.militar_amanha.posto }} {{ s.militar_amanha.nome }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>
+        {% empty %}
         <div class="col">
             <div class="card h-100">
-                <div class="card-header bg-success text-white">
-                    <i class="bi bi-people"></i> Total de Militares
-                </div>
-                <div class="card-body display-4 text-center">{{ total_militares }}</div>
-            </div>
-            <div class="card h-100 mt-4">
-                <div class="card-header bg-warning text-dark">
-                    <i class="bi bi-calendar-x"></i> Dispensados Hoje
-                </div>
-                <div class="card-body display-5 text-center">{{ total_dispensados }}</div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-header bg-info text-white">
-                    <i class="bi bi-trophy"></i> Top 5 Militares (Serviços)
-                </div>
-                <div class="card-body">
-                    <ol class="mb-0">
-                        {% for nome, total in top_militares %}
-                        <li class="mb-2">{{ nome }} <span class="badge bg-primary">{{ total }}</span></li>
-                        {% empty %}
-                        <li>Nenhum registo.</li>
-                        {% endfor %}
-                    </ol>
+                <div class="card-header bg-secondary text-white">
+                    Nenhum serviço ativo
                 </div>
             </div>
         </div>
-    </div>
-    <div class="card mt-4">
-        <div class="card-header bg-light">
-            <i class="bi bi-clock-history"></i> Últimas Ações (utilizador)
-        </div>
-        <div class="card-body">
-            <ul class="list-group list-group-flush">
-                {% for action in recent_actions %}
-                <li class="list-group-item">
-                    <small class="text-muted">{{ action.action_time|date:"d/m/Y H:i" }}</small><br>
-                    {{ action.get_change_message }}<br>
-                    <small class="text-muted">{{ action.content_type }}</small>
-                </li>
-                {% empty %}
-                <li class="list-group-item">Sem ações recentes.</li>
                 {% endfor %}
-            </ul>
-        </div>
     </div>
 </div>
 

@@ -319,18 +319,14 @@
                             <td class="efetivo-col">
                             {% for nomeacao in item.nomeacoes %}
                                 {% if not nomeacao.e_reserva %}
-                                    <div>
-                                        {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})
-                                    </div>
+                                    {{ nomeacao.escala_militar.militar.posto.capitalize }} {{ nomeacao.escala_militar.militar.nim }} {{ nomeacao.escala_militar.militar.nome }}<br>
                                 {% endif %}
                             {% endfor %}
                             </td>
                             <td class="reserva-col">
                             {% for nomeacao in item.nomeacoes %}
                                 {% if nomeacao.e_reserva %}
-                                    <div>
-                                        {{ nomeacao.escala_militar.militar.posto }} {{ nomeacao.escala_militar.militar.nome }} ({{ nomeacao.escala_militar.militar.nim|stringformat:"08d" }})
-                                    </div>
+                                    {{ nomeacao.escala_militar.militar.posto.capitalize }} {{ nomeacao.escala_militar.militar.nim }} {{ nomeacao.escala_militar.militar.nome }}<br>
                                 {% endif %}
                             {% endfor %}
                             </td>
@@ -492,7 +488,7 @@ function atualizarMilitarAtual() {
                 const militarAtual = document.getElementById('militarAtual');
                 const militarAtualNim = document.getElementById('militarAtualNim');
                 if (data.militar) {
-                    militarAtual.textContent = `${data.militar.posto} ${data.militar.nome} (${data.militar.nim})`;
+                    militarAtual.textContent = `${data.militar.posto.capitalize} ${data.militar.nim} ${data.militar.nome}`;
                     militarAtualNim.value = data.militar.nim;
                 } else {
                     militarAtual.textContent = 'Nenhum militar nomeado';
@@ -519,7 +515,7 @@ function atualizarMilitaresDisponiveis() {
                 data.militares.forEach(militar => {
                     const option = document.createElement('option');
                     option.value = militar.nim;
-                    option.textContent = `${militar.posto} ${militar.nome} (${militar.nim})`;
+                    option.textContent = `${militar.posto.capitalize} ${militar.nim} ${militar.nome}`;
                     select.appendChild(option);
                 });
             }

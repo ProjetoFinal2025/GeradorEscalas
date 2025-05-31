@@ -17,7 +17,7 @@ from django.contrib import admin, messages
 from datetime import date, datetime, timedelta
 from django import forms
 # Permite alterar os seguintes modelos na admin view
-from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao
+from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao, ConfiguracaoUnidade
 from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
 from .services.troca_service import TrocaService
@@ -67,9 +67,16 @@ class ServicoAdmin(VersionAdmin):
     # Shows Escalas in Service View
     def escalas_col(self, obj):
         if hasattr(obj, "escalas"):
-            qs = obj.escalas.all()  # related_name='escalas'
+            qs = obj.escalas.all()
         else:
-            qs = Escala.objects.filter(servico=obj)  # related_name='+' (no reverse)
+            qs = Escala.objects.filter(servico=obj)
+
+        # Filtrar conforme o tipo de escalas do serviço
+        if obj.tipo_escalas == "A":
+            qs = qs.filter(e_escala_b=False)
+        elif obj.tipo_escalas == "B":
+            qs = qs.filter(e_escala_b=True)
+        # Se for "AB" mostra ambas
 
         if not qs.exists():
             return "—"
@@ -691,6 +698,15 @@ class PrevisaoEscalasProxy(Escala):
         verbose_name = "Previsões de Nomeação"
         verbose_name_plural = "Previsões de Nomeação"
 
+class ConfiguracaoUnidadeAdmin(VersionAdmin):
+    list_display = ('nome_unidade', 'nome_subunidade')
+    fieldsets = (
+        ('Configuração da Unidade', {
+            'fields': ('nome_unidade', 'nome_subunidade'),
+            'description': 'Configure o nome da unidade e da subunidade que aparecerão nos documentos exportados.'
+        }),
+    )
+
 # Configuração do Admin Site
 class GeradorEscalasAdminSite(admin.AdminSite):
     site_header = 'Gerador de Escalas'
@@ -714,7 +730,7 @@ class GeradorEscalasAdminSite(admin.AdminSite):
         return app_list
 
     def index(self, request, extra_context=None):
-        from .models import Servico, Militar, Dispensa, Nomeacao
+        from .models import Servico, Militar, Dispensa, Nomeacao, EscalaMilitar
         from django.db.models import Count
         extra_context = extra_context or {}
 
@@ -753,6 +769,12 @@ class GeradorEscalasAdminSite(admin.AdminSite):
         ]
         extra_context['top_militares'] = top_militares
 
+        # Militares sem escala
+        todos_nims = set(Militar.objects.values_list('nim', flat=True))
+        nims_com_escala = set(EscalaMilitar.objects.values_list('militar__nim', flat=True))
+        total_sem_escala = len(todos_nims - nims_com_escala)
+        extra_context['total_militares_sem_escala'] = total_sem_escala
+
         # Adicionar ações recentes ao contexto (últimas 10 ações do utilizador)
         recent_actions = (
             LogEntry.objects.filter(user=request.user)
@@ -774,6 +796,7 @@ admin_site.register(Escala, EscalaAdmin)
 admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(Log)
+admin_site.register(ConfiguracaoUnidade, ConfiguracaoUnidadeAdmin)
 # Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
 

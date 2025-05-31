@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from datetime import datetime, timedelta, date
-from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao, TrocaServico
+from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao, TrocaServico, ConfiguracaoUnidade
 from .forms import *
 from .services.escala_service import EscalaService
 from .utils import obter_feriados
@@ -56,8 +56,8 @@ def home_view(request):
     militares_por_servico = {s.nome: s.militares.count() for s in servicos}
     total_militares = sum(militares_por_servico.values())
 
-    # Militares dispensados atualmente
     hoje = date.today()
+    amanha = hoje + timedelta(days=1)
     dispensas_ativas = Dispensa.objects.filter(data_inicio__lte=hoje, data_fim__gte=hoje)
     total_dispensados = dispensas_ativas.values('militar').distinct().count()
 
@@ -73,46 +73,158 @@ def home_view(request):
         for item in top_militares_qs
     ]
 
-    # Últimas 10 ações do utilizador (opcional)
-    recent_actions = (
-        LogEntry.objects.filter(user=request.user)
-        .select_related("content_type")
-        .order_by("-action_time")[:10]
-    )
+    # Calcular dispensados hoje e nomeados para hoje/amanhã por serviço
+    servicos_info = []
+    for servico in servicos:
+        # Dispensados hoje neste serviço
+        dispensados_hoje = Dispensa.objects.filter(
+            militar__servicos=servico,
+            data_inicio__lte=hoje,
+            data_fim__gte=hoje
+        ).values('militar').distinct().count()
+        # Nomeado para hoje
+        nomeacao_hoje = Nomeacao.objects.filter(
+            escala_militar__escala__servico=servico,
+            data=hoje,
+            e_reserva=False
+        ).select_related('escala_militar__militar').first()
+        militar_hoje = nomeacao_hoje.escala_militar.militar if nomeacao_hoje else None
+        # Nomeado para amanhã
+        nomeacao_amanha = Nomeacao.objects.filter(
+            escala_militar__escala__servico=servico,
+            data=amanha,
+            e_reserva=False
+        ).select_related('escala_militar__militar').first()
+        militar_amanha = nomeacao_amanha.escala_militar.militar if nomeacao_amanha else None
+        # Cor do banner conforme regras fornecidas
+        nome_lower = servico.nome.lower()
+        if "oficial" in nome_lower:
+            cor_banner = "bg-danger text-white"  # vermelho
+        elif "sargento" in nome_lower or "comandante" in nome_lower:
+            cor_banner = "bg-success text-white"  # verde
+        elif "cabo" in nome_lower:
+            cor_banner = "bg-primary text-white"  # azul
+        elif "graduado" in nome_lower:
+            cor_banner = "bg-secondary text-white"  # roxo/cinzento
+        else:
+            cor_banner = "bg-warning text-dark"  # amarelo (praças)
+        servicos_info.append({
+            'obj': servico,
+            'total_militares': militares_por_servico.get(servico.nome, 0),
+            'dispensados_hoje': dispensados_hoje,
+            'militar_hoje': militar_hoje,
+            'militar_amanha': militar_amanha,
+            'cor_banner': cor_banner,
+        })
 
     context = {
-        'servicos': servicos,
-        'militares_por_servico': militares_por_servico,
+        'servicos_info': servicos_info,
         'total_militares': total_militares,
         'total_dispensados': total_dispensados,
         'top_militares': top_militares,
-        'recent_actions': recent_actions,
         'hoje': hoje,
     }
     return render(request, 'core/home.html', context)
 
 @login_required
 def mapa_dispensas_view(request):
-    # Obter serviços ativos
+    # Obter o serviço selecionado do filtro
+    servico_id = request.GET.get('servico')
+    servico_selecionado = None
     servicos = Servico.objects.filter(ativo=True)
-    # Obter período
+    
+    if servico_id:
+        servico_selecionado = get_object_or_404(Servico, id=servico_id, ativo=True)
+        servicos = [servico_selecionado]
+    
     hoje = date.today()
-    data_fim = hoje + timedelta(days=30)
-    # Obter feriados
-    feriados = obter_feriados(hoje, data_fim)
-    # Obter dispensas
-    dispensas = Dispensa.objects.filter(
-        data_inicio__lte=data_fim,
+    # Calcular dias até ao final do ano
+    ultimo_dia_ano = date(hoje.year, 12, 31)
+    dias_restantes = (ultimo_dia_ano - hoje).days
+    
+    # Obter lista de feriados
+    feriados = obter_feriados(hoje, ultimo_dia_ano)
+    
+    # Agrupar dias por mês
+    dias_por_mes = {}
+    dias = []
+    data_atual = hoje
+    
+    while data_atual <= ultimo_dia_ano:
+        mes = data_atual.replace(day=1)
+        if mes not in dias_por_mes:
+            dias_por_mes[mes] = []
+        
+        e_fim_semana = data_atual.weekday() >= 5  # 5 = Sábado, 6 = Domingo
+        e_feriado = data_atual in feriados
+        
+        dia_info = {
+            'data': data_atual, 
+            'mes': mes,
+            'dia_semana': data_atual.strftime('%A'),
+            'e_fim_semana': e_fim_semana,
+            'e_feriado': e_feriado
+        }
+        
+        dias_por_mes[mes].append(dia_info)
+        dias.append(dia_info)
+        data_atual += timedelta(days=1)
+    
+    mapa_dispensas = {}
+    for servico in servicos:
+        militares = servico.militares.all().select_related('user').order_by('posto', 'nim')
+        dispensas_servico = {}
+        resumo = {
+            'dispensados': {},
+            'disponiveis': {},
+            'total': {}
+        }
+        for militar in militares:
+            dispensas = {}
+            dispensas_periodo = Dispensa.objects.filter(
+                militar=militar,
+                data_inicio__lte=ultimo_dia_ano,
         data_fim__gte=hoje
-    ).select_related('militar')
+            )
+            for dia in dias:
+                dispensa = next(
+                    (d for d in dispensas_periodo if d.data_inicio <= dia['data'] <= d.data_fim),
+                    None
+                )
+                if dispensa:
+                    dispensas[dia['data']] = {
+                        'motivo': dispensa.motivo
+                    }
+                    if dia['data'] not in resumo['dispensados']:
+                        resumo['dispensados'][dia['data']] = 0
+                    resumo['dispensados'][dia['data']] += 1
+                if dia['data'] not in resumo['total']:
+                    resumo['total'][dia['data']] = 0
+                resumo['total'][dia['data']] += 1
+            dispensas_servico[militar] = dispensas
+        for dia in dias:
+            total = resumo['total'].get(dia['data'], 0)
+            dispensados = resumo['dispensados'].get(dia['data'], 0)
+            resumo['disponiveis'][dia['data']] = total - dispensados
+        mapa_dispensas[servico] = {
+            'militares': dispensas_servico,
+            'resumo': resumo
+        }
+    if dias:
+        feriados = obter_feriados(min(d['data'] for d in dias), max(d['data'] for d in dias))
+    else:
+        feriados = []
     context = {
-        'servicos': servicos,
-        'dispensas': dispensas,
-        'feriados': feriados,
+        'mapa_dispensas': mapa_dispensas,
+        'dias': dias,
+        'dias_por_mes': dias_por_mes,
+        'servicos': Servico.objects.filter(ativo=True),
+        'servico_selecionado': servico_selecionado,
         'hoje': hoje,
-        'data_fim': data_fim
+        'dias_restantes': dias_restantes,
+        'feriados': feriados,
     }
-    return render(request, 'core/mapa_dispensas.html', context)
+    return render(request, 'core/mapa_dispensas_publica.html', context)
 
 @login_required
 def escala_servico_view(request, servico_id):
@@ -274,9 +386,19 @@ def nomear_militares(request, escala_id):
 def lista_servicos_view(request):
     servicos = list(Servico.objects.all())
     hoje = date.today()
+    
+    # Obter o índice inicial dos serviços a mostrar
+    pagina = int(request.GET.get('pagina', 1))
+    servicos_por_pagina = 2
+    total_paginas = (len(servicos) + servicos_por_pagina - 1) // servicos_por_pagina
+    pagina = min(max(1, pagina), total_paginas)
+    inicio = (pagina - 1) * servicos_por_pagina
+    servicos_paginados = servicos[inicio:inicio + servicos_por_pagina]
+    
     # Obter todas as nomeações a partir de hoje
     nomeacoes = Nomeacao.objects.filter(data__gte=hoje).select_related('escala_militar__escala', 'escala_militar__militar')
     datas_raw = sorted(set(n.data for n in nomeacoes))
+    
     # Obter feriados para o intervalo das datas
     if datas_raw:
         feriados = obter_feriados(min(datas_raw), max(datas_raw))
@@ -284,6 +406,7 @@ def lista_servicos_view(request):
     else:
         feriados = []
         feriados_set = set()
+    
     # Construir estrutura: lista de dicts com data e tipo_dia
     datas = []
     for d in datas_raw:
@@ -294,22 +417,28 @@ def lista_servicos_view(request):
         else:
             tipo_dia = 'util'
         datas.append({'data': d, 'tipo_dia': tipo_dia})
+    
     # Construir tabela: {data: {servico: {'efetivo': [], 'reserva': []}}}
     tabela = {}
     for d in datas_raw:
         tabela[d] = {}
-        for servico in servicos:
+        for servico in servicos_paginados:
             tabela[d][servico.id] = {'efetivo': [], 'reserva': []}
+    
     for n in nomeacoes:
         servico_id = n.escala_militar.escala.servico_id
-        if n.e_reserva:
-            tabela[n.data][servico_id]['reserva'].append(n.escala_militar.militar)
-        else:
-            tabela[n.data][servico_id]['efetivo'].append(n.escala_militar.militar)
+        if servico_id in [s.id for s in servicos_paginados]:
+            if n.e_reserva:
+                tabela[n.data][servico_id]['reserva'].append(n.escala_militar.militar)
+            else:
+                tabela[n.data][servico_id]['efetivo'].append(n.escala_militar.militar)
+    
     return render(request, 'core/lista_servicos.html', {
-        'servicos': servicos,
+        'servicos': servicos_paginados,
         'datas': datas,
         'tabela': tabela,
+        'pagina_atual': pagina,
+        'total_paginas': total_paginas,
     })
 
 @login_required
@@ -335,10 +464,15 @@ def previsoes_servico_view(request, servico_id):
     datas_set = set()
     for n in nomeacoes:
         nomeacoes_por_data.setdefault(n.data, {'efetivos': [], 'reservas': []})
-        if n.e_reserva:
-            nomeacoes_por_data[n.data]['reservas'].append(n.escala_militar.militar)
+        militar_obj = n.escala_militar.militar
+        if militar_obj:
+            militar_str = f"DEBUG {militar_obj.posto} {militar_obj.nome} {militar_obj.nim}"
         else:
-            nomeacoes_por_data[n.data]['efetivos'].append(n.escala_militar.militar)
+            militar_str = "N/A"
+        if n.e_reserva:
+            nomeacoes_por_data[n.data]['reservas'].append(militar_str)
+        else:
+            nomeacoes_por_data[n.data]['efetivos'].append(militar_str)
         # Juntar observações das nomeações do dia
         if n.data not in observacoes_por_data:
             observacoes_por_data[n.data] = set()
@@ -374,25 +508,20 @@ def previsoes_servico_view(request, servico_id):
 @login_required
 def exportar_previsoes_pdf(request, servico_id):
     servico = get_object_or_404(Servico, id=servico_id)
-    
-    # Obter todas as nomeações do serviço
+    hoje = date.today()
     nomeacoes = Nomeacao.objects.filter(
-        escala_militar__escala__servico=servico
+        escala_militar__escala__servico=servico,
+        data__gte=hoje
     ).select_related('escala_militar__militar', 'escala_militar__escala').order_by('data')
-    
+
     if not nomeacoes.exists():
         messages.error(request, "Não existem nomeações para exportar.")
         return redirect('previsoes_servico', servico_id=servico_id)
-    
-    # Obter data inicial e final das nomeações
+
     data_inicio = nomeacoes.first().data
     data_fim = nomeacoes.last().data
-    
-    # Obter feriados para o intervalo
     feriados = obter_feriados(data_inicio, data_fim)
     feriados_set = set(feriados)
-    
-    # Gerar todos os dias do intervalo
     dias = []
     data_atual = data_inicio
     while data_atual <= data_fim:
@@ -404,8 +533,6 @@ def exportar_previsoes_pdf(request, servico_id):
             tipo_dia = 'util'
         dias.append({'data': data_atual, 'tipo_dia': tipo_dia})
         data_atual += timedelta(days=1)
-    
-    # Agrupar nomeações por data
     nomeacoes_por_data = {}
     observacoes_por_data = {}
     for n in nomeacoes:
@@ -415,24 +542,35 @@ def exportar_previsoes_pdf(request, servico_id):
         else:
             nomeacoes_por_data[n.data]['efetivo'] = n.escala_militar.militar
         observacoes_por_data[n.data] = n.escala_militar.escala.observacoes if n.escala_militar.escala else ''
-    
-    # Gerar PDF
+
+    # Obter nome da unidade e subunidade
+    config = ConfiguracaoUnidade.objects.first()
+    if config:
+        if config.nome_subunidade:
+            nome_cabecalho = f"{config.nome_unidade} - {config.nome_subunidade}"
+        else:
+            nome_cabecalho = config.nome_unidade
+    else:
+        nome_cabecalho = "Unidade Militar"
+
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="previsoes_{servico.nome}.pdf"'
     p = canvas.Canvas(response, pagesize=A4)
     width, height = A4
     timestamp = datetime.now().strftime('Exportado em: %d/%m/%Y %H:%M')
-    
+
     def draw_header():
         p.setFont("Helvetica-Bold", 16)
-        p.drawString(2*cm, height-2*cm, f"Previsões de Nomeação – {servico.nome}")
+        p.drawString(2*cm, height-2*cm, nome_cabecalho)
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(2*cm, height-3*cm, f"Previsões de Nomeação – {servico.nome}")
         p.setFont("Helvetica", 8)
         p.drawRightString(width-2*cm, height-1.5*cm, timestamp)
         p.setFont("Helvetica", 10)
-    
+
     draw_header()
-    y = height-3*cm
-    
+    y = height-4*cm
+
     # Cabeçalho da tabela
     p.setFillColor(colors.HexColor('#4A5D23'))
     p.rect(2*cm, y, width-4*cm, 0.7*cm, fill=1)
@@ -442,12 +580,12 @@ def exportar_previsoes_pdf(request, servico_id):
     p.drawString(10*cm, y+0.2*cm, "Reserva")
     p.drawString(15*cm, y+0.2*cm, "Observações")
     y -= 0.7*cm
-    
+
     for dia in dias:
         if y < 2*cm:
             p.showPage()
             draw_header()
-            y = height-2*cm
+            y = height-3*cm
             p.setFont("Helvetica", 10)
             y -= 1*cm
             p.setFillColor(colors.HexColor('#4A5D23'))
@@ -458,13 +596,13 @@ def exportar_previsoes_pdf(request, servico_id):
             p.drawString(10*cm, y+0.2*cm, "Reserva")
             p.drawString(15*cm, y+0.2*cm, "Observações")
             y -= 0.7*cm
-        
+
         data_str = dia['data'].strftime('%d/%m/%Y')
         nomeacoes = nomeacoes_por_data.get(dia['data'], {})
         efetivo = nomeacoes.get('efetivo')
         reserva = nomeacoes.get('reserva')
         obs = observacoes_por_data.get(dia['data'], '')
-        
+
         # Destacar Escala B (fim de semana ou feriado)
         if dia['tipo_dia'] in ['feriado', 'fim_semana']:
             p.saveState()
@@ -476,13 +614,13 @@ def exportar_previsoes_pdf(request, servico_id):
         else:
             p.setFont("Helvetica", 9)
             p.setFillColor(colors.black)
-        
+
         p.drawString(2.1*cm, y+0.1*cm, data_str)
         p.drawString(5*cm, y+0.1*cm, f"{efetivo.posto} {efetivo.nome}" if efetivo else "—")
         p.drawString(10*cm, y+0.1*cm, f"{reserva.posto} {reserva.nome}" if reserva else "—")
         p.drawString(15*cm, y+0.1*cm, obs[:40])
         y -= 0.6*cm
-    
+
     p.showPage()
     p.save()
     return response
@@ -493,19 +631,35 @@ def exportar_escalas_pdf(request, servico_id):
     hoje = date.today()
     data_fim = hoje + timedelta(days=30)
     escalas = Escala.objects.filter(servico=servico).prefetch_related('militares_info__militar').order_by('id')
+    
+    # Obter nome da unidade e subunidade
+    config = ConfiguracaoUnidade.objects.first()
+    if config:
+        if config.nome_subunidade:
+            nome_cabecalho = f"{config.nome_unidade} - {config.nome_subunidade}"
+        else:
+            nome_cabecalho = config.nome_unidade
+    else:
+        nome_cabecalho = "Unidade Militar"
+    
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="escalas_{servico.nome}.pdf"'
     p = canvas.Canvas(response, pagesize=A4)
     width, height = A4
     timestamp = datetime.now().strftime('Exportado em: %d/%m/%Y %H:%M')
+    
     def draw_header():
         p.setFont("Helvetica-Bold", 16)
-        p.drawString(2*cm, height-2*cm, f"Escalas do Serviço – {servico.nome}")
+        p.drawString(2*cm, height-2*cm, nome_cabecalho)
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(2*cm, height-3*cm, f"Escalas do Serviço – {servico.nome}")
         p.setFont("Helvetica", 8)
         p.drawRightString(width-2*cm, height-1.5*cm, timestamp)
         p.setFont("Helvetica", 10)
+    
     draw_header()
-    y = height-3*cm
+    y = height-4*cm
+    
     # Cabeçalho da tabela
     p.setFillColor(colors.HexColor('#4A5D23'))
     p.rect(2*cm, y, width-4*cm, 0.7*cm, fill=1)
@@ -515,11 +669,12 @@ def exportar_escalas_pdf(request, servico_id):
     p.drawString(10*cm, y+0.2*cm, "Reservas")
     p.drawString(15*cm, y+0.2*cm, "Observações")
     y -= 0.7*cm
+    
     for escala in escalas:
         if y < 2*cm:
             p.showPage()
             draw_header()
-            y = height-2*cm
+            y = height-3*cm
             p.setFont("Helvetica", 10)
             y -= 1*cm
             p.setFillColor(colors.HexColor('#4A5D23'))
@@ -530,6 +685,7 @@ def exportar_escalas_pdf(request, servico_id):
             p.drawString(10*cm, y+0.2*cm, "Reservas")
             p.drawString(15*cm, y+0.2*cm, "Observações")
             y -= 0.7*cm
+            
         tipo = "B" if escala.e_escala_b else "A"
         efetivos = ", ".join([
             f"{mim.militar.posto} {mim.militar.nome}" for mim in escala.militares_info.all() if not mim.e_reserva
@@ -538,6 +694,7 @@ def exportar_escalas_pdf(request, servico_id):
             f"{mim.militar.posto} {mim.militar.nome}" for mim in escala.militares_info.all() if mim.e_reserva
         ])
         obs = escala.observacoes[:40] if escala.observacoes else ""
+        
         # Destacar Escala B
         if getattr(escala, 'e_escala_b', False):
             p.saveState()
@@ -549,11 +706,13 @@ def exportar_escalas_pdf(request, servico_id):
         else:
             p.setFont("Helvetica", 9)
             p.setFillColor(colors.black)
+            
         p.drawString(2.1*cm, y+0.1*cm, tipo)
         p.drawString(4*cm, y+0.1*cm, efetivos if efetivos else "—")
         p.drawString(10*cm, y+0.1*cm, reservas if reservas else "—")
         p.drawString(15*cm, y+0.1*cm, obs)
         y -= 0.6*cm
+        
     p.showPage()
     p.save()
     return response

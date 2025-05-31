@@ -169,7 +169,7 @@
                                 {% if item.escala %}
                                     {% for militar_info in item.escala.militares_info.all %}
                                         {% if not militar_info.e_reserva %}
-                                            ({{ militar_info.militar.posto }}) {{ militar_info.militar.nim|stringformat:"08d" }} {{ militar_info.militar.nome|upper }}
+                                            {{ militar_info.militar.posto|capfirst }} {{ militar_info.militar.nim|stringformat:"08d" }} {{ militar_info.militar.nome|upper }}
                                         {% endif %}
                                     {% endfor %}
                                 {% endif %}
@@ -184,7 +184,7 @@
                                 {% if item.escala %}
                                     {% for militar_info in item.escala.militares_info.all %}
                                         {% if militar_info.e_reserva %}
-                                            ({{ militar_info.militar.posto }}) {{ militar_info.militar.nim|stringformat:"08d" }} {{ militar_info.militar.nome|upper }}
+                                            {{ militar_info.militar.posto|capfirst }} {{ militar_info.militar.nim|stringformat:"08d" }} {{ militar_info.militar.nome|upper }}
                                         {% endif %}
                                     {% endfor %}
                                 {% endif %}
