@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
-from datetime import time, date, timedelta
+from datetime import time
 from django.utils.translation import gettext_lazy as _
 
 # Lista de postos do Exército Português (excluindo oficiais generais)
@@ -27,7 +27,7 @@ POSTOS_CHOICES = [
 ]
 
 
-# Models
+# Modelos
 class Role(models.Model):
     nome = models.CharField(max_length=100, unique=True)
     descricao = models.TextField(blank=True)
@@ -49,6 +49,7 @@ class Militar(models.Model):
     telefone = models.BigIntegerField()
     email = models.EmailField()
 
+    #Nomeacoes
     ultima_nomeacao_a = models.DateField(null=True, blank=True)
     ultima_nomeacao_b = models.DateField(null=True, blank=True)
 
@@ -90,7 +91,7 @@ class Militar(models.Model):
 
     def esta_disponivel(self, data):
         """
-        Verifica se o militar está disponível para serviço em uma determinada data
+        Verifica se o militar está disponível para serviço numa determinada data
         """
         from .services.escala_service import EscalaService
         disponivel, _ = EscalaService.verificar_disponibilidade_militar(self, data)
@@ -112,11 +113,11 @@ class Militar(models.Model):
 
     def calcular_folga(self, data_proposta, servico=None):
         """
-        Calcula a folga em horas desde o último serviço
+        Calcula a folga em horas desde o último serviço, necessário para escalas
         """
         ultimo_servico = self.obter_ultimo_servico(servico)
         if not ultimo_servico:
-            return float('inf')  # Nunca fez serviço, folga infinita
+            return float('inf')
 
         diferenca = data_proposta - ultimo_servico
         return diferenca.total_seconds() / 3600  # Converter para horas
