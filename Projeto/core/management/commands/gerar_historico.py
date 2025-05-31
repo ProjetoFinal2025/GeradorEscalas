@@ -13,10 +13,10 @@ class Command(BaseCommand):
         hoje = timezone.now().date()
         data_inicio = hoje - timedelta(days=60)
         
-        # Obter todos os serviços ativos
-        servicos = Servico.objects.filter(ativo=True)
+        # Obter todos os serviços
+        servicos = Servico.objects.all()
         if not servicos.exists():
-            self.stdout.write(self.style.ERROR('Não existem serviços ativos.'))
+            self.stdout.write(self.style.ERROR('Não existem serviços.'))
             return
 
         # Obter todos os militares

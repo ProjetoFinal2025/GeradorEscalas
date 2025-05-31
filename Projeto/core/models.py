@@ -173,7 +173,6 @@ class Servico(models.Model):
     id = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100)
     militares = models.ManyToManyField('Militar', related_name='servicos')
-    ativo = models.BooleanField(default=True)
     hora_inicio = models.TimeField(default=time(8, 0), help_text="Hora de início do serviço")
     hora_fim = models.TimeField(default=time(17, 0), help_text="Hora de fim do serviço")
     n_elementos = models.IntegerField(default=1, help_text="Número de elementos efetivos necessários por escala")
@@ -185,7 +184,7 @@ class Servico(models.Model):
         default="A",
         help_text="Que tipo de escalas compõem este serviço.",
     )
-
+    # Precisamos disto?
     armamento = models.BooleanField(default=False, help_text="Se o serviço requer armamento")
 
     def clean(self):
@@ -196,7 +195,7 @@ class Servico(models.Model):
 
         escalas = self.escalas.all()
 
-        # Checks if Escalas already exists when changing Servico escala type
+        # Check se escalas já estão presentes
         if self.tipo_escalas == "A" and escalas.filter(e_escala_b=True).exists():
             raise ValidationError(
                 _("Não pode mudar este serviço para 'Só Escala A' "
@@ -218,7 +217,6 @@ class Servico(models.Model):
 class Escala(models.Model):
     id = models.AutoField(primary_key=True)
     servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='escalas')
-    comentario = models.TextField(blank=True)
 
     e_escala_b = models.BooleanField(default=False, verbose_name="Escala B")
     observacoes = models.TextField(blank=True, verbose_name="Observações")
@@ -232,16 +230,15 @@ class Escala(models.Model):
     def clean(self):
         super().clean()
 
-        # "A" "B" or "AB"
+        # "A" "B" ou "AB"
         tipo_srv = self.servico.tipo_escalas
 
-        # checks that A/B matches the Serviço
+        # Verificaçao
         if tipo_srv == "A" and self.e_escala_b:
             raise ValidationError(_("Este serviço só pode ter escalas do tipo A."))
         if tipo_srv == "B" and not self.e_escala_b:
             raise ValidationError(_("Este serviço só pode ter escalas do tipo B."))
 
-        # checks only one escala of that kind for this Serviço
         clash = (
             Escala.objects
             .filter(servico=self.servico, e_escala_b=self.e_escala_b)
@@ -256,6 +253,7 @@ class Escala(models.Model):
         return f"Escala {tipo_escala} - {self.servico.nome}"
 
 
+# Modelo complementar a escala, nao possui view propria
 class EscalaMilitar(models.Model):
     escala = models.ForeignKey(Escala, on_delete=models.CASCADE, related_name='roster')
     militar = models.ForeignKey('Militar', on_delete=models.CASCADE)
@@ -279,11 +277,8 @@ class EscalaMilitar(models.Model):
         return ''
 
 
+# Nomeação diária: indica que um militar (via EscalaMilitar) cobre a data X, como efetivo ou reserva.
 class Nomeacao(models.Model):
-    """
-    Nomeação diária: indica que um militar (via EscalaMilitar) cobre
-    a data X, como efetivo ou reserva.
-    """
     escala_militar = models.ForeignKey(
         EscalaMilitar,
         on_delete=models.CASCADE,
@@ -303,7 +298,7 @@ class Nomeacao(models.Model):
         tipo = "Reserva" if self.e_reserva else "Efetivo"
         return f"{self.escala_militar.militar} em {self.data:%d/%m/%Y} ({tipo})"
 
-
+# Registos
 class Log(models.Model):
     id = models.AutoField(primary_key=True)
     nim_admin = models.BigIntegerField(help_text="NIM do administrador que realizou a ação")
@@ -326,27 +321,6 @@ class Log(models.Model):
     def __str__(self):
         return f"{self.data.strftime('%d/%m/%Y %H:%M:%S')} - {self.acao} (NIM: {str(self.nim_admin).zfill(8)})"
 
-
-class RegraNomeacao(models.Model):
-    TIPO_FOLGA_CHOICES = [
-        ('mesma_escala', 'Mesma Escala (A/B)'),
-        ('entre_escalas', 'Entre Escalas (A/B)'),
-    ]
-
-    servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='regras_nomeacao')
-    tipo_folga = models.CharField(max_length=20, choices=TIPO_FOLGA_CHOICES)
-    horas_minimas = models.IntegerField(help_text="Número mínimo de horas de folga")
-    prioridade_modernos = models.BooleanField(default=True, help_text="Prioridade para militares mais modernos")
-    considerar_ultimo_servico = models.BooleanField(default=True, help_text="Considerar data do último serviço")
-    permitir_trocas = models.BooleanField(default=True, help_text="Permitir trocas de serviço")
-
-    class Meta:
-        verbose_name = "Regra de Nomeação"
-        verbose_name_plural = "Regras de Nomeação"
-        unique_together = ('servico', 'tipo_folga')
-
-    def __str__(self):
-        return f"{self.servico.nome} - {self.get_tipo_folga_display()}"
 
 
 class TrocaServico(models.Model):
