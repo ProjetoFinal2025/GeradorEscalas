@@ -24,15 +24,54 @@
       background: #fff;
       margin: 0;
     }
-    
+
+
+
     .filters-container {
-      position: sticky;
-      top: 0;
-      background: var(--header-bg);
-      z-index: 100;
-      padding: 20px;
-      border-bottom: 2px solid var(--border-color);
+    background-color: #e9f0e2; /* soft green background to match the theme */
+    border: 1px solid #a3c293; /* gentle green border */
+    padding: 1rem;
+    border-radius: 6px;
     }
+
+    .filters-container .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        align-items: flex-end;
+
+    }
+
+    .filters-container label {
+        font-weight: bold;
+        color: #2f4f2f; /* dark green for text */
+    }
+
+    .filters-container input[type="date"],
+    .filters-container select {
+        padding: 0.5rem;
+        border: 1px solid #a3c293;
+        border-radius: 4px;
+        background-color: #fdfdf9;
+    }
+
+    .filters-container .btn-admin-pdf,
+    .filters-container .btn-substituir,
+    .filters-container .btn-editar-observacao {
+        background-color: #5a7c3c; /* consistent dark olive green */
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .filters-container .btn-admin-pdf:hover,
+    .filters-container .btn-substituir:hover,
+    .filters-container .btn-editar-observacao:hover {
+        background-color: #476330; /* slightly darker on hover */
+    }
+
 
     .form-row {
       display: flex;
@@ -248,6 +287,24 @@
       background: #e0a800;
       color: #111;
     }
+
+    .escala-table thead th {
+    background: #e9f0e2;
+    color: #2f4f2f;
+    font-weight: 600;
+    padding: 12px;
+    border-bottom: 2px solid #a3c293;
+    text-align: left;
+    }
+
+    #servico_select {
+    display: inline-block;
+    width: auto;
+    min-width: 200px;
+    padding-right: 0;
+    height: 2.2rem;
+    }
+
   </style>
 {% endblock %}
 

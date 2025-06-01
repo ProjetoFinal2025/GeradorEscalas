@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from reversion.admin import VersionAdmin
-from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, ConfiguracaoUnidade, Nomeacao
+from .models import *
 from .utils import obter_feriados
 from django.utils import timezone
 from django.template.defaulttags import register
@@ -17,6 +17,7 @@ from django.contrib import admin, messages
 from datetime import date, datetime, timedelta
 from django import forms
 # Permite alterar os seguintes modelos na admin view
+from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, ConfiguracaoUnidade
 from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
 from django.contrib.admin.views.decorators import staff_member_required
@@ -42,13 +43,13 @@ class ServicoAdmin(VersionAdmin):
     form = ServicoForm
     list_display = (
         'nome', 'hora_inicio', 'hora_fim', 'n_elementos',
-        'n_reservas', 'tipo_escalas', 'armamento', 'ativo',
+        'n_reservas', 'tipo_escalas', 'armamento',
         'escalas_col',
     )
-    list_filter = ('ativo', 'tipo_escalas', 'armamento')
+    list_filter = ('tipo_escalas', 'armamento')
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('nome', 'ativo')
+            'fields': ('nome',)
         }),
         ('Configurações do Serviço', {
             'fields': ('hora_inicio', 'hora_fim', 'n_elementos', 'n_reservas', 'tipo_escalas', 'armamento'),
@@ -242,7 +243,7 @@ class DispensaAdmin(VersionAdmin):
     change_list_template = 'admin/core/dispensa/change_list.html'
     
     def servico_atual(self, obj):
-        servicos = obj.militar.servicos.filter(ativo=True)
+        servicos = obj.militar.servicos.all()
         return ", ".join(str(s) for s in servicos)
     servico_atual.short_description = "Serviço Atual"
 
@@ -263,10 +264,10 @@ class DispensaAdmin(VersionAdmin):
         # Obter o serviço selecionado do filtro
         servico_id = request.GET.get('servico')
         servico_selecionado = None
-        servicos = Servico.objects.filter(ativo=True)
+        servicos = Servico.objects.all()
         
         if servico_id:
-            servico_selecionado = get_object_or_404(Servico, id=servico_id, ativo=True)
+            servico_selecionado = get_object_or_404(Servico, id=servico_id)
             servicos = [servico_selecionado]
         
         hoje = timezone.now().date()
@@ -367,7 +368,7 @@ class DispensaAdmin(VersionAdmin):
             'mapa_dispensas': mapa_dispensas,
             'dias': dias,
             'dias_por_mes': dias_por_mes,
-            'servicos': Servico.objects.filter(ativo=True),
+            'servicos': Servico.objects.all(),
             'servico_selecionado': servico_selecionado,
             'hoje': hoje,
             'dias_restantes': dias_restantes,
@@ -445,16 +446,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
         # serviço activo seleccionado
         servico_id = request.GET.get("servico")
-        servicos_ativos = Servico.objects.filter(ativo=True)
+        servicos = Servico.objects.all()
         
-        if not servicos_ativos.exists():
-            messages.warning(request, "Não há serviços ativos no sistema. Por favor, ative um serviço primeiro.")
+        if not servicos.exists():
+            messages.warning(request, "Não há serviços no sistema. Por favor, ative um serviço primeiro.")
             return redirect("admin:core_servico_changelist")
             
         servico = (
-            servicos_ativos.get(pk=servico_id)
+            servicos.get(pk=servico_id)
             if servico_id
-            else servicos_ativos.first()
+            else servicos.first()
         )
 
         data_fim_str = request.GET.get("data_fim")
@@ -467,7 +468,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         extra_context.update(
             {
                 "servico": servico,
-                "servicos": Servico.objects.filter(ativo=True),
+                "servicos": Servico.objects.all(),
                 "hoje": date.today(),
                 "proximo_mes": date.today().replace(day=1) + timedelta(days=32),
                 "data_fim": data_fim,
@@ -557,16 +558,16 @@ class PrevisaoEscalasAdmin(VersionAdmin):
 
         # ---------- parâmetros GET ----------
         servico_id = request.GET.get("servico")
-        servicos_ativos = Servico.objects.filter(ativo=True)
+        servicos = Servico.objects.all()
         
-        if not servicos_ativos.exists():
-            messages.warning(request, "Não há serviços ativos no sistema. Por favor, ative um serviço primeiro.")
+        if not servicos.exists():
+            messages.warning(request, "Não há serviços no sistema. Por favor, ative um serviço primeiro.")
             return redirect("admin:core_servico_changelist")
             
         servico = (
-            servicos_ativos.get(pk=servico_id)
+            servicos.get(pk=servico_id)
             if servico_id
-            else servicos_ativos.first()
+            else servicos.first()
         )
 
         hoje = date.today()
@@ -672,7 +673,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         context = {
             "title": f"Previsões de Nomeação – {servico.nome}",
             "servico": servico,
-            "servicos": Servico.objects.filter(ativo=True),
+            "servicos": Servico.objects.all(),
             "datas": datas,
             "hoje": hoje,
             "data_fim": data_fim,
@@ -734,12 +735,12 @@ class GeradorEscalasAdminSite(admin.AdminSite):
         from django.db.models import Count
         extra_context = extra_context or {}
 
-        # Serviços ativos
-        servicos_ativos = Servico.objects.filter(ativo=True)
-        extra_context['servicos_ativos'] = servicos_ativos
+        # Serviços
+        servicos = Servico.objects.all()
+        extra_context['servicos'] = servicos
 
         # Militares por serviço
-        militares_por_servico = {s.nome: s.militares.count() for s in servicos_ativos}
+        militares_por_servico = {s.nome: s.militares.count() for s in servicos}
         extra_context['militares_por_servico'] = militares_por_servico
         total_militares = sum(militares_por_servico.values())
         extra_context['total_militares'] = total_militares
@@ -747,7 +748,7 @@ class GeradorEscalasAdminSite(admin.AdminSite):
         # Militares dispensados por serviço (atuais)
         hoje = timezone.now().date()
         dispensados_por_servico = {}
-        for servico in servicos_ativos:
+        for servico in servicos:
             militares = servico.militares.all()
             count = militares.filter(
                 dispensas__data_inicio__lte=hoje,

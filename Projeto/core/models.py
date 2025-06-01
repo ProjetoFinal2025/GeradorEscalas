@@ -177,7 +177,6 @@ class Servico(models.Model):
     hora_fim = models.TimeField(default=time(17, 0), help_text="Hora de fim do serviço")
     n_elementos = models.IntegerField(default=1, help_text="Número de elementos efetivos necessários por escala")
     n_reservas = models.IntegerField(default=1, help_text="Número de elementos reserva necessários por escala")
-    ativo = models.BooleanField(default=True, help_text="Se o serviço está ativo")
 
     tipo_escalas = models.CharField(
         max_length=2,
