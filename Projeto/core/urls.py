@@ -6,10 +6,16 @@ from .views import (
     login_view, home_view, mapa_dispensas_view, escala_servico_view, 
     gerar_escalas_view, nomear_militares, lista_servicos_view, 
     previsoes_por_servico_view, previsoes_servico_view, exportar_previsoes_pdf, 
+<<<<<<< HEAD
     exportar_escalas_pdf, obter_militar, 
+=======
+    exportar_escalas_pdf, solicitar_troca_view, aprovar_troca_view, 
+    rejeitar_troca_view, agendar_destroca_view, obter_militar, guia_view,
+>>>>>>> 154df01a8b56f3866bfa768794b8c2c9e57dff22
     obter_militares_disponiveis, substituir_militar, obter_nomeacao_atual,
     editar_observacao_nomeacao, previsualizar_previsoes_pdf
 )
+
 
 class CustomLogoutView(LogoutView):
     def dispatch(self, request, *args, **kwargs):
@@ -21,6 +27,7 @@ urlpatterns = [
     path('login/', login_view, name='login'),
     path('logout/', CustomLogoutView.as_view(next_page='login'), name='logout'),
     path('home/', home_view, name='home'),
+    path('guia/', guia_view, name='guia'),
     path('mapa-dispensas/', mapa_dispensas_view, name='mapa_dispensas'),
     path('escala-servico/', escala_servico_view, name='escala_servico'),
     path('escala-servico/<int:servico_id>/', escala_servico_view, name='escala_servico_detalhe'),

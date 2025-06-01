@@ -4,10 +4,10 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 import io
-from ..models import ConfiguracaoUnidade
-
+from ..models import ConfiguracaoUnidade, EscalaMilitar
 def gerar_pdf_escala(escala):
-    militares_info = escala.militares_info.select_related('militar').order_by('ordem_semana')
+    militares_info = (EscalaMilitar.objects.filter(escala=escala).select_related("militar").order_by("ordem"))
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
 
@@ -30,15 +30,13 @@ def gerar_pdf_escala(escala):
     elements.append(Paragraph(f"Militares da Escala: {escala}", styles['Heading1']))
     elements.append(Spacer(1, 20))
 
-    data = [["NIM", "Posto", "Nome", "Ordem Semana", "Ordem FDS"]]
+    data = [["NIM", "Posto", "Nome"]]
     for info in militares_info:
         militar = info.militar
         data.append([
             str(militar.nim).zfill(8),
             militar.posto,
             militar.nome,
-            info.ordem_semana,
-            info.ordem_fds,
         ])
 
     table = Table(data, colWidths=[70, 70, 150, 60, 60])

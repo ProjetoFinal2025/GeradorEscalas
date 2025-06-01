@@ -149,6 +149,7 @@ class EscalaAdmin(VersionAdmin):
 
     list_display = ("id", "servico", "tipo_de_escala")
     list_filter = ("servico", "e_escala_b")
+    list_display_links = ("id","servico")
     search_fields = ("servico__nome",)
     change_form_template = "admin/core/escala/militar_escala_change_form.html"
 
@@ -171,6 +172,7 @@ class EscalaAdmin(VersionAdmin):
         ]
         return custom + urls
 
+    #
     def export_militares_pdf(self, request, object_id, *args, **kwargs):
         escala = self.get_object(request, object_id)
         if not escala:
