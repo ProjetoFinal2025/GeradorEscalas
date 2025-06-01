@@ -13,7 +13,7 @@ body {
     background: #f7fdf7 !important;
 }
 
-/* BUTTONS (like "Gravar", "Reset ordem", etc.) */
+/* BUTTONS */
 input.button, a.button, button.button {
     background-color: #4A5D23 !important;
     border: none !important;
@@ -297,7 +297,7 @@ nav.toplinks a.date-back {
     text-decoration: underline;
 }
 
-/* Optional: make the mini "Escala" and "Servico" text also olive green */
+/* make the mini "Escala" and "Servico" text also olive green */
 #recent-actions-module .mini.quiet {
     color: #4A5D23 !important;
 }

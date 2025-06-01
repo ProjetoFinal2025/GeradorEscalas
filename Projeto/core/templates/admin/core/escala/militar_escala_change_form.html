@@ -15,16 +15,6 @@
     <a href="{% url 'admin:core_escala_delete' original.pk %}" class="deletelink"> {% trans 'Remover' %}</a>
     {% endif %}
 
-
-    {% if custom_reset_button and change %}
-      <form method="post" style="display:inline">
-        {% csrf_token %}
-        <input type="submit" class="button"
-               name="_reset_ordem"
-               value="{% trans 'Reset ordem por NIM' %}">
-      </form>
-    {% endif %}
-
     {% if export_pdf_url %}
       <form method="get" action="{{ export_pdf_url }}" style="display:inline">
         <input type="submit" class="button"
@@ -35,7 +25,6 @@
   </div>
 {% endblock %}
 
-{# Mantemos o bloco object‑tools padrão (Histórico, etc.). #}
 {% block object-tools %}
   {{ block.super }}
 {% endblock %}

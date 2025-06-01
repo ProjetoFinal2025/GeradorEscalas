@@ -68,21 +68,23 @@ class EscalaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # if we're editing an existing Escala, never show the radios,
-        # and don't require it — just carry over the old value
+        if "servico" in self.fields:
+            w = self.fields["servico"].widget
+            w.can_add_related = False
+            w.can_change_related = False
+            w.can_view_related = False
+
         if self.instance and self.instance.pk:
-            # 1) hide
             self.fields["e_escala_b"].widget = forms.HiddenInput()
-            # 2) not required
             self.fields["e_escala_b"].required = False
-            # 3) seed with the current value ('0' or '1')
             self.initial["e_escala_b"] = "1" if self.instance.e_escala_b else "0"
-            # and we can stop here: no need to re‐apply the service logic below
             return
 
         # — only reach this code on *add* or when there are validation errors —
         servico = None
         has_errors = bool(self.errors)  # True if form already has validation errors
+
+
 
         if not has_errors:
             if "servico" in self.data:

@@ -132,18 +132,9 @@ class EscalaMilitarInline(admin.TabularInline):
 
     display_militar.short_description = "Militar"
 
-@admin.action(description="Reset orders by NIM")
-def reset_orders_by_nim(modeladmin, request, queryset):
-
-    for escala in queryset:
-        esc_mils = EscalaMilitar.objects.filter(escala=escala).select_related('militar').order_by('militar__nim')
-        for i, em in enumerate(esc_mils, start=1):
-            em.ordem = i
-            em.save()
 
 class EscalaAdmin(VersionAdmin):
     inlines = [EscalaMilitarInline]
-    actions = [reset_orders_by_nim]
     form = EscalaForm
 
 
@@ -796,9 +787,9 @@ admin_site.register(Servico, ServicoAdmin)
 admin_site.register(Escala, EscalaAdmin)
 admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
-admin_site.register(Log)
-admin_site.register(ConfiguracaoUnidade, ConfiguracaoUnidadeAdmin)
-# Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
+admin_site.register(ConfiguracaoUnidade, ConfiguracaoUnidadeAdmin)
+admin_site.register(Log)
+# Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 
 
