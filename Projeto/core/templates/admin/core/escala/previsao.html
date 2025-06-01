@@ -49,10 +49,10 @@
 
     .filters-container input[type="date"],
     .filters-container select {
-        padding: 0.5rem;
-        border: 1px solid #a3c293;
-        border-radius: 4px;
-        background-color: #fdfdf9;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
     }
 
     .filters-container .btn-admin-pdf,
@@ -212,6 +212,20 @@
     }
 
     @media (max-width: 1100px) {
+      .content-container {
+        height: auto;
+        min-height: 100vh;
+      }
+      .filters-container {
+        max-height: 260px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+      .table-container {
+        max-height: calc(100vh - 320px);
+        min-height: 200px;
+        overflow-y: auto;
+      }
       .form-row {
         flex-direction: column;
         align-items: stretch;
@@ -224,6 +238,13 @@
       }
       .btns-right {
         justify-content: flex-end;
+      }
+      .table-container {
+        overflow-x: auto;
+        padding: 0 5px;
+      }
+      .escala-table {
+        min-width: 600px;
       }
     }
 
@@ -303,6 +324,64 @@
     min-width: 200px;
     padding-right: 0;
     height: 2.2rem;
+    }
+
+    @media (max-width: 700px) {
+      .content-container {
+        height: auto !important;
+        min-height: 0 !important;
+        display: block !important;
+        padding: 0;
+      }
+      .filters-container,
+      .table-container {
+        max-height: none !important;
+        min-height: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      .form-row {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .form-row > div,
+      .btns-right {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+      }
+      .btns-right {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .escala-table {
+        font-size: 0.85em;
+        min-width: 400px;
+      }
+      .escala-table th,
+      .escala-table td {
+        padding: 6px;
+      }
+      .table-container {
+        padding: 0 2px;
+        min-height: 120px;
+        max-height: calc(100vh - 220px);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .form-row {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .filters-container input[type="date"],
+      .filters-container select {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
     }
 
   </style>
