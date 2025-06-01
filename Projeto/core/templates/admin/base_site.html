@@ -15,4 +15,16 @@
     <a href="{% url 'admin:index' %}">Administração</a> /
     <a href="{% url 'guia' %}">Guia</a> /
     {{ block.super }} //
+<style>
+
+    a.section[href="/admin/auth/"],
+    a.section[href="/admin/core/"] {
+        pointer-events: none;
+        cursor: default;
+        text-decoration: none;
+        color: inherit;
+    }
+
+</style>
 {% endblock %}
+
