@@ -321,9 +321,18 @@ class EscalaService:
                 print("[DEBUG] Ordem dos dias de Escala B:", dias_b_ordenados)
                 for dia in dias_b_ordenados:
                     print(f"\n[DEBUG] Dia: {dia} | Tipo: B")
-                    # Ordenar por última nomeação B e depois por NIM
+                    escala = EscalaService.criar_ou_obter_escala(
+                        servico, e_escala_b=True)
+                    # Ordenar por última nomeação B e depois pela ordem na escala
+                    def get_ordem(nim):
+                        militar = militares_dict[nim]
+                        try:
+                            escala_militar = EscalaMilitar.objects.get(escala=escala, militar=militar)
+                            return escala_militar.ordem if escala_militar.ordem is not None else 9999
+                        except EscalaMilitar.DoesNotExist:
+                            return 9999
                     rotacao_nim = sorted([m.nim for m in militares], 
-                                       key=lambda nim: (ultima_nomeacao_b[nim] or date.min, nim))
+                                       key=lambda nim: (ultima_nomeacao_b[nim] or date.min, get_ordem(nim)))
                     # Filtrar indisponíveis no próprio dia, mas manter ordem da
                     # rotação
                     disponiveis_nim = [
@@ -376,9 +385,18 @@ class EscalaService:
             if servico.tipo_escalas in ("A", "AB"):
                 for dia in dias_escala['escala_a']:
                     print(f"\n[DEBUG] Dia: {dia} | Tipo: A")
-                    # Ordenar por última nomeação A e depois por NIM
+                    escala = EscalaService.criar_ou_obter_escala(
+                        servico, e_escala_b=False)
+                    # Ordenar por última nomeação A e depois pela ordem na escala
+                    def get_ordem_a(nim):
+                        militar = militares_dict[nim]
+                        try:
+                            escala_militar = EscalaMilitar.objects.get(escala=escala, militar=militar)
+                            return escala_militar.ordem if escala_militar.ordem is not None else 9999
+                        except EscalaMilitar.DoesNotExist:
+                            return 9999
                     rotacao_nim = sorted([m.nim for m in militares], 
-                                       key=lambda nim: (ultima_nomeacao_a[nim] or date.min, nim))
+                                       key=lambda nim: (ultima_nomeacao_a[nim] or date.min, get_ordem_a(nim)))
                     # Filtrar indisponíveis no próprio dia, mas manter ordem da
                     # rotação
                     disponiveis_nim = [

@@ -22,6 +22,7 @@ from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
 from django.contrib.admin.views.decorators import staff_member_required
 from .views import ERRO_PREVISAO_DIA_ATUAL
+from django.db.models import Max
 
 @register.filter
 def get_item(dictionary, key):
@@ -122,7 +123,7 @@ class EscalaMilitarInline(admin.TabularInline):
     readonly_fields = ("display_militar",)
     fields = ("display_militar", "ordem")
     ordering = ("ordem",)
-    sortable_by = ("ordem", "militar")
+    sortable_by = ("ordem",)
     max_num = 0
 
     def display_militar(self, obj):
@@ -137,7 +138,6 @@ class EscalaAdmin(VersionAdmin):
     inlines = [EscalaMilitarInline]
     form = EscalaForm
 
-
     list_display = ("id", "servico", "tipo_de_escala")
     list_filter = ("servico", "e_escala_b")
     list_display_links = ("id","servico")
@@ -149,7 +149,6 @@ class EscalaAdmin(VersionAdmin):
 
     tipo_de_escala.short_description = 'Tipo de escala'
     tipo_de_escala.admin_order_field = 'e_escala_b'
-
 
     def get_urls(self):
 
@@ -174,20 +173,6 @@ class EscalaAdmin(VersionAdmin):
 
     ## Changes the order of Militares by NIm
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
-
-        #  handle the special POST that resets ordem
-        if request.method == "POST" and "_reset_ordem" in request.POST and object_id:
-            escala = self.get_object(request, object_id)
-            if escala:
-                related = (escala.roster
-                           .select_related("militar")
-                           .order_by("militar__nim"))
-                for i, em in enumerate(related, start=1):
-                    em.ordem= i
-                    em.save()
-                self.message_user(request, "Ordem redefinida com sucesso.")
-                return redirect(request.path)
-
         # supply both variables to the template
         extra_context = extra_context or {}
         extra_context["custom_reset_button"] = True
@@ -207,6 +192,8 @@ class EscalaAdmin(VersionAdmin):
     @staticmethod
     def _sincronizar_militares(escala):
         militares_srv = list(escala.servico.militares.all())
+        existing = EscalaMilitar.objects.filter(escala=escala).select_related("militar")
+        existing_by_mil = {em.militar_id: em for em in existing}
 
         # apagar designações órfãs
         (
@@ -216,15 +203,18 @@ class EscalaAdmin(VersionAdmin):
             .delete()
         )
 
-        # criar/atualizar as que faltam
-        for idx, mil in enumerate(militares_srv, start=1):
-            EscalaMilitar.objects.update_or_create(
-                escala=escala,
-                militar=mil,
-                defaults={
-                    "ordem": idx,
-                },
-            )
+        # Obter a maior ordem existente
+        max_ordem = existing.aggregate(Max('ordem'))['ordem__max'] or 0
+
+        # Adicionar apenas os novos militares ao final, preservando a ordem dos existentes
+        for mil in militares_srv:
+            if mil.pk not in existing_by_mil:
+                max_ordem += 1
+                EscalaMilitar.objects.create(
+                    escala=escala,
+                    militar=mil,
+                    ordem=max_ordem
+                )
 
 class DispensaAdmin(VersionAdmin):
     list_display = ('militar', 'data_inicio', 'data_fim', 'motivo', 'servico_atual')

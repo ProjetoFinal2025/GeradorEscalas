@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
@@ -20,6 +20,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import cm
 import json
 from django.views.generic import TemplateView
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 
 # Mensagens de erro constantes
@@ -896,3 +898,21 @@ def editar_observacao_nomeacao(request):
         return JsonResponse({'success': True, 'message': 'Observação atualizada com sucesso.'})
     except (Servico.DoesNotExist, ValueError, KeyError) as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+@csrf_exempt  # Se usares AJAX puro, pode ser necessário. Se usares o CSRF token, podes remover.
+@require_POST
+def atualizar_ordem_militares(request, escala_id):
+    try:
+        data = json.loads(request.body)
+        nova_ordem = data.get('ordem', [])  # lista de NIMs na nova ordem
+        escala = Escala.objects.get(id=escala_id)
+        for idx, nim in enumerate(nova_ordem):
+            try:
+                em = EscalaMilitar.objects.get(escala=escala, militar__nim=nim)
+                em.ordem = idx + 1
+                em.save()
+            except EscalaMilitar.DoesNotExist:
+                continue
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:
+        return HttpResponseBadRequest(str(e))

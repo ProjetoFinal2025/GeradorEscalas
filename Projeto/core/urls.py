@@ -8,7 +8,8 @@ from .views import (
     previsoes_por_servico_view, previsoes_servico_view, exportar_previsoes_pdf, 
     exportar_escalas_pdf, obter_militar,
     obter_militares_disponiveis, substituir_militar, obter_nomeacao_atual,
-    editar_observacao_nomeacao, previsualizar_previsoes_pdf
+    editar_observacao_nomeacao, previsualizar_previsoes_pdf,
+    atualizar_ordem_militares
 )
 
 
@@ -43,4 +44,5 @@ urlpatterns = [
     path('api/nomeacao/substituir/', substituir_militar, name='substituir_militar'),
     path('api/nomeacao/atual/<int:servico_id>/<str:data>/<str:tipo>/', obter_nomeacao_atual, name='obter_nomeacao_atual'),
     path('api/nomeacao/editar_observacao/', editar_observacao_nomeacao, name='editar_observacao_nomeacao'),
+    path('escalas/<int:escala_id>/reordenar/', atualizar_ordem_militares, name='atualizar_ordem_militares'),
 ]

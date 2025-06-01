@@ -5,6 +5,7 @@ from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 from .models import Militar, Servico, Dispensa, Escala, Log, Role, EscalaMilitar, Nomeacao
 from decouple import config
+from django.db.models import Max
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
     """Função auxiliar para criar logs"""
@@ -178,7 +179,7 @@ def sync_escalas_when_servico_changes(sender, instance, action, **kwargs):
         return
 
     servico = instance
-    militares = list(servico.militares.all().order_by("nim"))
+    militares = list(servico.militares.all())
 
     for escala in servico.escalas.all():
         existing = EscalaMilitar.objects.filter(escala=escala).select_related("militar")
@@ -189,13 +190,13 @@ def sync_escalas_when_servico_changes(sender, instance, action, **kwargs):
             if em.militar not in militares:
                 em.delete()
 
-        # Add or re-order
-        for idx, mil in enumerate(militares, start=1):
+        # Add new ones at the end, preserve order for existing ones
+        max_ordem = existing.aggregate(Max('ordem'))['ordem__max'] or 0
+        for mil in militares:
             em, created = EscalaMilitar.objects.get_or_create(
                 escala=escala,
                 militar=mil,
-                defaults={"ordem": idx}
+                defaults={"ordem": max_ordem + 1}
             )
-            if not created:
-                em.ordem= idx
-                em.save()
+            if created:
+                max_ordem += 1

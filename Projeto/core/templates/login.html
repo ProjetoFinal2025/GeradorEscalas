@@ -83,13 +83,23 @@
         .alert i {
             margin-right: 0.5rem;
         }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            color: white;
+            font-size: 0.9rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="login-container">
             <div class="login-header">
-                <img src="{% static 'core/images/logo_exercito_cor1_png.png' %}" alt="Logo do Exército" class="img-fluid">
+                <img src="{% static 'core/images/logo_expopto2.png' %}" alt="Logo do Exército" class="img-fluid">
                 <h2>Acesso ao Sistema</h2>
                 <p class="text-muted">Gerador de Escalas</p>
             </div>
@@ -156,5 +166,8 @@
             })
         })()
     </script>
+    <div class="footer">
+        Gerador de escala 2025 - Criado por Nelson Freitas e Henrique Melo - V1.02
+    </div>
 </body>
 </html>
