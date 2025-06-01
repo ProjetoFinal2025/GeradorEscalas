@@ -12,6 +12,7 @@
 {% endblock %}
 
 {% block userlinks %}
+    <a href="{% url 'admin:index' %}">Administração</a> /
     <a href="{% url 'guia' %}">Guia</a> /
     {{ block.super }} //
 {% endblock %}

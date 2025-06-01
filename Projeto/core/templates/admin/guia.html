@@ -1,203 +1,632 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-    {% extends "admin/base_site.html" %}
-    {% load static %}
-    {% block content %}
-        <style>
-          .accordion {
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        :root {
+            --primary-color: #4A5D23;
+            --primary-dark: #6B8E23;
+            --primary-light: #f7fdf7;
+            --text-color: #2c3e50;
+            --border-color: #dee2e6;
+            --background-light: #f8f9fa;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .guide-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-color);
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+
+        .guide-sidebar {
+            position: sticky;
+            top: 20px;
+            height: calc(100vh - 40px);
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .guide-main {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+
+        .guide-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .guide-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            z-index: 1;
+        }
+
+        .guide-header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .guide-header p {
+            font-size: 1.2em;
+            margin: 20px 0 0;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+
+        .nav-menu {
             list-style: none;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
+            padding: 0;
+            margin: 0;
+        }
 
-          .accordion details {
-            margin: 0 !important;
-            padding: 0 !important;
-          }
+        .nav-menu li {
+            margin-bottom: 5px;
+        }
 
-          .accordion summary {
-            margin: 0 !important;
-            padding: 0 !important;
-          }
+        .nav-menu a {
+            display: block;
+            padding: 12px 15px;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: var(--transition);
+            font-weight: 500;
+        }
 
-          .ul {
-            padding: 0! important;
+        .nav-menu a:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .nav-menu a.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .guide-section {
+            padding: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .guide-section:last-child {
+            border-bottom: none;
+        }
+
+        .guide-section h2 {
+            color: var(--primary-color);
+            font-size: 1.8em;
+            margin: 0 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-light);
+        }
+
+        .guide-section h3 {
+            color: var(--primary-color);
+            font-size: 1.4em;
+            margin: 25px 0 15px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .info-card {
+            background: var(--background-light);
+            border-radius: 10px;
+            padding: 20px;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-shadow);
+            border-color: var(--primary-color);
+        }
+
+        .info-card h4 {
+            color: var(--primary-color);
+            margin: 0 0 10px;
+            font-size: 1.2em;
+        }
+
+        .steps {
+            list-style: none;
+            padding: 0;
+            counter-reset: step-counter;
+        }
+
+        .steps > li {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: var(--background-light);
+            border-radius: 10px;
+            position: relative;
+            counter-increment: step-counter;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .steps > li:hover {
+            transform: translateX(10px);
+            box-shadow: var(--card-shadow);
+            border-color: var(--primary-color);
+        }
+
+        .steps > li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Corrigir listas internas para não herdarem estilos de .steps */
+        .steps ul {
+            list-style: disc inside;
+            padding-left: 30px;
+            margin-top: 10px;
+        }
+        .steps ul li {
+            padding: 0;
+            margin: 0 0 8px 0;
+            background: none;
+            border: none;
+            border-radius: 0;
+            position: static;
+            box-shadow: none;
+            color: inherit;
+            font-size: 1em;
+        }
+
+        .accordion {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .accordion details {
+            margin: 10px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .accordion summary {
+            padding: 15px 20px;
+            background: var(--background-light);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .accordion summary:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .accordion-content {
+            padding: 20px;
+            background: white;
+        }
+
+        .tip-box {
+            background: var(--primary-light);
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .faq-item {
+            background: var(--background-light);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .faq-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--card-shadow);
+            border-color: var(--primary-color);
+        }
+
+        .faq-question {
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .guide-container {
+                grid-template-columns: 1fr;
             }
-        </style>
 
-      <h1>Guia do Sistema</h1>
-      <p>Bem-vindo ao nosso gerador de escalas.</p>
+            .guide-sidebar {
+                position: relative;
+                height: auto;
+                top: 0;
+            }
+        }
 
+        @media (max-width: 768px) {
+            .guide-header {
+                padding: 30px 20px;
+            }
 
-      <h3>Dados e a sua organização: </h3>
+            .guide-header h1 {
+                font-size: 2em;
+            }
 
-        <ul class="accordion">
+            .guide-section {
+                padding: 20px;
+            }
 
-            <details>
-              <summary><strong>Dispensas</strong></summary>
-              <p>
-                Uma dispensa é o período em que o militar está oficialmente <strong>indisponível</strong> para prestar serviço, por exemplo: férias, afastamento médico ou licença especial.
-              </p>
-              <p>
-                Cada dispensa deve incluir obrigatoriamente:
-              </p>
-              <ul>
-                <li><strong>Data inicial:</strong> o primeiro dia da ausência.</li>
-                <li><strong>Data final:</strong> o último dia da ausência.</li>
-                <li><strong>Motivo:</strong> justificativa clara e objetiva (ex.: “férias regulamentares”, “licença médica – fratura”).</li>
-              </ul>
-              <p>
-                <strong>Importante:</strong> preencha sempre o campo <em>Motivo</em> para garantir rastreabilidade e facilitar o planejamento das escalas.
-              </p>
-            </details>
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
 
-            <details>
-              <summary><strong>Escalas</strong></summary>
-                <p>
-                  No serviço militar, uma escala é a organização formal dos turnos de serviço atribuídos aos militares duma unidade,
-                    indicando quem deverá cumprir determinada função, em que dia. Garante a distribuição equilibrada das responsabilidades entre os
-                    membros da unidade, respeitando critérios como a disponibilidade de cada militar, a natureza da função, e a necessidade de rotação.
-                </p>
-                <p>
-                    Existem dois tipos de escala:
-                </p>
+{% block content %}
+<div class="guide-container">
+    <aside class="guide-sidebar">
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="#introducao" class="active">1. Introdução</a></li>
+                <li><a href="#requisitos">2. Requisitos do Sistema</a></li>
+                <li><a href="#estrutura">3. Estrutura de Dados</a></li>
+                <li><a href="#utilizacao">4. Como Utilizar</a></li>
+                <li><a href="#dicas">5. Dicas e Boas Práticas</a></li>
+                <li><a href="#faq">6. Perguntas Frequentes</a></li>
+                <li><a href="#problemas">7. Solução de Problemas</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="guide-main">
+        <div class="guide-header">
+            <h1>Guia do Sistema de Geração de Escalas</h1>
+            <p>Bem-vindo ao nosso gerador de escalas. Este guia irá ajudá-lo a utilizar todas as funcionalidades do sistema de forma eficiente.</p>
+        </div>
+
+        <div id="introducao" class="guide-section">
+            <h2>1. Introdução</h2>
+            <p>O Sistema de Geração de Escalas é uma ferramenta desenvolvida para auxiliar na gestão e organização das escalas de serviço em unidades militares.</p>
+            
+            <div class="card-grid">
+                <div class="info-card">
+                    <h4>Gestão de Militares</h4>
+                    <p>Gerencie dados dos militares, incluindo NIM, posto, função e contatos.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Criação de Serviços</h4>
+                    <p>Configure diferentes tipos de serviços com horários e requisitos específicos.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Geração de Escalas</h4>
+                    <p>Gere escalas automaticamente respeitando todas as regras e restrições.</p>
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <h3>Regras de Nomeação</h3>
+                <p>O sistema aplica automaticamente as seguintes regras na geração das escalas:</p>
                 <ul>
-                <li><strong>A:</strong> Equivale aos dias da semana.</li>
-                <li><strong>B:</strong> Equivale a fins de semana e feriados.</li>
+                    <li><strong>Ordem de Serviço:</strong> Os militares são nomeados seguindo a ordem definida na escala do serviço
+                        ou de acordo com a folga de serviço independemente da escala.</li>
+                    <li><strong>Dispensas:</strong> Militares com dispensa registada não são nomeados para o período correspondente</li>
+                    <li><strong>Feriados e fins de semana:</strong> Em dias de feriado ou fim de semana, são utilizadas as escalas do tipo B (fins de semana)</li>
+                    <li><strong>Nomeação:</strong> Militares são nomeados apenas para serviços para os quais estão designados</li>
+                    <li><strong>Folga de serviço:</strong> São respeitadas folgas de 24 horas entre escalas diferentes e 48 horas entre escalas do mesmo tipo.</li>
                 </ul>
-                <p> Cada escala necessita obrigatóriamente de pertencer a <strong>só um</strong> serviço. Uma escala não pode existir sem serviço.</p>
-            </details>
+            </div>
 
-            <details>
-              <summary><strong>Feriados</strong></summary>
-              <p>No contexto de geração de escalas, um feriado representa um dia em que a uma escala A não é utilizada. Em vez disso, aplica-se uma escala B.</p>
-               <p> Existem dois tipos de Feriado:</p>
+            <div class="tip-box">
+                <h3>Tipos de Utilizadores</h3>
                 <ul>
-                    <li><strong>Fixo:</strong> ocorre sempre na mesma data todos os anos, como o Natal (25 de dezembro) ou o Dia da Independência (7 de setembro).</li>
-                    <li><strong>Movel:</strong> a data varia a cada ano, como a Páscoa ou o Carnaval.</li>
+                    <li><strong>Superadmin:</strong> Acesso total a todas as funcionalidades e configurações do sistema.</li>
+                    <li><strong>Admin:</strong> Permite gerar escalas e inserir dispensas, além de gerir militares e serviços.</li>
+                    <li><strong>Utilizador público:</strong> Apenas pode visualizar as escalas em que está nomeado, sem permissões de edição.</li>
                 </ul>
+            </div>
+        </div>
 
-            </details>
+        <div id="requisitos" class="guide-section">
+            <h2>2. Requisitos do Sistema</h2>
+            <div class="card-grid">
+                <div class="info-card"><li><strong>Nomeação:</strong> Militares são nomeados apenas para serviços para os quais estão designados</li>
+                    <h4>Navegador</h4>
+                    <p>Navegador web atualizado (Chrome, Firefox, Edge)</p>
+                </div>
+                <div class="info-card">
+                    <h4>Conexão</h4>
+                    <p>Conexão à internet estável</p>
+                </div>
+                <div class="info-card">
+                    <h4>Permissões</h4>
+                    <p>Permissões de administrador para funcionalidades específicas</p>
+                </div>
+            </div>
+        </div>
 
-            <details>
-              <summary><strong>Logs</strong></summary>
-              <p>Logs são registros de cada ação tomada por administradores, sempre que um administrador realiza uma operação, como por exemplo,
-              remover um militar duma escala, um log é construido, mantendo assim um histórico das ações tomadas.</p>
-            </details>
+        <div id="estrutura" class="guide-section">
+            <h2>3. Estrutura de Dados</h2>
+            <ul class="accordion">
+                <details>
+                    <summary>Militares</summary>
+                    <div class="accordion-content">
+                        <p>Cada militar é identificado por um NIM único e possui informações essenciais:</p>
+                        <ul>
+                            <li><strong>NIM:</strong> Número de Identificação Militar (8 dígitos)</li>
+                            <li><strong>Nome:</strong> Nome completo do militar</li>
+                            <li><strong>Posto:</strong> Posto militar atual</li>
+                            <li><strong>Função:</strong> Função desempenhada na unidade</li>
+                            <li><strong>Contato:</strong> Telefone e email para comunicação</li>
+                        </ul>
+                        <div class="tip-box">
+                            <strong>Dica:</strong> Manter os dados de contato sempre atualizados para facilitar a comunicação em caso de necessidade.
+                        </div>
+                    </div>
+                </details>
 
-            <details>
-              <summary><strong>Militares</strong></summary>
-              <p>Cada militar é um indivíduo participante na organização militar disponivel. Sendo este identificado pelo seu Numero de Identificação Militar(NIM).</p>
+                <details>
+                    <summary>Serviços</summary>
+                    <div class="accordion-content">
+                        <p>Os serviços representam as diferentes funções que podem ser atribuídas aos militares:</p>
+                        <ul>
+                            <li><strong>Nome:</strong> Identificador único do serviço</li>
+                            <li><strong>Horário:</strong> Início e fim do serviço</li>
+                            <li><strong>Elementos:</strong> Número de militares necessários</li>
+                            <li><strong>Reservas:</strong> Número de militares reserva</li>
+                            <li><strong>Tipo de Escala:</strong> A (dias úteis), B (fins de semana) ou AB (ambos)</li>
+                        </ul>
+                        <div class="warning-box">
+                            <strong>Atenção:</strong> Ao alterar o tipo de escala de um serviço, verificar se não existem escalas já criadas que possam ser afetadas.
+                        </div>
+                    </div>
+                </details>
 
-                <p>Cada Militar necessita de obrigatóriamente ter:</p>
+                <details>
+                    <summary>Escalas</summary>
+                    <div class="accordion-content">
+                        <p>As escalas organizam a distribuição dos serviços entre os militares:</p>
+                        <ul>
+                            <li><strong>Tipo A:</strong> Para dias úteis</li>
+                            <li><strong>Tipo B:</strong> Para fins de semana e feriados</li>
+                            <li><strong>Ordem:</strong> Definir a sequência de militares na escala na coluna "Ordem". Se o militar tiver transitado de outra escala será considerada a folga de serviço.</li>
+                        </ul>
+                        <div class="warning-box">
+                          <strong>Atenção:</strong> Se estas escalas não forem criadas manualmente, o sistema irá fazer a sua criação automaticamente baseando-se nos serviços criados.
+                      </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Dispensas</summary>
+                    <div class="accordion-content">
+                        <p>Registam períodos e motivos em que militares estão indisponíveis:</p>
+                        <ul>
+                            <li><strong>Data Inicial:</strong> Início da dispensa</li>
+                            <li><strong>Data Final:</strong> Término da dispensa</li>
+                            <li><strong>Motivo:</strong> Justificativa da dispensa</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Feriados</summary>
+                    <div class="accordion-content">
+                        <p>Dias especiais que afetam a geração de escalas:</p>
+                        <ul>
+                            <li><strong>Fixo:</strong> Data constante (ex: Natal) - calculado automaticamente pela aplicação</li>
+                            <li><strong>Móvel:</strong> Data variável (ex: Páscoa) - calculado automaticamente pela aplicação</li>
+                            <li><strong>Local:</strong> Feriados específicos da unidade ou região</li>
+                        </ul>
+                        <div class="tip-box">
+                            <strong>Dica:</strong> Os feriados fixos e móveis são calculados automaticamente pela aplicação, não sendo necessário adicioná-los manualmente. Pode adicionar feriados locais através da interface de administração em "Feriados" para incluir datas importantes específicas da sua unidade ou região.
+                        </div>
+                    </div>
+                </details>
+            </ul>
+        </div>
+
+        <div id="utilizacao" class="guide-section">
+            <h2>4. Como Utilizar</h2>
+            <ol class="steps">
+                <li>
+                    <h3>Configuração Inicial</h3>
+                    <p>Configurar os dados básicos da unidade:</p>
+                    <ul>
+                        <li>Adicionar os militares da unidade</li>
+                        <li>Configurar os serviços necessários</li>
+                        <li>Definir os feriados do ano</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <h3>Criação de Escalas</h3>
+                    <p>Para cada serviço, criar as escalas correspondentes:</p>
+                    <ul>
+                        <li>Selecionar o tipo de escala (A ou B)</li>
+                        <li>Definir a ordem dos militares</li>
+                        <li>Verificar a distribuição equilibrada</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <h3>Gestão de Dispensas</h3>
+                    <p>Registar as dispensas dos militares:</p>
+                    <ul>
+                        <li>Usar o calendário de dispensas</li>
+                        <li>Adicionar dispensas individuais</li>
+                        <li>Editar ou eliminar dispensas</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <h3>Geração de Previsões</h3>
+                    <p>Gerar as previsões de escala:</p>
+                    <ul>
+                        <li>Selecionar o período desejado</li>
+                        <li>Verificar as previsões geradas</li>
+                        <li>Fazer ajustes manuais se necessário</li>
+                        <li>Exportar para PDF</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div id="dicas" class="guide-section">
+            <h2>5. Dicas e Boas Práticas</h2>
+            <div class="card-grid">
+                <div class="info-card">
+                    <h4>Gestão de Militares</h4>
+                    <ul>
+                        <li>Manter os dados dos militares sempre atualizados</li>
+                        <li>Verificar regularmente as dispensas registadas</li>
+                        <li>Distribuir os serviços de forma equilibrada</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h4>Geração de Escalas</h4>
+                    <ul>
+                        <li>Planear as escalas com antecedência</li>
+                        <li>Considerar as qualificações dos militares</li>
+                        <li>Manter um histórico das escalas geradas</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h4>Exportação de Dados</h4>
+                    <ul>
+                        <li>Exportar regularmente as escalas em PDF</li>
+                        <li>Manter backups dos dados importantes</li>
+                        <li>Verificar a formatação dos relatórios</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="faq" class="guide-section">
+            <h2>6. Perguntas Frequentes</h2>
+            <div class="faq-item">
+                <p class="faq-question">Como adicionar um novo militar?</p>
+                <p>Ir para "Militares" no menu de administração e clicar em "Adicionar Militar". Preencher todos os campos obrigatórios e salvar.</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-question">Como gerar uma nova escala?</p>
+                <p>Aceder a "Previsões de Nomeação", selecionar o serviço e o período desejado, e clicar em "Gerar Previsões".</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-question">Como exportar uma escala para PDF?</p>
+                <p>Na visualização da escala, clicar no botão "Exportar PDF" no canto superior direito.</p>
+            </div>
+        </div>
+
+        <div id="problemas" class="guide-section">
+            <h2>7. Solução de Problemas</h2>
+            <div class="warning-box">
+                <h3>Problemas Comuns</h3>
                 <ul>
-                    <li><strong>NIM: </strong> Um número de identificação Militar unico, e válido consoante os parametros exigidos pelo exército portugues.</li>
-                    <li><strong>Nome: </strong>O seu nome.</li>
-                    <li><strong>Posto: </strong>O seu posto.</li>
-                    <li><strong>Posto: </strong>A sua função.</li>
-                    <li><strong>Telefone: </strong>Um numero de telefone válido, sem o identificador nacional(+351/00351).</li>
-                    <li><strong>Email: </strong>O seu endereço eletrónico.</li>
+                    <li><strong>Erro ao gerar escala:</strong> Verificar se as datas selecionadas são válidas</li>
+                    <li><strong>Existem dias sem previsão:</strong> Verificar se não foi eliminado algum militar</li>
+                    <li><strong>Problemas de acesso:</strong> Verificar suas permissões de utilizador</li>
                 </ul>
-            </details>
+            </div>
 
-            <details>
-              <summary><strong>Configurações da Unidade</strong></summary>
-              <p>Uma Configuração de unidade guarda ambos os nomes da unidade, e da subunidade presente.</p>
-            </details>
+            <div class="tip-box">
+                <h3>Contato para Suporte</h3>
+                <p>Em caso de problemas não resolvidos, entre em contato com o administrador do sistema.</p>
+            </div>
+        </div>
+    </main>
+</div>
 
-            <details>
-              <summary><strong> Serviço</strong></summary>
-              <p>
-               Um serviço é a ação que cada militar precisa de executar num determinado dia e hora.
-              </p>
+<script>
+    // Atualizar menu ativo ao rolar
+    window.addEventListener('scroll', function() {
+        const sections = document.querySelectorAll('.guide-section');
+        const navLinks = document.querySelectorAll('.nav-menu a');
+        
+        let current = '';
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 60) {
+                current = section.getAttribute('id');
+            }
+        });
 
-              <p>Um serviço necessita de ter:</p>
-                <ul>
-                    <li><strong>Nome: </strong> Como o seu identificador, idealmente relevante á tarefa que representa.</li>
-                    <li><strong>Hora de início/fim: </strong>A hora em que começa e acaba o serviço.</li>
-                    <li><strong>Número de elementos: </strong>O número de elementos que realizam o serviço por dia.</li>
-                    <li><strong>Numero de Reservas: </strong>O número de Reservas que o serviço precisa de ter por dia, idealmente igual ao número de elementos.</li>
-                    <li><strong>Tipo De escala: </strong>O serviço poderá ter apenas escala A(apenas dias da semana), escala B(apenas fins de semana), ou ambos.</li>
-                    <li><strong>Militares: </strong>Os individuos que irão realizar o serviço.</li>
-                </ul>
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').substring(1) === current) {
+                link.classList.add('active');
+            }
+        });
+    });
 
-
-            </details>
-
-            <details>
-                <summary><strong> Utilizadores e Administradores</strong></summary>
-                <p>Sempre que um militar é adicionado ao sistema, é criado automaticamente um utilizador, podende este autenticar-se com o respetivo NIM e uma
-                    senha ‘default’, que depois do seu primeiro acesso necessita de ser modificada.</p>
-                <p></p>
-
-                <p>Existem três tipos de utilizador.</p>
-                <ul>
-                    <li><strong>Utilizador: </strong>Possui a habilidade de ver as escalas atuais, os serviços atuais e as respectivas dispensas.</li>
-                    <li><strong>Administrador: </strong>Possui a habilidade de criar militares, dispensas, escalas e serviços. Podendo realizar as respetivas ações necessárias para a administração duma unidade militar. </li>
-                    <li><strong>Número de elementos: </strong>Possui as mesmas habilidades que o administrador, adicionalmente pode modificar as permissões dum administrador. Pode tambem remover ou adicionar administradores.</li>
-                </ul>
-
-            </details>
-
-        </ul>
-
-
-
-      <h3>Como utilizar o programa:</h3>
-      <p>Para a boa utilização do gerador de escalas é aconselhável a seguinte ordem de ações.</p>
-
-        <ul class="steps">
-          <li>
-            <h4><strong>1 - Criação de Militares</strong></h4>
-            <p>Adicione os respetivos militares da sua unidade, inserindo os seus dados.</p>
-          </li>
-
-          <li>
-            <h4><strong>2 - Criação de Serviços</strong></h4>
-            <p>Crie os serviços necessários para a sua unidade, não se esqueça de selecionar o tipo de escala que cada serviço possui.</p>
-          </li>
-
-          <li>
-            <h4><strong>3 - Criação de Escalas</strong></h4>
-            <p>Crie as equivalentes escalas necessárias para os serviços disponíveis.</p>
-          </li>
-
-          <li>
-            <h4><strong>4 - Gestão de Feriados/Dispensas</strong></h4>
-            <p>Antes de gerar as previsões de escala, insira feriados e/ou dispensas já presentes atualmente.</p>
-          </li>
-
-          <li>
-            <h4><strong>5 - Gire as respetivas previsões</strong></h4>
-            <p>Selecione "Previsões de Nomeação"(Só visivel para administradores), insira o serviço que pretende e as respetivas datas, e pressione "Gerar Previsões".</p>
-            <p>Adicionalmente, é possível substituir manualmente militares em dias específicos e exportar para PDF as previsões geradas.</p>
-          </li>
-        </ul>
-
-      <h3>Outras ações possiveis:</h3>
-        <ul class="accordion">
-
-            <details>
-              <summary><strong>Visualisar Dispensas</strong></summary>
-              <p> Em "Dispensas" existe a possiblidade de visualizar um calendário para cada serviço, mostrando as dispensas presentes para cada soldado.</p>
-              <p><strong>Por favor note, existe a possiblidade de adicionar uma dispensa diretamente, clicando no dia inicial e no dia final </strong></p>
-              <img src="{% static 'core/images/exemplo_mapa_dispesa.gif' %}" alt="Exemplo de Mapa de Dispensa", width="800", height="300">
-            </details>
-
-
-        </ul>
-
-
-
-    {% endblock %}
-
-
-
-</head>
-<body>
-
-</body>
-</html>
+    // Navegação suave
+    document.querySelectorAll('.nav-menu a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetSection = document.querySelector(targetId);
+            targetSection.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+</script>
+{% endblock %}

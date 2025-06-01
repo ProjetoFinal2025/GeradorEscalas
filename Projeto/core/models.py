@@ -177,6 +177,7 @@ class Servico(models.Model):
     hora_fim = models.TimeField(default=time(17, 0), help_text="Hora de fim do serviço")
     n_elementos = models.IntegerField(default=1, help_text="Número de elementos efetivos necessários por escala")
     n_reservas = models.IntegerField(default=1, help_text="Número de elementos reserva necessários por escala")
+    ativo = models.BooleanField(default=True, help_text="Se o serviço está ativo")
 
     tipo_escalas = models.CharField(
         max_length=2,
@@ -321,30 +322,6 @@ class Log(models.Model):
     def __str__(self):
         return f"{self.data.strftime('%d/%m/%Y %H:%M:%S')} - {self.acao} (NIM: {str(self.nim_admin).zfill(8)})"
 
-
-<<<<<<< HEAD
-class RegraNomeacao(models.Model):
-    TIPO_FOLGA_CHOICES = [
-        ('mesma_escala', 'Mesma Escala (A/B)'),
-        ('entre_escalas', 'Entre Escalas (A/B)'),
-    ]
-
-    servico = models.ForeignKey('Servico', on_delete=models.CASCADE, related_name='regras_nomeacao')
-    tipo_folga = models.CharField(max_length=20, choices=TIPO_FOLGA_CHOICES)
-    horas_minimas = models.IntegerField(help_text="Número mínimo de horas de folga")
-    prioridade_modernos = models.BooleanField(default=True, help_text="Prioridade para militares mais modernos")
-    considerar_ultimo_servico = models.BooleanField(default=True, help_text="Considerar data do último serviço")
-
-    class Meta:
-        verbose_name = "Regra de Nomeação"
-        verbose_name_plural = "Regras de Nomeação"
-        unique_together = ('servico', 'tipo_folga')
-
-    def __str__(self):
-        return f"{self.servico.nome} - {self.get_tipo_folga_display()}"
-
-=======
->>>>>>> 154df01a8b56f3866bfa768794b8c2c9e57dff22
 
 class ConfiguracaoUnidade(models.Model):
     nome_unidade = models.CharField("Nome da Unidade", max_length=200)

@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from reversion.admin import VersionAdmin
-from .models import *
+from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, ConfiguracaoUnidade, Nomeacao
 from .utils import obter_feriados
 from django.utils import timezone
 from django.template.defaulttags import register
@@ -17,7 +17,6 @@ from django.contrib import admin, messages
 from datetime import date, datetime, timedelta
 from django import forms
 # Permite alterar os seguintes modelos na admin view
-from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao, ConfiguracaoUnidade
 from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
 from django.contrib.admin.views.decorators import staff_member_required
