@@ -20,7 +20,6 @@ from django import forms
 from .models import Militar, Dispensa, Escala, Servico, Log, Feriado, EscalaMilitar, RegraNomeacao, ConfiguracaoUnidade
 from .services.escala_service import EscalaService
 from django.contrib.admin.models import LogEntry
-from .services.troca_service import TrocaService
 from django.contrib.admin.views.decorators import staff_member_required
 from .views import ERRO_PREVISAO_DIA_ATUAL
 
@@ -799,67 +798,5 @@ admin_site.register(Log)
 admin_site.register(ConfiguracaoUnidade, ConfiguracaoUnidadeAdmin)
 # Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
-
-@admin.register(TrocaServico)
-class TrocaServicoAdmin(VersionAdmin):
-    list_display = ('militar_solicitante', 'militar_trocado', 'data_troca', 'status', 'data_solicitacao', 'data_aprovacao', 'data_destroca')
-    list_filter = ('status', 'data_troca', 'data_solicitacao')
-    search_fields = ('militar_solicitante__nome', 'militar_trocado__nome', 'militar_solicitante__nim', 'militar_trocado__nim')
-    date_hierarchy = 'data_troca'
-    change_list_template = 'admin/core/troca/change_list.html'
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('<int:troca_id>/aprovar/', self.admin_site.admin_view(self.aprovar_troca), name='core_trocasservicoproxy_aprovar'),
-            path('<int:troca_id>/rejeitar/', self.admin_site.admin_view(self.rejeitar_troca), name='core_trocasservicoproxy_rejeitar'),
-            path('<int:troca_id>/agendar-destroca/', self.admin_site.admin_view(self.agendar_destroca), name='core_trocasservicoproxy_agendar_destroca'),
-        ]
-        return custom_urls + urls
-
-    def aprovar_troca(self, request, troca_id):
-        troca = get_object_or_404(TrocaServico, id=troca_id)
-        troca_service = TrocaService()
-        sucesso, mensagem = troca_service.aprovar_troca(troca)
-        
-        if sucesso:
-            self.message_user(request, mensagem, messages.SUCCESS)
-        else:
-            self.message_user(request, mensagem, messages.ERROR)
-            
-        return redirect('admin:core_trocasservico_changelist')
-
-    def rejeitar_troca(self, request, troca_id):
-        troca = get_object_or_404(TrocaServico, id=troca_id)
-        troca_service = TrocaService()
-        sucesso, mensagem = troca_service.rejeitar_troca(troca)
-        
-        if sucesso:
-            self.message_user(request, mensagem, messages.SUCCESS)
-        else:
-            self.message_user(request, mensagem, messages.ERROR)
-            
-        return redirect('admin:core_trocasservico_changelist')
-
-    def agendar_destroca(self, request, troca_id):
-        troca = get_object_or_404(TrocaServico, id=troca_id)
-        
-        if request.method == 'POST':
-            data_destroca_str = request.POST.get('data_destroca')
-            
-            try:
-                data_destroca = datetime.strptime(data_destroca_str, '%Y-%m-%d').date()
-                troca_service = TrocaService()
-                sucesso, mensagem = troca_service.agendar_destroca(troca, data_destroca)
-                
-                if sucesso:
-                    self.message_user(request, mensagem, messages.SUCCESS)
-                else:
-                    self.message_user(request, mensagem, messages.ERROR)
-                    
-            except ValueError:
-                self.message_user(request, "Data inválida", messages.ERROR)
-                
-        return redirect('admin:core_trocasservico_changelist')
 
 

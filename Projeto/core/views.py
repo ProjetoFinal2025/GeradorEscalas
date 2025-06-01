@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from datetime import datetime, timedelta, date
-from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao, TrocaServico, ConfiguracaoUnidade
+from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao, ConfiguracaoUnidade
 from .forms import *
 from .services.escala_service import EscalaService
 from .utils import obter_feriados
@@ -18,7 +18,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from .services.troca_service import TrocaService
 import json
 
 # Mensagens de erro constantes
@@ -453,7 +452,7 @@ def previsoes_servico_view(request, servico_id):
 
     nomeacoes_por_data = {}
     observacoes_por_data = {}
-    datas_set = set()
+    datas_set = set(n.data for n in nomeacoes)
     for n in nomeacoes:
         nomeacoes_por_data.setdefault(n.data, {'efetivos': [], 'reservas': []})
         militar_obj = n.escala_militar.militar
@@ -470,7 +469,6 @@ def previsoes_servico_view(request, servico_id):
             observacoes_por_data[n.data] = set()
         if n.observacoes:
             observacoes_por_data[n.data].add(n.observacoes)
-        datas_set.add(n.data)
 
     # Junta as observações em string
     observacoes_por_data = {k: ' | '.join(v) for k, v in observacoes_por_data.items()}
@@ -498,7 +496,13 @@ def previsoes_servico_view(request, servico_id):
     })
 
 @login_required
-def exportar_previsoes_pdf(request, servico_id):
+def previsualizar_previsoes_pdf(request, servico_id):
+    """Pré-visualiza o PDF das previsões no navegador."""
+    response = exportar_previsoes_pdf(request, servico_id, download=False)
+    return response
+
+@login_required
+def exportar_previsoes_pdf(request, servico_id, download=True):
     servico = get_object_or_404(Servico, id=servico_id)
     hoje = date.today()
     nomeacoes = Nomeacao.objects.filter(
@@ -514,17 +518,21 @@ def exportar_previsoes_pdf(request, servico_id):
     data_fim = nomeacoes.last().data
     feriados = obter_feriados(data_inicio, data_fim)
     feriados_set = set(feriados)
+    # Gerar lista de dias exatamente como na grelha de previsões
+    datas_set = set(n.data for n in nomeacoes)
+    if datas_set:
+        feriados = set(obter_feriados(min(datas_set), max(datas_set)))
+    else:
+        feriados = set()
     dias = []
-    data_atual = data_inicio
-    while data_atual <= data_fim:
-        if data_atual in feriados_set:
+    for d in sorted(datas_set):
+        if d in feriados:
             tipo_dia = 'feriado'
-        elif data_atual.weekday() >= 5:
+        elif d.weekday() >= 5:
             tipo_dia = 'fim_semana'
         else:
             tipo_dia = 'util'
-        dias.append({'data': data_atual, 'tipo_dia': tipo_dia})
-        data_atual += timedelta(days=1)
+        dias.append({'data': d, 'tipo_dia': tipo_dia})
     nomeacoes_por_data = {}
     observacoes_por_data = {}
     for n in nomeacoes:
@@ -546,21 +554,36 @@ def exportar_previsoes_pdf(request, servico_id):
         nome_cabecalho = "Unidade Militar"
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="previsoes_{servico.nome}.pdf"'
+    if download:
+        response['Content-Disposition'] = f'attachment; filename="previsoes_{servico.nome}.pdf"'
+    else:
+        response['Content-Disposition'] = f'inline; filename="previsoes_{servico.nome}.pdf"'
     p = canvas.Canvas(response, pagesize=A4)
     width, height = A4
     timestamp = datetime.now().strftime('Exportado em: %d/%m/%Y %H:%M')
 
     def draw_header():
+        # Centralizar o nome da unidade
         p.setFont("Helvetica-Bold", 16)
-        p.drawString(2*cm, height-2*cm, nome_cabecalho)
+        text_width = p.stringWidth(nome_cabecalho, "Helvetica-Bold", 16)
+        x_centro = (width - text_width) / 2
+        p.drawString(x_centro, height-2*cm, nome_cabecalho)
+        
         p.setFont("Helvetica-Bold", 14)
         p.drawString(2*cm, height-3*cm, f"Previsões de Nomeação – {servico.nome}")
+        # Adicionar timestamp no canto superior direito
         p.setFont("Helvetica", 8)
         p.drawRightString(width-2*cm, height-1.5*cm, timestamp)
         p.setFont("Helvetica", 10)
 
+    def draw_footer():
+        p.setFont("Helvetica", 8)
+        # Desenhar o aviso mais abaixo
+        aviso = "Atenção: Estas previsões podem ser alteradas. Deve sempre consultar a Ordem de Serviço antes de sair da Unidade."
+        p.drawString(2*cm, 1*cm, aviso)
+
     draw_header()
+    draw_footer()
     y = height-4*cm
 
     # Cabeçalho da tabela
@@ -577,6 +600,7 @@ def exportar_previsoes_pdf(request, servico_id):
         if y < 2*cm:
             p.showPage()
             draw_header()
+            draw_footer()
             y = height-3*cm
             p.setFont("Helvetica", 10)
             y -= 1*cm
@@ -645,11 +669,14 @@ def exportar_escalas_pdf(request, servico_id):
         p.drawString(2*cm, height-2*cm, nome_cabecalho)
         p.setFont("Helvetica-Bold", 14)
         p.drawString(2*cm, height-3*cm, f"Escalas do Serviço – {servico.nome}")
-        p.setFont("Helvetica", 8)
-        p.drawRightString(width-2*cm, height-1.5*cm, timestamp)
         p.setFont("Helvetica", 10)
-    
+
+    def draw_footer():
+        p.setFont("Helvetica", 8)
+        p.drawRightString(width-2*cm, 1.5*cm, timestamp)
+
     draw_header()
+    draw_footer()
     y = height-4*cm
     
     # Cabeçalho da tabela
@@ -666,6 +693,7 @@ def exportar_escalas_pdf(request, servico_id):
         if y < 2*cm:
             p.showPage()
             draw_header()
+            draw_footer()
             y = height-3*cm
             p.setFont("Helvetica", 10)
             y -= 1*cm
@@ -708,108 +736,6 @@ def exportar_escalas_pdf(request, servico_id):
     p.showPage()
     p.save()
     return response
-
-@login_required
-def solicitar_troca_view(request):
-    if request.method == 'POST':
-        militar_trocado_id = request.POST.get('militar_trocado')
-        data_troca_str = request.POST.get('data_troca')
-        
-        try:
-            militar_solicitante = request.user.militar
-            militar_trocado = Militar.objects.get(nim=militar_trocado_id)
-            data_troca = datetime.strptime(data_troca_str, '%Y-%m-%d').date()
-            
-            troca_service = TrocaService()
-            sucesso, mensagem = troca_service.solicitar_troca(
-                militar_solicitante,
-                militar_trocado,
-                data_troca
-            )
-            
-            if sucesso:
-                messages.success(request, mensagem)
-            else:
-                messages.error(request, mensagem)
-                
-        except (Militar.DoesNotExist, ValueError):
-            messages.error(request, "Dados inválidos")
-            
-        return redirect('solicitar_troca')
-    
-    # Obter militares disponíveis para troca
-    militares_disponiveis = Militar.objects.filter(
-        servicos__in=request.user.militar.servicos.all()
-    ).exclude(
-        nim=request.user.militar.nim
-    ).distinct()
-    
-    # Obter trocas pendentes e aprovadas
-    trocas_pendentes = TrocaService.obter_trocas_pendentes()
-    trocas_aprovadas = TrocaService.obter_trocas_por_militar(request.user.militar).filter(
-        status='APROVADA'
-    )
-    
-    context = {
-        'militares_disponiveis': militares_disponiveis,
-        'trocas_pendentes': trocas_pendentes,
-        'trocas_aprovadas': trocas_aprovadas
-    }
-    
-    return render(request, 'core/solicitar_troca.html', context)
-
-@login_required
-def aprovar_troca_view(request, troca_id):
-    troca = get_object_or_404(TrocaServico, id=troca_id)
-    
-    if request.method == 'POST':
-        troca_service = TrocaService()
-        sucesso, mensagem = troca_service.aprovar_troca(troca)
-        
-        if sucesso:
-            messages.success(request, mensagem)
-        else:
-            messages.error(request, mensagem)
-            
-    return redirect('solicitar_troca')
-
-@login_required
-def rejeitar_troca_view(request, troca_id):
-    troca = get_object_or_404(TrocaServico, id=troca_id)
-    
-    if request.method == 'POST':
-        troca_service = TrocaService()
-        sucesso, mensagem = troca_service.rejeitar_troca(troca)
-        
-        if sucesso:
-            messages.success(request, mensagem)
-        else:
-            messages.error(request, mensagem)
-            
-    return redirect('solicitar_troca')
-
-@login_required
-def agendar_destroca_view(request, troca_id):
-    troca = get_object_or_404(TrocaServico, id=troca_id)
-    
-    if request.method == 'POST':
-        data_destroca_str = request.POST.get('data_destroca')
-        
-        try:
-            data_destroca = datetime.strptime(data_destroca_str, '%Y-%m-%d').date()
-            
-            troca_service = TrocaService()
-            sucesso, mensagem = troca_service.agendar_destroca(troca, data_destroca)
-            
-            if sucesso:
-                messages.success(request, mensagem)
-            else:
-                messages.error(request, mensagem)
-                
-        except ValueError:
-            messages.error(request, "Data inválida")
-            
-    return redirect('solicitar_troca')
 
 @login_required
 def obter_militar(request, militar_nim):

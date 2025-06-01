@@ -1,0 +1,2659 @@
+[
+{
+  "model": "core.militar",
+  "pk": "11420465",
+  "fields": {
+    "user": null,
+    "nome": "Sousa Antunes",
+    "posto": "2FUR",
+    "funcao": "Comandante de Pelotão",
+    "e_administrador": false,
+    "telefone": 926923371,
+    "email": "sousa.antunes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "11749730",
+  "fields": {
+    "user": null,
+    "nome": "Carvalho Santos",
+    "posto": "FUR",
+    "funcao": "Comandante de Pelotão",
+    "e_administrador": false,
+    "telefone": 994733170,
+    "email": "carvalho.santos@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "11863736",
+  "fields": {
+    "user": null,
+    "nome": "Rodrigues Sousa",
+    "posto": "FUR",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 954637779,
+    "email": "rodrigues.sousa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "12345678",
+  "fields": {
+    "user": 2,
+    "nome": "Administrador",
+    "posto": "CAP",
+    "funcao": "Administrador",
+    "e_administrador": true,
+    "telefone": 912345678,
+    "email": "admin@exemplo.com",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "13897652",
+  "fields": {
+    "user": null,
+    "nome": "Ribeiro Moreira",
+    "posto": "CABSEC",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 903822598,
+    "email": "ribeiro.moreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "14542511",
+  "fields": {
+    "user": null,
+    "nome": "Antunes Costa",
+    "posto": "1CAB",
+    "funcao": "Comandante de Pelotão",
+    "e_administrador": false,
+    "telefone": 929615783,
+    "email": "antunes.costa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "16310583",
+  "fields": {
+    "user": null,
+    "nome": "Gomes Vieira",
+    "posto": "2FUR",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 988985603,
+    "email": "gomes.vieira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "16852036",
+  "fields": {
+    "user": null,
+    "nome": "Correia Ferreira",
+    "posto": "CABSEC",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 992864098,
+    "email": "correia.ferreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "18069619",
+  "fields": {
+    "user": null,
+    "nome": "Fernandes Ribeiro",
+    "posto": "1CAB",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 963423298,
+    "email": "fernandes.ribeiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "19301856",
+  "fields": {
+    "user": null,
+    "nome": "Gomes Ferreira",
+    "posto": "CAP",
+    "funcao": "Comandante de Companhia",
+    "e_administrador": false,
+    "telefone": 937265080,
+    "email": "gomes.ferreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "19767413",
+  "fields": {
+    "user": null,
+    "nome": "Ramos Araújo",
+    "posto": "1SARG",
+    "funcao": "Operador de Arma",
+    "e_administrador": false,
+    "telefone": 991181898,
+    "email": "ramos.araújo@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "20132799",
+  "fields": {
+    "user": null,
+    "nome": "Gomes Lopes",
+    "posto": "2SARG",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 964275992,
+    "email": "gomes.lopes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "20154762",
+  "fields": {
+    "user": null,
+    "nome": "Gomes Carvalho",
+    "posto": "CABSEC",
+    "funcao": "Operador de Rádio",
+    "e_administrador": false,
+    "telefone": 900432152,
+    "email": "gomes.carvalho@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "20352004",
+  "fields": {
+    "user": null,
+    "nome": "Nunes Nunes",
+    "posto": "2SARG",
+    "funcao": "Operador de Rádio",
+    "e_administrador": false,
+    "telefone": 954862482,
+    "email": "nunes.nunes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "23482612",
+  "fields": {
+    "user": null,
+    "nome": "Silva Ferreira",
+    "posto": "FUR",
+    "funcao": "Operador de Rádio",
+    "e_administrador": false,
+    "telefone": 902472970,
+    "email": "silva.ferreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "25040696",
+  "fields": {
+    "user": null,
+    "nome": "Antunes Vieira",
+    "posto": "ALF",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 927945887,
+    "email": "antunes.vieira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "26038170",
+  "fields": {
+    "user": null,
+    "nome": "Vieira Vieira",
+    "posto": "1CAB",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 947936328,
+    "email": "vieira.vieira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "26767202",
+  "fields": {
+    "user": null,
+    "nome": "Dias Sousa",
+    "posto": "2FUR",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 949130409,
+    "email": "dias.sousa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "27749058",
+  "fields": {
+    "user": null,
+    "nome": "Almeida Oliveira",
+    "posto": "1SARG",
+    "funcao": "Comandante de Pelotão",
+    "e_administrador": false,
+    "telefone": 978487649,
+    "email": "almeida.oliveira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "29354582",
+  "fields": {
+    "user": null,
+    "nome": "Silva Rodrigues",
+    "posto": "FUR",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 918277724,
+    "email": "silva.rodrigues@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "29471026",
+  "fields": {
+    "user": null,
+    "nome": "Nunes Araújo",
+    "posto": "FUR",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 973963967,
+    "email": "nunes.araújo@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "30015294",
+  "fields": {
+    "user": null,
+    "nome": "Gomes Martins",
+    "posto": "SOL",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 905856381,
+    "email": "gomes.martins@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "30573092",
+  "fields": {
+    "user": null,
+    "nome": "Teixeira Carvalho",
+    "posto": "CABSEC",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 968508762,
+    "email": "teixeira.carvalho@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "32945885",
+  "fields": {
+    "user": null,
+    "nome": "Costa Mendes",
+    "posto": "ALF",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 954952277,
+    "email": "costa.mendes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "33959526",
+  "fields": {
+    "user": null,
+    "nome": "Soares Gomes",
+    "posto": "CAP",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 911797418,
+    "email": "soares.gomes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "36126239",
+  "fields": {
+    "user": null,
+    "nome": "Santos Martins",
+    "posto": "1SARG",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 926561392,
+    "email": "santos.martins@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "36526105",
+  "fields": {
+    "user": null,
+    "nome": "Moreira Ramos",
+    "posto": "CABSEC",
+    "funcao": "Mecânico",
+    "e_administrador": false,
+    "telefone": 905962674,
+    "email": "moreira.ramos@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "38808669",
+  "fields": {
+    "user": null,
+    "nome": "Vieira Almeida",
+    "posto": "ALF",
+    "funcao": "Comandante de Companhia",
+    "e_administrador": false,
+    "telefone": 985185810,
+    "email": "vieira.almeida@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "38917187",
+  "fields": {
+    "user": null,
+    "nome": "Rodrigues Fernandes",
+    "posto": "ALF",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 999625680,
+    "email": "rodrigues.fernandes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "38942666",
+  "fields": {
+    "user": null,
+    "nome": "Fernandes Gonçalves",
+    "posto": "ALF",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 991392782,
+    "email": "fernandes.gonçalves@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "39140041",
+  "fields": {
+    "user": null,
+    "nome": "Ribeiro Ribeiro",
+    "posto": "1CAB",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 989440354,
+    "email": "ribeiro.ribeiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "40325927",
+  "fields": {
+    "user": null,
+    "nome": "Oliveira Ribeiro",
+    "posto": "TEN",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 908079285,
+    "email": "oliveira.ribeiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "40390265",
+  "fields": {
+    "user": null,
+    "nome": "Ramos Mendes",
+    "posto": "1SARG",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 916593765,
+    "email": "ramos.mendes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "41002826",
+  "fields": {
+    "user": null,
+    "nome": "Ramos Sousa",
+    "posto": "SOL",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 970159226,
+    "email": "ramos.sousa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "41091367",
+  "fields": {
+    "user": null,
+    "nome": "Mendes Gomes",
+    "posto": "CAP",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 953108017,
+    "email": "mendes.gomes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "41275285",
+  "fields": {
+    "user": null,
+    "nome": "Moreira Rodrigues",
+    "posto": "TEN",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 922526817,
+    "email": "moreira.rodrigues@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "42025721",
+  "fields": {
+    "user": null,
+    "nome": "Santos Mendes",
+    "posto": "1SARG",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 905707460,
+    "email": "santos.mendes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "42793607",
+  "fields": {
+    "user": null,
+    "nome": "Gonçalves Lopes",
+    "posto": "2SARG",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 900179245,
+    "email": "gonçalves.lopes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "43617827",
+  "fields": {
+    "user": null,
+    "nome": "Araújo Correia",
+    "posto": "2SARG",
+    "funcao": "Mecânico",
+    "e_administrador": false,
+    "telefone": 993621241,
+    "email": "araújo.correia@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "44354909",
+  "fields": {
+    "user": null,
+    "nome": "Martins Mendes",
+    "posto": "2FUR",
+    "funcao": "Mecânico",
+    "e_administrador": false,
+    "telefone": 973063113,
+    "email": "martins.mendes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "44997290",
+  "fields": {
+    "user": null,
+    "nome": "Sousa Monteiro",
+    "posto": "CAP",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 987696060,
+    "email": "sousa.monteiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "45948215",
+  "fields": {
+    "user": null,
+    "nome": "Martins Almeida",
+    "posto": "CAP",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 991333359,
+    "email": "martins.almeida@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "46063849",
+  "fields": {
+    "user": null,
+    "nome": "Moreira Nunes",
+    "posto": "ALF",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 939504566,
+    "email": "moreira.nunes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "46085970",
+  "fields": {
+    "user": null,
+    "nome": "Monteiro Carvalho",
+    "posto": "CABSEC",
+    "funcao": "Operador de Rádio",
+    "e_administrador": false,
+    "telefone": 910018730,
+    "email": "monteiro.carvalho@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "46403457",
+  "fields": {
+    "user": null,
+    "nome": "Marques Teixeira",
+    "posto": "SOL",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 931802906,
+    "email": "marques.teixeira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "46460608",
+  "fields": {
+    "user": null,
+    "nome": "Mendes Vieira",
+    "posto": "2SARG",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 978965227,
+    "email": "mendes.vieira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "47582566",
+  "fields": {
+    "user": null,
+    "nome": "Jesus Ramos",
+    "posto": "CABSEC",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 931660821,
+    "email": "jesus.ramos@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "47703652",
+  "fields": {
+    "user": null,
+    "nome": "Fernandes Sousa",
+    "posto": "2FUR",
+    "funcao": "Mecânico",
+    "e_administrador": false,
+    "telefone": 941511738,
+    "email": "fernandes.sousa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "47985278",
+  "fields": {
+    "user": null,
+    "nome": "Gomes Araújo",
+    "posto": "ALF",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 908821799,
+    "email": "gomes.araújo@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "48618503",
+  "fields": {
+    "user": null,
+    "nome": "Fernandes Jesus",
+    "posto": "CAP",
+    "funcao": "Comandante de Companhia",
+    "e_administrador": false,
+    "telefone": 981456143,
+    "email": "fernandes.jesus@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "51688654",
+  "fields": {
+    "user": null,
+    "nome": "Moreira Almeida",
+    "posto": "SOL",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 966896168,
+    "email": "moreira.almeida@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "53339015",
+  "fields": {
+    "user": null,
+    "nome": "Sousa Nunes",
+    "posto": "ALF",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 909242744,
+    "email": "sousa.nunes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "54303833",
+  "fields": {
+    "user": null,
+    "nome": "Jesus Soares",
+    "posto": "TEN",
+    "funcao": "Comandante de Pelotão",
+    "e_administrador": false,
+    "telefone": 933290167,
+    "email": "jesus.soares@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "56521979",
+  "fields": {
+    "user": null,
+    "nome": "Teixeira Marques",
+    "posto": "CABSEC",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 966082676,
+    "email": "teixeira.marques@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "57705119",
+  "fields": {
+    "user": null,
+    "nome": "Ferreira Moreira",
+    "posto": "1SARG",
+    "funcao": "Operador de Arma",
+    "e_administrador": false,
+    "telefone": 909034629,
+    "email": "ferreira.moreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "58368014",
+  "fields": {
+    "user": null,
+    "nome": "Antunes Martins",
+    "posto": "1CAB",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 931588198,
+    "email": "antunes.martins@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "58763278",
+  "fields": {
+    "user": null,
+    "nome": "Fernandes Gonçalves",
+    "posto": "1SARG",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 952829031,
+    "email": "fernandes.gonçalves@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "61341861",
+  "fields": {
+    "user": null,
+    "nome": "Carvalho Ramos",
+    "posto": "2SARG",
+    "funcao": "Operador de Arma",
+    "e_administrador": false,
+    "telefone": 973432149,
+    "email": "carvalho.ramos@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "63785805",
+  "fields": {
+    "user": null,
+    "nome": "Silva Jesus",
+    "posto": "2SARG",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 945155373,
+    "email": "silva.jesus@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "65531777",
+  "fields": {
+    "user": null,
+    "nome": "Silva Ribeiro",
+    "posto": "TEN",
+    "funcao": "Mecânico",
+    "e_administrador": false,
+    "telefone": 916181344,
+    "email": "silva.ribeiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "65739029",
+  "fields": {
+    "user": null,
+    "nome": "Nunes Monteiro",
+    "posto": "TEN",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 998186620,
+    "email": "nunes.monteiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "67511833",
+  "fields": {
+    "user": null,
+    "nome": "Dias Ferreira",
+    "posto": "FUR",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 918103917,
+    "email": "dias.ferreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "69138430",
+  "fields": {
+    "user": null,
+    "nome": "Costa Gonçalves",
+    "posto": "FUR",
+    "funcao": "Operador de Arma",
+    "e_administrador": false,
+    "telefone": 927985176,
+    "email": "costa.gonçalves@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "70880349",
+  "fields": {
+    "user": null,
+    "nome": "Pereira Antunes",
+    "posto": "1CAB",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 939959222,
+    "email": "pereira.antunes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "71476443",
+  "fields": {
+    "user": null,
+    "nome": "Santos Araújo",
+    "posto": "FUR",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 946326929,
+    "email": "santos.araújo@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "71632621",
+  "fields": {
+    "user": null,
+    "nome": "Gomes Araújo",
+    "posto": "ALF",
+    "funcao": "Operador de Arma",
+    "e_administrador": false,
+    "telefone": 967999053,
+    "email": "gomes.araújo@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "72183092",
+  "fields": {
+    "user": null,
+    "nome": "Marques Sousa",
+    "posto": "TEN",
+    "funcao": "Operador de Arma",
+    "e_administrador": false,
+    "telefone": 998060603,
+    "email": "marques.sousa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "73043852",
+  "fields": {
+    "user": null,
+    "nome": "Carvalho Soares",
+    "posto": "SOL",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 960723217,
+    "email": "carvalho.soares@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "74898460",
+  "fields": {
+    "user": null,
+    "nome": "Fernandes Marques",
+    "posto": "CAP",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 939752958,
+    "email": "fernandes.marques@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "75218357",
+  "fields": {
+    "user": null,
+    "nome": "Correia Correia",
+    "posto": "2FUR",
+    "funcao": "Mecânico",
+    "e_administrador": false,
+    "telefone": 924339068,
+    "email": "correia.correia@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "75363584",
+  "fields": {
+    "user": null,
+    "nome": "Vieira Jesus",
+    "posto": "SOL",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 979114702,
+    "email": "vieira.jesus@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "76163284",
+  "fields": {
+    "user": null,
+    "nome": "Martins Almeida",
+    "posto": "TEN",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 947360040,
+    "email": "martins.almeida@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "76494196",
+  "fields": {
+    "user": null,
+    "nome": "Antunes Monteiro",
+    "posto": "TEN",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 932488813,
+    "email": "antunes.monteiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "76855094",
+  "fields": {
+    "user": null,
+    "nome": "Soares Martins",
+    "posto": "CABSEC",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 937965902,
+    "email": "soares.martins@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "77194092",
+  "fields": {
+    "user": null,
+    "nome": "Ferreira Martins",
+    "posto": "1SARG",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 952997923,
+    "email": "ferreira.martins@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "77346306",
+  "fields": {
+    "user": null,
+    "nome": "Dias Rodrigues",
+    "posto": "2FUR",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 962498320,
+    "email": "dias.rodrigues@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "77677907",
+  "fields": {
+    "user": null,
+    "nome": "Ribeiro Sousa",
+    "posto": "SOL",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 932618581,
+    "email": "ribeiro.sousa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "79211381",
+  "fields": {
+    "user": null,
+    "nome": "Ferreira Ramos",
+    "posto": "2FUR",
+    "funcao": "Mecânico",
+    "e_administrador": false,
+    "telefone": 968482884,
+    "email": "ferreira.ramos@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "79844147",
+  "fields": {
+    "user": null,
+    "nome": "Oliveira Costa",
+    "posto": "FUR",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 973698115,
+    "email": "oliveira.costa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "79876515",
+  "fields": {
+    "user": null,
+    "nome": "Mendes Ferreira",
+    "posto": "TEN",
+    "funcao": "Comandante de Companhia",
+    "e_administrador": false,
+    "telefone": 980321176,
+    "email": "mendes.ferreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "80223597",
+  "fields": {
+    "user": null,
+    "nome": "Carvalho Teixeira",
+    "posto": "1CAB",
+    "funcao": "Comandante de Pelotão",
+    "e_administrador": false,
+    "telefone": 999703094,
+    "email": "carvalho.teixeira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "80650876",
+  "fields": {
+    "user": null,
+    "nome": "Araújo Araújo",
+    "posto": "CAP",
+    "funcao": "Comandante de Companhia",
+    "e_administrador": false,
+    "telefone": 996620243,
+    "email": "araújo.araújo@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "83140119",
+  "fields": {
+    "user": null,
+    "nome": "Jesus Gomes",
+    "posto": "1SARG",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 904049810,
+    "email": "jesus.gomes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "84297130",
+  "fields": {
+    "user": null,
+    "nome": "Mendes Monteiro",
+    "posto": "2SARG",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 953842815,
+    "email": "mendes.monteiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "84784552",
+  "fields": {
+    "user": null,
+    "nome": "Gonçalves Correia",
+    "posto": "ALF",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 940592539,
+    "email": "gonçalves.correia@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "85920953",
+  "fields": {
+    "user": null,
+    "nome": "Mendes Teixeira",
+    "posto": "TEN",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 928970987,
+    "email": "mendes.teixeira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "86404134",
+  "fields": {
+    "user": null,
+    "nome": "Martins Moreira",
+    "posto": "FUR",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 961967470,
+    "email": "martins.moreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "86955176",
+  "fields": {
+    "user": null,
+    "nome": "Silva Oliveira",
+    "posto": "1SARG",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 923394840,
+    "email": "silva.oliveira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "87838522",
+  "fields": {
+    "user": null,
+    "nome": "Mendes Carvalho",
+    "posto": "SOL",
+    "funcao": "Observador",
+    "e_administrador": false,
+    "telefone": 928999407,
+    "email": "mendes.carvalho@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "90370449",
+  "fields": {
+    "user": null,
+    "nome": "Silva Pereira",
+    "posto": "1CAB",
+    "funcao": "Operador de Arma",
+    "e_administrador": false,
+    "telefone": 925254973,
+    "email": "silva.pereira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "91913293",
+  "fields": {
+    "user": null,
+    "nome": "Gonçalves Rodrigues",
+    "posto": "CAP",
+    "funcao": "Comandante de Companhia",
+    "e_administrador": false,
+    "telefone": 957523544,
+    "email": "gonçalves.rodrigues@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "92568813",
+  "fields": {
+    "user": null,
+    "nome": "Pereira Ferreira",
+    "posto": "2FUR",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 981382185,
+    "email": "pereira.ferreira@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "94537029",
+  "fields": {
+    "user": null,
+    "nome": "Vieira Gonçalves",
+    "posto": "2SARG",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 900811067,
+    "email": "vieira.gonçalves@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "95449614",
+  "fields": {
+    "user": null,
+    "nome": "Lopes Ribeiro",
+    "posto": "2FUR",
+    "funcao": "Operador de Sistemas",
+    "e_administrador": false,
+    "telefone": 940532308,
+    "email": "lopes.ribeiro@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "95643126",
+  "fields": {
+    "user": null,
+    "nome": "Vieira Araújo",
+    "posto": "1CAB",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 968592512,
+    "email": "vieira.araújo@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "96031886",
+  "fields": {
+    "user": null,
+    "nome": "Jesus Dias",
+    "posto": "2SARG",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 945135142,
+    "email": "jesus.dias@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "97175374",
+  "fields": {
+    "user": null,
+    "nome": "Silva Lopes",
+    "posto": "SOL",
+    "funcao": "Atirador",
+    "e_administrador": false,
+    "telefone": 939394032,
+    "email": "silva.lopes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "97244859",
+  "fields": {
+    "user": null,
+    "nome": "Fernandes Silva",
+    "posto": "SOL",
+    "funcao": "Comandante de Secção",
+    "e_administrador": false,
+    "telefone": 909253360,
+    "email": "fernandes.silva@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "97682006",
+  "fields": {
+    "user": null,
+    "nome": "Teixeira Santos",
+    "posto": "CABSEC",
+    "funcao": "Chefe de Secção",
+    "e_administrador": false,
+    "telefone": 919284756,
+    "email": "teixeira.santos@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "99781758",
+  "fields": {
+    "user": null,
+    "nome": "Marques Lopes",
+    "posto": "CAP",
+    "funcao": "Condutor de Viatura",
+    "e_administrador": false,
+    "telefone": 970729242,
+    "email": "marques.lopes@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.militar",
+  "pk": "99834802",
+  "fields": {
+    "user": null,
+    "nome": "Teixeira Sousa",
+    "posto": "1CAB",
+    "funcao": "Condutor",
+    "e_administrador": false,
+    "telefone": 990220028,
+    "email": "teixeira.sousa@exército.pt",
+    "ultima_nomeacao_a": null,
+    "ultima_nomeacao_b": null
+  }
+},
+{
+  "model": "core.role",
+  "pk": 1,
+  "fields": {
+    "nome": "Administrador",
+    "descricao": "Papel padrão para administradores militares",
+    "permissions": []
+  }
+},
+{
+  "model": "core.log",
+  "pk": 1,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Login no sistema: nelsonf",
+    "tipo_acao": "LOGIN",
+    "modelo": "User",
+    "data": "2025-05-30T15:32:31.963Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 2,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Fernandes Jesus",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.775Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 3,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Sousa Monteiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.789Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 4,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Fernandes Marques",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.804Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 5,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Marques Lopes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.818Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 6,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Gomes Ferreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.832Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 7,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Marques Sousa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.845Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 8,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Silva Ribeiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.860Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 9,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Moreira Rodrigues",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.873Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 10,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Mendes Teixeira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.887Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 11,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Mendes Ferreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.902Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 12,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Fernandes Gonçalves",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.915Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 13,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Gomes Araújo",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.928Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 14,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Moreira Nunes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.942Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 15,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Costa Mendes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.956Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 16,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Sousa Nunes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.969Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 17,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Silva Oliveira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.984Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 18,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Ramos Mendes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:45.998Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 19,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Fernandes Gonçalves",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.013Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 20,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Ferreira Moreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.029Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 21,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Ferreira Martins",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.042Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 22,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Gonçalves Lopes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.058Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 23,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Nunes Nunes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.073Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 24,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Gomes Lopes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.087Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 25,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Mendes Monteiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.100Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 26,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Silva Jesus",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.115Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 27,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Silva Ferreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.130Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 28,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Santos Araújo",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.143Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 29,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Rodrigues Sousa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.159Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 30,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Carvalho Santos",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.173Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 31,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Oliveira Costa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.187Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 32,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Martins Mendes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.203Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 33,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Ferreira Ramos",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.216Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 34,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Sousa Antunes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.230Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 35,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Correia Correia",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.243Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 36,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Gomes Vieira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.258Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 37,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Correia Ferreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.271Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 38,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Teixeira Marques",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.285Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 39,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Soares Martins",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.300Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 40,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Ribeiro Moreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.315Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 41,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Jesus Ramos",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.329Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 42,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Antunes Martins",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.343Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 43,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Vieira Vieira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.358Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 44,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Vieira Araújo",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.372Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 45,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Carvalho Teixeira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.385Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 46,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Silva Pereira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.400Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 47,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Marques Teixeira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.414Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 48,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Silva Lopes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.429Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 49,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Mendes Carvalho",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.444Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 50,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Vieira Jesus",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.460Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 51,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Gomes Martins",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T15:37:46.474Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 52,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Araújo Araújo",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.526Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 53,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Gonçalves Rodrigues",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.531Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 54,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Martins Almeida",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.535Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 55,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Soares Gomes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.539Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 56,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Mendes Gomes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.542Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 57,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Nunes Monteiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.547Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 58,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Jesus Soares",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.551Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 59,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Antunes Monteiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.555Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 60,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Oliveira Ribeiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.559Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 61,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: TEN Martins Almeida",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.563Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 62,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Gomes Araújo",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.568Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 63,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Gonçalves Correia",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.571Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 64,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Vieira Almeida",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.576Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 65,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Rodrigues Fernandes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.580Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 66,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: ALF Antunes Vieira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.583Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 67,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Santos Martins",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.588Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 68,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Jesus Gomes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.594Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 69,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Almeida Oliveira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.599Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 70,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Santos Mendes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.605Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 71,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1SARG Ramos Araújo",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.610Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 72,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Araújo Correia",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.616Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 73,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Carvalho Ramos",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.621Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 74,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Jesus Dias",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.627Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 75,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Vieira Gonçalves",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.632Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 76,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2SARG Mendes Vieira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.638Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 77,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Costa Gonçalves",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.643Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 78,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Silva Rodrigues",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.649Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 79,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Martins Moreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.655Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 80,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Dias Ferreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.661Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 81,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: FUR Nunes Araújo",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.665Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 82,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Dias Rodrigues",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.670Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 83,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Lopes Ribeiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.674Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 84,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Fernandes Sousa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.679Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 85,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Pereira Ferreira",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.685Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 86,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 2FUR Dias Sousa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.691Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 87,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Monteiro Carvalho",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.694Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 88,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Teixeira Carvalho",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.699Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 89,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Moreira Ramos",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.703Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 90,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Gomes Carvalho",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.707Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 91,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CABSEC Teixeira Santos",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.710Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 92,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Fernandes Ribeiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.713Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 93,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Pereira Antunes",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.718Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 94,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Ribeiro Ribeiro",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.722Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 95,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Teixeira Sousa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.725Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 96,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: 1CAB Antunes Costa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.730Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 97,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Moreira Almeida",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.733Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 98,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Fernandes Silva",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.745Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 99,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Carvalho Soares",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.749Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 100,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Ribeiro Sousa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.753Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 101,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: SOL Ramos Sousa",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:39:04.757Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 102,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Criado militar: CAP Administrador",
+    "tipo_acao": "CREATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:48:01.391Z"
+  }
+},
+{
+  "model": "core.log",
+  "pk": 103,
+  "fields": {
+    "nim_admin": 12345678,
+    "acao": "Atualizado militar: CAP Administrador",
+    "tipo_acao": "UPDATE",
+    "modelo": "Militar",
+    "data": "2025-05-30T16:48:02.058Z"
+  }
+}
+]

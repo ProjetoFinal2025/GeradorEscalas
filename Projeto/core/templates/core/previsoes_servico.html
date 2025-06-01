@@ -7,14 +7,35 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-calendar3"></i> Previsões de Nomeação – {{ servico.nome }}</h2>
         <div>
-            <a href="{% url 'exportar_previsoes_pdf' servico.id %}" class="btn btn-success me-2" target="_blank">
+            <button class="btn btn-info me-2" onclick="abrirPDF('{% url 'previsualizar_previsoes_pdf' servico.id %}')">
+                <i class="bi bi-eye"></i> Pré-visualizar PDF
+            </button>
+            <button class="btn btn-success me-2" onclick="abrirPDF('{% url 'previsualizar_previsoes_pdf' servico.id %}')">
                 <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
-            </a>
+            </button>
             <a href="{% url 'previsoes_por_servico' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left"></i> Voltar
             </a>
         </div>
     </div>
+
+    <!-- Modal para mostrar o PDF -->
+    <div class="modal fade" id="pdfModal" tabindex="-1" aria-labelledby="pdfModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pdfModalLabel">Previsões de Nomeação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="pdfContainer" style="width: 100%; height: 80vh; overflow: auto;">
+                        <canvas id="pdfCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="container-previsoes" class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
         <table id="tabela-previsoes" class="table table-bordered table-escalas table-mobile align-middle" style="table-layout: fixed; width: 100%;">
             <thead>
@@ -65,6 +86,8 @@
             </tbody>
         </table>
     </div>
+    <!-- Espaço extra para afastar o rodapé -->
+    <div style="margin-bottom: 2.5rem;"></div>
 </div>
 
 <style>
@@ -110,11 +133,35 @@
     background-color: #fff3cd !important;
     border: 2px solid #ffc107;
 }
+.pdf-controls {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    z-index: 1000;
+}
+.pdf-controls button {
+    margin: 0 10px;
+}
+#pdfContainer {
+    background: #f5f5f5;
+}
+#pdfCanvas {
+    margin: 20px auto;
+    display: block;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
 </style>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script type="text/javascript">
+// Configurar o worker do PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
 function scrollParaHoje() {
     var container = $('#container-previsoes');
     var tabela = $('#tabela-previsoes');
@@ -143,6 +190,76 @@ function scrollParaHoje() {
             }
         }
     });
+}
+
+async function abrirPDF(url) {
+    try {
+        var modal = new bootstrap.Modal(document.getElementById('pdfModal'));
+        modal.show();
+
+        // Carregar o PDF
+        const loadingTask = pdfjsLib.getDocument(url);
+        const pdf = await loadingTask.promise;
+        
+        // Obter a primeira página
+        const page = await pdf.getPage(1);
+        
+        // Configurar o canvas
+        const canvas = document.getElementById('pdfCanvas');
+        const context = canvas.getContext('2d');
+        
+        // Ajustar o tamanho do canvas
+        const viewport = page.getViewport({ scale: 1.5 });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        // Renderizar a página
+        await page.render({
+            canvasContext: context,
+            viewport: viewport
+        }).promise;
+
+        // Adicionar controles de navegação
+        const container = document.getElementById('pdfContainer');
+        const controls = document.createElement('div');
+        controls.className = 'pdf-controls';
+        controls.innerHTML = `
+            <button onclick="mudarPagina(-1)" class="btn btn-sm btn-primary">Anterior</button>
+            <span id="pageInfo">Página 1 de ${pdf.numPages}</span>
+            <button onclick="mudarPagina(1)" class="btn btn-sm btn-primary">Próxima</button>
+        `;
+        container.insertBefore(controls, canvas);
+    } catch (error) {
+        console.error('Erro ao carregar o PDF:', error);
+        alert('Erro ao carregar o PDF. Por favor, tente novamente.');
+    }
+}
+
+let currentPage = 1;
+let currentPdf = null;
+
+async function mudarPagina(delta) {
+    if (!currentPdf) return;
+    
+    const newPage = currentPage + delta;
+    if (newPage < 1 || newPage > currentPdf.numPages) return;
+    
+    currentPage = newPage;
+    const page = await currentPdf.getPage(currentPage);
+    
+    const canvas = document.getElementById('pdfCanvas');
+    const context = canvas.getContext('2d');
+    
+    const viewport = page.getViewport({ scale: 1.5 });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    
+    await page.render({
+        canvasContext: context,
+        viewport: viewport
+    }).promise;
+    
+    document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${currentPdf.numPages}`;
 }
 
 $(document).ready(function() {
