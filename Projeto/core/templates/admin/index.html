@@ -20,7 +20,7 @@
                     {% if militares_por_servico %}
                         <tr style="font-weight:bold;background:#f5f5f5;"><td style='text-align:left;'>Total</td><td style='text-align:right;'>{{ total_militares }}</td></tr>
                     {% endif %}
-                    <tr><td style='text-align:left; color: #b00; font-weight: bold;'>Sem Escala</td><td style='text-align:right; color: #b00; font-weight: bold;'>{{ total_militares_sem_escala }}</td></tr>
+                    <tr><td style='text-align:left; color: #b00; font-weight: bold;'>Sem Serviço Atribuído</td><td style='text-align:right; color: #b00; font-weight: bold;'>{{ total_militares_sem_escala }}</td></tr>
                     <tr style="font-weight:bold;background:#e0e0e0;"><td style='text-align:left;'>Total Geral</td><td style='text-align:right;'>{{ total_militares|add:total_militares_sem_escala }}</td></tr>
                     </tbody>
                 </table>
