@@ -467,7 +467,7 @@ def previsoes_servico_view(request, servico_id):
         nomeacoes_por_data.setdefault(n.data, {'efetivos': [], 'reservas': []})
         militar_obj = n.escala_militar.militar
         if militar_obj:
-            militar_str = f"DEBUG {militar_obj.posto} {militar_obj.nome} {militar_obj.nim}"
+            militar_str = f"{militar_obj.posto} {militar_obj.nome} {militar_obj.nim}"
         else:
             militar_str = "N/A"
         if n.e_reserva:

@@ -35,10 +35,18 @@ def limpar_nomeacoes(modeladmin, request, queryset):
 
 class MilitarAdmin(VersionAdmin):
     form = MilitarForm
-    list_display = ('nome', 'posto', 'nim', 'listar_servicos', 'listar_escalas')
+    list_display = ('nome', 'posto_raw', 'nim', 'listar_servicos', 'listar_escalas')
     # Remove a habilidade de mudar o Utilizador de um militar
     readonly_fields = ['user', 'listar_servicos', 'listar_escalas','listar_dispensas']
     actions = [limpar_nomeacoes]
+
+    def posto_raw(self, obj):
+        return obj.posto or "(não definido)"
+    posto_raw.short_description = "Posto (BD)"
+
+    def get_posto_display(self, obj):
+        return obj.get_posto_display()
+    get_posto_display.short_description = 'Posto'
 
 class ServicoAdmin(VersionAdmin):
     form = ServicoForm

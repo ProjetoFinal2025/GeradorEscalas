@@ -1,4 +1,3 @@
-<h1>DEBUG TEMPLATE</h1>
 {% extends 'base.html' %}
 {% load core_tags %}
 
@@ -10,9 +9,9 @@
             <button class="btn btn-info me-2" onclick="abrirPDF('{% url 'previsualizar_previsoes_pdf' servico.id %}')">
                 <i class="bi bi-eye"></i> Pré-visualizar PDF
             </button>
-            <button class="btn btn-success me-2" onclick="abrirPDF('{% url 'previsualizar_previsoes_pdf' servico.id %}')">
+            <a href="{% url 'exportar_previsoes_pdf' servico.id %}" class="btn btn-success me-2" target="_blank">
                 <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
-            </button>
+            </a>
             <a href="{% url 'previsoes_por_servico' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left"></i> Voltar
             </a>
@@ -221,12 +220,16 @@ async function abrirPDF(url) {
 
         // Adicionar controles de navegação
         const container = document.getElementById('pdfContainer');
+        // Remove controlos antigos antes de adicionar novos
+        const oldControls = container.querySelectorAll('.pdf-controls');
+        oldControls.forEach(ctrl => ctrl.remove());
         const controls = document.createElement('div');
         controls.className = 'pdf-controls';
         controls.innerHTML = `
             <button onclick="mudarPagina(-1)" class="btn btn-sm btn-primary">Anterior</button>
             <span id="pageInfo">Página 1 de ${pdf.numPages}</span>
             <button onclick="mudarPagina(1)" class="btn btn-sm btn-primary">Próxima</button>
+            <button onclick="imprimirPDFCanvas()" class="btn btn-sm btn-secondary ms-2">Imprimir</button>
         `;
         container.insertBefore(controls, canvas);
     } catch (error) {
@@ -260,6 +263,15 @@ async function mudarPagina(delta) {
     }).promise;
     
     document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${currentPdf.numPages}`;
+}
+
+function imprimirPDFCanvas() {
+    var canvas = document.getElementById('pdfCanvas');
+    var dataUrl = canvas.toDataURL();
+    var janela = window.open('', '_blank');
+    janela.document.write('<img src="' + dataUrl + '" style="width:100%">');
+    janela.print();
+    janela.close();
 }
 
 $(document).ready(function() {
