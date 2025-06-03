@@ -697,6 +697,10 @@ class ConfiguracaoUnidadeAdmin(VersionAdmin):
         }),
     )
 
+class LogAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
 # Configuração do Admin Site
 class GeradorEscalasAdminSite(admin.AdminSite):
     site_header = 'Gerador de Escalas'
@@ -717,6 +721,26 @@ class GeradorEscalasAdminSite(admin.AdminSite):
                 })
                 # Ordenar modelos, colocando 'Previsões de Nomeação' no fim
                 app['models'].sort(key=lambda m: m['name'] == 'Previsões de Nomeação')
+                # Ordenar modelos, colocando 'Lista de Serviços' no fim
+                app['models'].sort(key=lambda m: m['name'] == 'Lista de Serviços')
+                # Ordenar explicitamente os modelos conforme a ordem desejada
+                ordem = [
+                    'Configuração da Unidade',
+                    'Feriados',
+                    'Militares',
+                    'Dispensas',
+                    'Servicos',
+                    'Escalas',
+                    'Previsões de Nomeação',
+                    'Lista de Serviços',
+                    'Logs',
+                ]
+                def key_ordem(m):
+                    try:
+                        return ordem.index(m['name'])
+                    except ValueError:
+                        return 100  # Fica no fim se não estiver na lista
+                app['models'].sort(key=key_ordem)
         return app_list
 
     def index(self, request, extra_context=None):
@@ -787,7 +811,7 @@ admin_site.register(Dispensa, DispensaAdmin)
 admin_site.register(Feriado, FeriadoAdmin)
 admin_site.register(PrevisaoEscalasProxy, PrevisaoEscalasAdmin)
 admin_site.register(ConfiguracaoUnidade, ConfiguracaoUnidadeAdmin)
-admin_site.register(Log)
+admin_site.register(Log, LogAdmin)
 # Registrar a Previsões de Nomeação como um modelo proxy (no fim)
 
 
