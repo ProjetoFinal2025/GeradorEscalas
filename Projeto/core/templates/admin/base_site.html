@@ -5,7 +5,11 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'core/css/admin_custom.css' %}">
 {% endblock %}
-
+{% block branding %}
+    <div class="custom-header">
+        <h1>Gerador de Escalas</h1>
+    </div>
+{% endblock %}
 
 {% block sidebar %}
     {{ block.super }}
@@ -24,6 +28,7 @@
         text-decoration: none;
         color: inherit;
     }
+
 
 </style>
 {% endblock %}

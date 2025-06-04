@@ -5,7 +5,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from datetime import datetime, timedelta, date
-from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao, ConfiguracaoUnidade
+from .models import Servico, Dispensa, Nomeacao, ConfiguracaoUnidade
 from .forms import *
 from .services.escala_service import EscalaService
 from .utils import obter_feriados
@@ -292,42 +292,6 @@ def gerar_escalas_view(request, servico_id):
 guia_view = staff_member_required(
     TemplateView.as_view(template_name='admin/guia.html')
 )
-
-@login_required
-def nomear_militares(request, escala_id):
-    escala = get_object_or_404(Escala, pk=escala_id)
-    escala_service = EscalaService()
-
-    # --------- determinar a data em que vamos nomear ----------
-    # • primeiro tenta vir no GET ?data=AAAA-MM-DD
-    # • se vier em POST (hidden input), também funciona
-    data_str = request.GET.get("data") or request.POST.get("data")
-    data_ref = parse_date(data_str) if data_str else None
-    if data_ref is None:
-        messages.error(request, "Data da escala não informada.")
-        return redirect('escala_servico', servico_id=escala.servico.pk)
-
-    # --------- ações POST ----------
-    if request.method == "POST":
-        try:
-            escala_service.aplicar_previsao([escala], data_ref)
-            messages.success(request, "Militares nomeados com sucesso!")
-        except Exception as exc:
-            messages.error(request, f"Erro: {exc}")
-        return redirect('escala_servico', servico_id=escala.servico.pk)
-
-    # --------- GET: mostrar tela ----------
-    militares = escala_service.obter_militares_disponiveis(
-        escala.servico,
-        data_ref,
-    )
-
-    context = {
-        "escala":    escala,
-        "data_ref":  data_ref,
-        "militares": militares,
-    }
-    return render(request, "core/nomear_militares.html", context)
 
 @login_required
 def lista_servicos_view(request):

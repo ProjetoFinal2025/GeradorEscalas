@@ -4,7 +4,7 @@ from django.contrib.auth.views import LogoutView, PasswordChangeView, PasswordCh
 from django.contrib import messages
 from .views import (
     login_view, home_view, mapa_dispensas_view, escala_servico_view, 
-    gerar_escalas_view, nomear_militares, lista_servicos_view, 
+    gerar_escalas_view, lista_servicos_view,
     previsoes_por_servico_view, previsoes_servico_view, exportar_previsoes_pdf, 
     exportar_escalas_pdf, obter_militar,
     obter_militares_disponiveis, substituir_militar, obter_nomeacao_atual,
@@ -28,7 +28,6 @@ urlpatterns = [
     path('escala-servico/', escala_servico_view, name='escala_servico'),
     path('escala-servico/<int:servico_id>/', escala_servico_view, name='escala_servico_detalhe'),
     path('gerar-escalas/', gerar_escalas_view, name='gerar_escalas'),
-    path('nomear-militares/', nomear_militares, name='nomear_militares'),
     path('servicos/', lista_servicos_view, name='lista_servicos'),
     path('previsoes-por-servico/', previsoes_por_servico_view, name='previsoes_por_servico'),
     path('previsoes-servico/<int:servico_id>/', previsoes_servico_view, name='previsoes_servico'),
