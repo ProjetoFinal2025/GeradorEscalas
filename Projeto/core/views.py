@@ -4,15 +4,11 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.utils import timezone
 from datetime import datetime, timedelta, date
 from .models import Servico, Dispensa, Escala, Militar, EscalaMilitar, Nomeacao, ConfiguracaoUnidade
 from .forms import *
 from .services.escala_service import EscalaService
 from .utils import obter_feriados
-from django.db.models import Q
-from django.core.paginator import Paginator
-from django.contrib.admin.models import LogEntry
 from django.db.models import Count
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -47,7 +43,7 @@ def login_view(request):
 
     return render(request, 'login.html')
 
-from django.http import HttpResponse
+
 
 ## Testar se log in foi executado
 @login_required
@@ -296,56 +292,6 @@ def gerar_escalas_view(request, servico_id):
 guia_view = staff_member_required(
     TemplateView.as_view(template_name='admin/guia.html')
 )
-
-
-@staff_member_required
-def nomear_militares_view(request):
-    servicos = Servico.objects.all()
-    servico = None
-    data = None
-    militares_disponiveis = []
-    
-    if request.method == 'GET':
-        servico_id = request.GET.get('servico')
-        data_str = request.GET.get('data')
-        
-        if servico_id:
-            servico = Servico.objects.get(id=servico_id)
-            if data_str:
-                try:
-                    data = datetime.strptime(data_str, '%Y-%m-%d').date()
-                    nomeacao_service = NomeacaoService()
-                    militares_disponiveis = nomeacao_service.obter_militares_disponiveis(data)
-                except ValueError:
-                    pass
-    
-    elif request.method == 'POST':
-        servico_id = request.GET.get('servico')
-        data_str = request.GET.get('data')
-        militar_id = request.POST.get('militar_id')
-        posicao = request.POST.get('posicao')
-        
-        if servico_id and data_str and militar_id and posicao:
-            try:
-                servico = Servico.objects.get(id=servico_id)
-                data = datetime.strptime(data_str, '%Y-%m-%d').date()
-                militar = Militar.objects.get(nim=militar_id)
-                
-                nomeacao_service = NomeacaoService()
-                nomeacao_service.criar_nomeacao(militar, servico, data, posicao)
-                
-                return redirect('nomear_militares')
-            except (Servico.DoesNotExist, Militar.DoesNotExist, ValueError):
-                pass
-    
-    context = {
-        'servicos': servicos,
-        'servico': servico,
-        'data': data,
-        'militares_disponiveis': militares_disponiveis,
-    }
-    
-    return render(request, 'admin/core/escala/nomear_militares.html', context)
 
 @login_required
 def nomear_militares(request, escala_id):

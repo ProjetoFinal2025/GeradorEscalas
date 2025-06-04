@@ -150,7 +150,7 @@ class EscalaAdmin(VersionAdmin):
     list_filter = ("servico", "e_escala_b")
     list_display_links = ("id","servico")
     search_fields = ("servico__nome",)
-    change_form_template = "admin/core/escala/militar_escala_change_form.html"
+    change_form_template = "admin/escala/militar_escala_change_form.html"
 
     def tipo_de_escala(self, obj):
         return 'B' if obj.e_escala_b else 'A'
@@ -229,7 +229,7 @@ class DispensaAdmin(VersionAdmin):
     list_filter = ('militar__servicos', 'data_inicio', 'data_fim')
     search_fields = ('militar__nome', 'militar__nim', 'motivo')
     date_hierarchy = 'data_inicio'
-    change_list_template = 'admin/core/dispensa/change_list.html'
+    change_list_template = 'admin/dispensa/change_list.html'
     
     def servico_atual(self, obj):
         servicos = obj.militar.servicos.all()
@@ -392,7 +392,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
     Tela de previsões de nomeação:
     gera escalas, mostra dias futuros, permite remover flag 'prevista'.
     """
-    change_list_template = 'admin/core/escala/previsao.html'
+    change_list_template = 'admin/escala/previsao.html'
 
     def has_add_permission(self, request):
         return False
@@ -436,11 +436,11 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         # serviço activo seleccionado
         servico_id = request.GET.get("servico")
         servicos = Servico.objects.all()
-        
+
         if not servicos.exists():
             messages.warning(request, "Não há serviços no sistema. Por favor, ative um serviço primeiro.")
             return redirect("admin:core_servico_changelist")
-            
+
         servico = (
             servicos.get(pk=servico_id)
             if servico_id
@@ -548,11 +548,11 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         # ---------- parâmetros GET ----------
         servico_id = request.GET.get("servico")
         servicos = Servico.objects.all()
-        
+
         if not servicos.exists():
             messages.warning(request, "Não há serviços no sistema. Por favor, ative um serviço primeiro.")
             return redirect("admin:core_servico_changelist")
-            
+
         servico = (
             servicos.get(pk=servico_id)
             if servico_id
@@ -674,7 +674,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             "has_change_permission": self.has_change_permission(request),
             "has_delete_permission": self.has_delete_permission(request),
         }
-        return render(request, "admin/core/escala/previsao.html", context)
+        return render(request, "admin/escala/previsao.html", context)
 
     class Meta:
         verbose_name = "Previsões de Nomeação"
