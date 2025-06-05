@@ -2,6 +2,8 @@ from django import template
 import logging
 
 logger = logging.getLogger(__name__)
+logger.info("Carregando custom_filters.py")  # Adicionando log para debug
+
 register = template.Library()
 
 @register.filter
