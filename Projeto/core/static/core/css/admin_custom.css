@@ -3,9 +3,10 @@
     background: linear-gradient(135deg, #4A5D23, #6B8E23);
 }
 
-#header h1 a {
-    color: white !important;
+#header h1 {
+    color: #FFFFFF !important;
     font-weight: 600;
+    font-size: 2.4rem !important;
 }
 
 /* LOGIN and BODY background (optional global) */
