@@ -261,6 +261,51 @@ class EscalaService:
         return None, None
 
     @staticmethod
+    def gerar_alerta_escassez_militares(servico: Servico, data_inicio: date, data_fim: date, minimo: int = 4):
+        """
+        Verifica se há escassez de militares e retorna uma lista de períodos problemáticos.
+        Um período é uma sequência de um ou mais dias consecutivos.
+        """
+        militares_servico = servico.militares.all()
+        total_militares = militares_servico.count()
+
+        dispensas_por_dia = defaultdict(set)
+        dispensas_periodo = Dispensa.objects.filter(
+            militar__in=militares_servico,
+            data_inicio__lte=data_fim,
+            data_fim__gte=data_inicio
+        )
+        for dispensa in dispensas_periodo:
+            d_atual = max(dispensa.data_inicio, data_inicio)
+            d_fim_periodo = min(dispensa.data_fim, data_fim)
+            while d_atual <= d_fim_periodo:
+                dispensas_por_dia[d_atual].add(dispensa.militar_id)
+                d_atual += timedelta(days=1)
+
+        dias_problematicos = []
+        current_day = data_inicio
+        while current_day <= data_fim:
+            num_em_dispensa = len(dispensas_por_dia.get(current_day, set()))
+            if total_militares - num_em_dispensa < minimo:
+                dias_problematicos.append(current_day)
+            current_day += timedelta(days=1)
+
+        if not dias_problematicos:
+            return None
+
+        # Agrupar dias consecutivos em períodos
+        periodos = []
+        if dias_problematicos:
+            start_periodo = dias_problematicos[0]
+            for i in range(1, len(dias_problematicos)):
+                if dias_problematicos[i] != dias_problematicos[i-1] + timedelta(days=1):
+                    periodos.append({'inicio': start_periodo, 'fim': dias_problematicos[i-1]})
+                    start_periodo = dias_problematicos[i]
+            periodos.append({'inicio': start_periodo, 'fim': dias_problematicos[-1]})
+        
+        return periodos
+
+    @staticmethod
     def _inicializar_geracao(servico, data_inicio, data_fim):
         """Valida as datas, limpa nomeações existentes e retorna os dados iniciais."""
         hoje = timezone.now().date()
@@ -326,13 +371,13 @@ class EscalaService:
                 if i < len(disponiveis_nim):
                     nim_efetivo = disponiveis_nim[i]
                     militar_efetivo = militares_dict[nim_efetivo]
-                    
-                    if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
-                        ultima_nomeacao_dict[nim_efetivo] = dia
-                        militar_efetivo.ultima_nomeacao_a = dia if not e_escala_b else militar_efetivo.ultima_nomeacao_a
-                        militar_efetivo.ultima_nomeacao_b = dia if e_escala_b else militar_efetivo.ultima_nomeacao_b
-                        militar_efetivo.save()
-                        efetivos_por_dia[dia].append(militar_efetivo)
+                
+                if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
+                    ultima_nomeacao_dict[nim_efetivo] = dia
+                    militar_efetivo.ultima_nomeacao_a = dia if not e_escala_b else militar_efetivo.ultima_nomeacao_a
+                    militar_efetivo.ultima_nomeacao_b = dia if e_escala_b else militar_efetivo.ultima_nomeacao_b
+                    militar_efetivo.save()
+                    efetivos_por_dia[dia].append(militar_efetivo)
 
         return efetivos_por_dia
 
@@ -354,13 +399,13 @@ class EscalaService:
                         if disponivel and not Nomeacao.objects.filter(escala_militar__escala=escala, escala_militar__militar=militar, data=dia, e_reserva=True).exists():
                             militar_reserva = militar
                             break
-                
+
                 # Se não encontrou, procura no próximo dia de escala válido
                 if not militar_reserva:
                     militar_reserva, _ = EscalaService.encontrar_proximo_efetivo_valido(
                         dia, efetivos_por_dia, todos_dias_escala, e_escala_b
                     )
-                
+
                 if militar_reserva and EscalaService.nomear_reserva(escala, militar_reserva, dia):
                     reservas_nomeados += 1
                 else:

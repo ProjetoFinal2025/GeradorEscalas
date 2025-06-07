@@ -420,6 +420,11 @@ class PrevisaoEscalasAdmin(VersionAdmin):
                 data_inicio = date.fromisoformat(data_inicio)
                 data_fim = date.fromisoformat(data_fim)
 
+                # Verificar se há escassez de militares e emitir um aviso prévio
+                alerta = EscalaService.gerar_alerta_escassez_militares(servico, data_inicio, data_fim)
+                if alerta:
+                    messages.warning(request, alerta)
+
                 ok = EscalaService.gerar_escalas_automaticamente(servico, data_inicio, data_fim)
                 if not ok and data_inicio <= date.today():
                     messages.error(request, ERRO_PREVISAO_DIA_ATUAL)
@@ -525,25 +530,30 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         # ---------- geração automática (POST) ----------
         if request.method == "POST" and "gerar_escalas" in request.POST:
             servico_id = request.POST.get("servico")
-            data_inicio = request.POST.get("data_inicio")
-            data_fim = request.POST.get("data_fim")
+            data_inicio = date.fromisoformat(request.POST.get("data_inicio"))
+            data_fim = date.fromisoformat(request.POST.get("data_fim"))
+            servico = Servico.objects.get(pk=servico_id)
 
-            try:
-                servico = Servico.objects.get(pk=servico_id)
-                data_inicio = date.fromisoformat(data_inicio)
-                data_fim = date.fromisoformat(data_fim)
+            # Se o utilizador não confirmou, verificar a escassez
+            if "confirmar_geracao" not in request.POST:
+                periodos_alerta = EscalaService.gerar_alerta_escassez_militares(servico, data_inicio, data_fim)
+                if periodos_alerta:
+                    # Se houver escassez, renderizar novamente a página com dados para o modal
+                    context = self.get_previsao_context(request, servico, data_fim)
+                    context.update({
+                        'alerta_escassez_periodos': periodos_alerta,
+                        'form_data_POST': request.POST, # Para reenviar os dados
+                    })
+                    return render(request, 'admin/escala/previsao.html', context)
 
-                ok = EscalaService.gerar_escalas_automaticamente(servico, data_inicio, data_fim)
-                if not ok and data_inicio <= date.today():
-                    messages.error(request, ERRO_PREVISAO_DIA_ATUAL)
-                else:
-                    msg = "Previsões geradas com sucesso!" if ok else "Erro ao gerar previsões."
-                    (messages.success if ok else messages.error)(request, msg)
+            # Se não houve alerta ou o utilizador confirmou, gerar a escala
+            ok = EscalaService.gerar_escalas_automaticamente(servico, data_inicio, data_fim)
+            if ok:
+                messages.success(request, "Previsões geradas com sucesso!")
+            else:
+                messages.error(request, "Ocorreu um erro ao gerar as previsões.")
 
-            except Exception as exc:  # pylint: disable=broad-except
-                messages.error(request, f"Erro: {exc}")
-
-            return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim}")
+            return redirect(f"{request.path}?servico={servico_id}&data_fim={data_fim.isoformat()}")
 
         # ---------- parâmetros GET ----------
         servico_id = request.GET.get("servico")
@@ -562,13 +572,18 @@ class PrevisaoEscalasAdmin(VersionAdmin):
         hoje = date.today()
         try:
             data_fim = date.fromisoformat(request.GET.get("data_fim", ""))
-        except ValueError:
+        except (ValueError, TypeError):
             data_fim = hoje + timedelta(days=30)
-        data_fim = data_fim or (hoje + timedelta(days=30))
+        
+        context = self.get_previsao_context(request, servico, data_fim)
+        return render(request, 'admin/escala/previsao.html', context)
 
+    def get_previsao_context(self, request, servico, data_fim):
+        """Método auxiliar para construir o contexto da página de previsão."""
+        hoje = date.today()
         # ---------- feriados / dias de escala ----------
         feriados = obter_feriados(hoje, data_fim)
-        dias_escala = EscalaService.obter_dias_escala(hoje, data_fim)  # {'escala_a': [...], 'escala_b': [...]}
+        dias_escala = EscalaService.obter_dias_escala(hoje, data_fim)
 
         datas = []
 
@@ -584,26 +599,21 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             .order_by("data")
         )
 
-        # Agrupa nomeações por data
         nomeacoes_por_dia = defaultdict(list)
         for nomeacao in historico_qs:
             nomeacoes_por_dia[nomeacao.data].append(nomeacao)
 
+        # Adicionar histórico aos dados
         for dia, nomeacoes in nomeacoes_por_dia.items():
             e_feriado = dia in feriados
             e_fim_semana = dia.weekday() >= 5
-            datas.append(
-                {
-                    "data": dia,
-                    "nomeacoes": nomeacoes,
-                    "e_fim_semana": e_fim_semana and not e_feriado,
-                    "e_feriado": e_feriado,
-                    "tipo_dia": "feriado" if e_feriado else ("fim_semana" if e_fim_semana else "util"),
-                }
-            )
+            datas.append({
+                "data": dia, "nomeacoes": nomeacoes, "e_fim_semana": e_fim_semana and not e_feriado,
+                "e_feriado": e_feriado, "tipo_dia": "feriado" if e_feriado else ("fim_semana" if e_fim_semana else "util")
+            })
 
         # --- futuros | Escala B (fds / feriados) ---
-        for dia in dias_escala["escala_b"]:
+        for dia in dias_escala.get("escala_b", []):
             if dia <= hoje and any(d["data"] == dia for d in datas):
                 continue
             escala = Escala.objects.filter(
@@ -630,7 +640,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             )
 
         # --- futuros | Escala A (dias úteis) ---
-        for dia in dias_escala["escala_a"]:
+        for dia in dias_escala.get("escala_a", []):
             if dia <= hoje and any(d["data"] == dia for d in datas):
                 continue
             escala = Escala.objects.filter(
@@ -674,7 +684,7 @@ class PrevisaoEscalasAdmin(VersionAdmin):
             "has_change_permission": self.has_change_permission(request),
             "has_delete_permission": self.has_delete_permission(request),
         }
-        return render(request, "admin/escala/previsao.html", context)
+        return context
 
     class Meta:
         verbose_name = "Previsões de Nomeação"
