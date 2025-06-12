@@ -3,51 +3,75 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="alert alert-success mb-4">
-        <h4 class="alert-heading"><i class="bi bi-emoji-smile"></i> Bem-vindo ao Sistema de Gestão de Escalas!</h4>
+    <div class="alert alert-success mb-4 shadow-sm">
+        <h4 class="alert-heading"><i class="bi bi-emoji-smile-fill"></i> Bem-vindo ao Sistema de Gestão de Escalas!</h4>
         <p class="mb-0">Aqui podes ver todas as escalas e nomeações de serviço.</p>
     </div>
-    <h2>Dashboard Geral</h2>
-    <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+    <h2 class="mb-4">Dashboard Geral</h2>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
         {% for s in servicos_info %}
         <div class="col">
-            <div class="card h-100">
-                <div class="card-header {{ s.cor_banner }}">
-                    <i class="bi bi-gear"></i> {{ s.obj.nome }}
+            <div class="card h-100 shadow-sm card-hover">
+                <div class="card-header {{ s.cor_banner | default:'bg-primary' }} text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i>{{ s.obj.nome }}</h5>
                 </div>
-                <div class="card-body">
-                    <p><b>Total de Militares:</b> {{ s.total_militares }}</p>
-                    <p><b>Dispensados Hoje:</b> {{ s.dispensados_hoje }}</p>
-                    <p><b>Nomeado hoje:</b>
-                        {% if s.militar_hoje %}
-                            {{ s.militar_hoje.posto }} {{ s.militar_hoje.nome }}
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </p>
-                    <p><b>Nomeado amanhã:</b>
-                        {% if s.militar_amanha %}
-                            {{ s.militar_amanha.posto }} {{ s.militar_amanha.nome }}
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </p>
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-people-fill me-2 fs-4 text-primary"></i>
+                        <p class="card-text mb-0"><b>Total de Militares:</b> {{ s.total_militares }}</p>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-person-x-fill me-2 fs-4 text-danger"></i>
+                        <p class="card-text mb-0"><b>Dispensados Hoje:</b> {{ s.dispensados_hoje }}</p>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                         <i class="bi bi-person-check-fill me-2 fs-4 text-success"></i>
+                        <p class="card-text mb-0"><b>Nomeado hoje:</b>
+                            {% if s.militar_hoje %}
+                                {{ s.militar_hoje.posto }} {{ s.militar_hoje.nome }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="d-flex align-items-center">
+                         <i class="bi bi-person-video2 me-2 fs-4 text-info"></i>
+                        <p class="card-text mb-0"><b>Nomeado amanhã:</b>
+                            {% if s.militar_amanha %}
+                                {{ s.militar_amanha.posto }} {{ s.militar_amanha.nome }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
         {% empty %}
         <div class="col">
-            <div class="card h-100">
+            <div class="card h-100 shadow-sm">
                 <div class="card-header bg-secondary text-white">
-                    Nenhum serviço.
+                    <h5 class="mb-0">Nenhum serviço</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Não há serviços configurados no sistema.</p>
                 </div>
             </div>
         </div>
-                {% endfor %}
+        {% endfor %}
     </div>
 </div>
 
 <style>
+.card-hover {
+    transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+
 @media (max-width: 768px) {
     .display-4 {
         font-size: 2.5rem;

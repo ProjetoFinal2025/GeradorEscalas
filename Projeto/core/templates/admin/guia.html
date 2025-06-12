@@ -187,6 +187,15 @@
             border-color: var(--primary-color);
         }
 
+        .steps img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+        }
+
         .steps > li::before {
             content: counter(step-counter);
             position: absolute;
@@ -389,7 +398,7 @@
                     <li><strong>Ordem de Entrada:</strong> Os militares são nomeados seguindo a ordem definida na escala do serviço
                         ou de acordo com a folga de serviço independemente da escala.</li>
                     <li><strong>Dispensas:</strong> Militares com dispensa registada não são nomeados para o período correspondente, para a véspera do inicio nem para o dia de apresentação.</li>
-                    <li><strong>Feriados e fins de semana:</strong> Em dias de feriado ou fim de semana, são utilizadas as escalas do tipo B (fins de semana), sendo esta prioritária em relação à escala A.</li>
+                    <li><strong>Feriados e fins de semana:</strong> Em dias de feriado ou fim de semana, são utilizadas as escalas do tipo B , sendo esta prioritária em relação à escala A.</li>
                     <li><strong>Nomeação:</strong> Militares são nomeados apenas para serviços para os quais estão designados.</li>
                     <li><strong>Folga de serviço:</strong> São respeitadas folgas de 24 horas entre escalas diferentes e 48 horas entre escalas do mesmo tipo.</li>
                 </ul>
@@ -520,8 +529,13 @@
                     <p>Inicialmente são inseridos os dados gerais:</p>
                     <ul>
                         <li>Inserir os dados básicos da Unidade (opcional). Estes dados são usados exclusivamente nas exportações.</li>
+                        <img src="{% static 'core/images/configurarUnidade.gif' %}" alt="Configuração Unidade">
+                        <li>Definir os feriados do ano</li>
+                        <img src="{% static 'core/images/configurarFeriados.gif' %}" alt="Configuração Feriados">
+                        
+                        
                         <li>Adicionar os militares relevantes para as escalas com todos dados no formulário respetivo</li>
-                        <img src="">
+                        <img src="{% static 'core/images/adicionarMilitar.gif' %}" alt="Adicionar Militares">
                         <div class="warning-box">
                             <strong>Importante:</strong> Deve verificar se o NIM do militar está correto. A correção posterior tem impacto na geração das escalas.
                         </div>
@@ -530,12 +544,12 @@
                         	<li>Designação do serviço</li>
                         	<li>Horários do serviço</li>
                         	<li>Tipos de escalas: A, B ou ambas</li>
-                        	<li>Quantidade de militares a nomear por dia, efetivo(s) e reserva(s)</li>	
+                        	<li>Quantidade de militares a nomear por dia, efetivo(s) e reserva(s)</li>
+                            <li>Adicionar os militares que irão fazer parte do serviço</li>
                         	</ol>
+                        <img src="{% static 'core/images/adicionarServico.gif' %}" alt="Configuração Serviços">
+                        <img src="{% static 'core/images/militaresServico.gif' %}" alt="Adicionar militares ao serviço">
                         	
-                        <li>Definir os feriados do ano</li>
-                        
-
 
                     </ul>
                 </li>
@@ -545,18 +559,19 @@
                     <p>Registar as dispensas dos militares:</p>
                     <ul>
                         <li>Adicionar dispensas individuais</li>
+                        <img src="{% static 'core/images/inserirDispensa.gif' %}" alt="Adicionar Dispensas">
                         <li>Usar o calendário de dispensas</li>
                         <ol>
                         	<li>Clique no dia de inicio</li>
                         	<li>Clique no dia de fim</li>
                         	<li>Preencher o motivo e salvar para a dispensa aparecer no calendário</li>
+                            
+
                         </ol>
-                        
+                        <img src="{% static 'core/images/dispensaCalendario.gif' %}" alt="Calendário de Dispensas">
                         <li>Editar ou eliminar dispensas</li>
                     </ul>
                 </li>
-
-
                 <li>
                     <h3>Criação de Escalas</h3>
                     <p>Para cada serviço, criar as escalas correspondentes:</p>
@@ -564,6 +579,8 @@
                         <li>Selecionar o tipo de escala (A ou B)</li>
                         <li>Definir a ordem dos militares. Deve ser feito para ambas as escalas</li>
                     </ul>
+                    <img src="{% static 'core/images/escolherEscala.gif' %}" alt="Escolher escala">
+                    <img src="{% static 'core/images/ordenarMilitares.gif' %}" alt="Ordenar">
                      <div class="warning-box">
                      	<strong>Importante:</strong> Confirmar atentamente a ordem dos militares antes de gerar qualquer escala.
                     </div>
@@ -578,6 +595,7 @@
                         <li>Fazer ajustes manuais se necessário</li>
                         <li>Exportar para PDF</li>
                     </ul>
+                    <img src="{% static 'core/images/gerarPrevisao.gif' %}" alt="Previsão">
                     <div class="warning-box">
                      	<strong>Importante:</strong> A geração de escalas não pode ser executada com início no dia atual. Deve ser pelo menos o dia seguinte.
                     </div>
@@ -631,7 +649,7 @@
 
             <div class="faq-item">
                 <p class="faq-question">A minha password está segura?</p>
-                <p>Sim. A passsords são guardadas num base de dados encriptada que não é visivel para qualquer utilizador. Se for perdida, terá que ser redefinida pelo administrador.</p>
+                <p>Sim. As passwords são guardadas num base de dados encriptada que não é visivel para qualquer utilizador. Se for perdida, terá que ser redefinida pelo administrador.</p>
             </div>
 
 
@@ -662,7 +680,7 @@
                 <h3>Problemas Comuns</h3>
                 <ul>
                     <li><strong>Erro ao gerar escala:</strong> Verificar se as datas selecionadas são válidas</li>
-                    <li><strong>Existem dias sem previsão:</strong> Verificar se não foi eliminado algum militar</li>
+                    <li><strong>Existem dias sem previsão:</strong> Verificar se não foi eliminado algum militar ou o serviço tem as escalas configuradas</li>
                     <li><strong>Problemas de acesso:</strong> Verificar suas permissões de utilizador</li>
                 </ul>
             </div>
