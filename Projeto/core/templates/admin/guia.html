@@ -346,32 +346,51 @@
 
         <div id="introducao" class="guide-section">
             <h2>1. Introdução</h2>
-            <p>O Sistema de Geração de Escalas é uma ferramenta desenvolvida para auxiliar na gestão e organização das escalas de serviço em unidades militares.</p>
+            <p>O Sistema de Geração de Escalas é uma ferramenta desenvolvida para auxiliar na gestão e organização das escalas de serviço em unidades militares. O Sistema tem como objetivo simplificar todo
+            o procedimento de elaboração das escalas de serviço de forma mais eficiente e intuitíva. </p>
             
             <div class="card-grid">
                 <div class="info-card">
                     <h4>Gestão de Militares</h4>
-                    <p>Gerencie dados dos militares, incluindo NIM, posto, função e contatos.</p>
+                    <p>Gere os dados dos militares, incluindo NIM, posto, função e contatos.</p>
                 </div>
+
+                <div class="info-card">
+                    <h4>Gestão de Ausências</h4>
+                    <p>Registo dos periodos de indisponibilidadade dos militares das escalas.</p>
+                </div>
+
                 <div class="info-card">
                     <h4>Criação de Serviços</h4>
                     <p>Configure diferentes tipos de serviços com horários e requisitos específicos.</p>
                 </div>
+                
                 <div class="info-card">
                     <h4>Geração de Escalas</h4>
                     <p>Gere escalas automaticamente respeitando todas as regras e restrições.</p>
+                </div>
+
+                <div class="info-card">
+                    <h4>Exportação de Escalas</h4>
+                    <p>Exporte as escalas para formato de impressão para mais fácil afixação ou divulgação.</p>
+                </div>
+
+                <div class="info-card">
+                    <h4>Página de Consulta</h4>
+                    <p>Apresente de forma automatica as escalas aos militares através de uma página própria, sem possibilidade de edição.</p>
                 </div>
             </div>
 
             <div class="tip-box">
                 <h3>Regras de Nomeação</h3>
-                <p>O sistema aplica automaticamente as seguintes regras na geração das escalas:</p>
+                <p>O sistema aplica automaticamente as regras definidas na PAD 230-01 - Regulamento Geral de Serviço das Unidades, Estabelecimentos e Orgãos do Exército para 
+                a geração das escalas, das quais se destacam:</p>
                 <ul>
-                    <li><strong>Ordem de Serviço:</strong> Os militares são nomeados seguindo a ordem definida na escala do serviço
+                    <li><strong>Ordem de Entrada:</strong> Os militares são nomeados seguindo a ordem definida na escala do serviço
                         ou de acordo com a folga de serviço independemente da escala.</li>
-                    <li><strong>Dispensas:</strong> Militares com dispensa registada não são nomeados para o período correspondente</li>
-                    <li><strong>Feriados e fins de semana:</strong> Em dias de feriado ou fim de semana, são utilizadas as escalas do tipo B (fins de semana)</li>
-                    <li><strong>Nomeação:</strong> Militares são nomeados apenas para serviços para os quais estão designados</li>
+                    <li><strong>Dispensas:</strong> Militares com dispensa registada não são nomeados para o período correspondente, para a véspera do inicio nem para o dia de apresentação.</li>
+                    <li><strong>Feriados e fins de semana:</strong> Em dias de feriado ou fim de semana, são utilizadas as escalas do tipo B (fins de semana), sendo esta prioritária em relação à escala A.</li>
+                    <li><strong>Nomeação:</strong> Militares são nomeados apenas para serviços para os quais estão designados.</li>
                     <li><strong>Folga de serviço:</strong> São respeitadas folgas de 24 horas entre escalas diferentes e 48 horas entre escalas do mesmo tipo.</li>
                 </ul>
             </div>
@@ -381,15 +400,18 @@
                 <ul>
                     <li><strong>Superadmin:</strong> Acesso total a todas as funcionalidades e configurações do sistema.</li>
                     <li><strong>Admin:</strong> Permite gerar escalas e inserir dispensas, além de gerir militares e serviços.</li>
-                    <li><strong>Utilizador público:</strong> Apenas pode visualizar as escalas em que está nomeado, sem permissões de edição.</li>
+                    <li><strong>Utilizador público:</strong> Apenas permite visualizar e exportar as escalas.</li>
                 </ul>
+                <div class="warning-box">
+                   <strong>Atenção:</strong> Os dados usados para autenticação limitam o acesso aos dados conforme as permissões atribuídas apresentando apenas a informação e funcionalidades do perfil.
+                </div>
             </div>
         </div>
 
         <div id="requisitos" class="guide-section">
             <h2>2. Requisitos do Sistema</h2>
             <div class="card-grid">
-                <div class="info-card"><li><strong>Nomeação:</strong> Militares são nomeados apenas para serviços para os quais estão designados</li>
+                <div class="info-card">
                     <h4>Navegador</h4>
                     <p>Navegador web atualizado (Chrome, Firefox, Edge)</p>
                 </div>
@@ -397,9 +419,14 @@
                     <h4>Conexão</h4>
                     <p>Conexão à internet estável</p>
                 </div>
+                <br>
+                <div class="info-card">
+                    <h4>Base de dados</h4>
+                    <p>Sistema de gestão de bases de dados MySQL.</p>
+                </div>
                 <div class="info-card">
                     <h4>Permissões</h4>
-                    <p>Permissões de administrador para funcionalidades específicas</p>
+                    <p>Permissões adequadas ao tipo de utilizador. SuperAdmin ou Admin para edições.</p>
                 </div>
             </div>
         </div>
@@ -412,7 +439,7 @@
                     <div class="accordion-content">
                         <p>Cada militar é identificado por um NIM único e possui informações essenciais:</p>
                         <ul>
-                            <li><strong>NIM:</strong> Número de Identificação Militar (8 dígitos)</li>
+                            <li><strong>NIM:</strong> Número de Identificação Militar (8 dígitos), usado para toda a lógica de nomeações e cálculo de folgas.</li>
                             <li><strong>Nome:</strong> Nome completo do militar</li>
                             <li><strong>Posto:</strong> Posto militar atual</li>
                             <li><strong>Função:</strong> Função desempenhada na unidade</li>
@@ -433,7 +460,7 @@
                             <li><strong>Horário:</strong> Início e fim do serviço</li>
                             <li><strong>Elementos:</strong> Número de militares necessários</li>
                             <li><strong>Reservas:</strong> Número de militares reserva</li>
-                            <li><strong>Tipo de Escala:</strong> A (dias úteis), B (fins de semana) ou AB (ambos)</li>
+                            <li><strong>Tipos de Escala:</strong> A (dias úteis), B (fins de semana) ou AB (ambos)</li>
                         </ul>
                         <div class="warning-box">
                             <strong>Atenção:</strong> Ao alterar o tipo de escala de um serviço, verificar se não existem escalas já criadas que possam ser afetadas.
@@ -490,21 +517,26 @@
             <ol class="steps">
                 <li>
                     <h3>Configuração Inicial</h3>
-                    <p>Configurar os dados básicos da unidade:</p>
+                    <p>Inicialmente são inseridos os dados gerais:</p>
                     <ul>
-                        <li>Adicionar os militares da unidade</li>
-                        <li>Configurar os serviços necessários</li>
+                        <li>Inserir os dados básicos da Unidade (opcional). Estes dados são usados exclusivamente nas exportações.</li>
+                        <li>Adicionar os militares relevantes para as escalas com todos dados no formulário respetivo</li>
+                        <img src="">
+                        <div class="warning-box">
+                            <strong>Importante:</strong> Deve verificar se o NIM do militar está correto. A correção posterior tem impacto na geração das escalas.
+                        </div>
+                        <li>Configurar os serviços necessários:</li>
+                        	<ol>
+                        	<li>Designação do serviço</li>
+                        	<li>Horários do serviço</li>
+                        	<li>Tipos de escalas: A, B ou ambas</li>
+                        	<li>Quantidade de militares a nomear por dia, efetivo(s) e reserva(s)</li>	
+                        	</ol>
+                        	
                         <li>Definir os feriados do ano</li>
-                    </ul>
-                </li>
+                        
 
-                <li>
-                    <h3>Criação de Escalas</h3>
-                    <p>Para cada serviço, criar as escalas correspondentes:</p>
-                    <ul>
-                        <li>Selecionar o tipo de escala (A ou B)</li>
-                        <li>Definir a ordem dos militares</li>
-                        <li>Verificar a distribuição equilibrada</li>
+
                     </ul>
                 </li>
 
@@ -512,12 +544,31 @@
                     <h3>Gestão de Dispensas</h3>
                     <p>Registar as dispensas dos militares:</p>
                     <ul>
-                        <li>Usar o calendário de dispensas</li>
                         <li>Adicionar dispensas individuais</li>
+                        <li>Usar o calendário de dispensas</li>
+                        <ol>
+                        	<li>Clique no dia de inicio</li>
+                        	<li>Clique no dia de fim</li>
+                        	<li>Preencher o motivo e salvar para a dispensa aparecer no calendário</li>
+                        </ol>
+                        
                         <li>Editar ou eliminar dispensas</li>
                     </ul>
                 </li>
 
+
+                <li>
+                    <h3>Criação de Escalas</h3>
+                    <p>Para cada serviço, criar as escalas correspondentes:</p>
+                    <ul>
+                        <li>Selecionar o tipo de escala (A ou B)</li>
+                        <li>Definir a ordem dos militares. Deve ser feito para ambas as escalas</li>
+                    </ul>
+                     <div class="warning-box">
+                     	<strong>Importante:</strong> Confirmar atentamente a ordem dos militares antes de gerar qualquer escala.
+                    </div>
+                </li>
+                
                 <li>
                     <h3>Geração de Previsões</h3>
                     <p>Gerar as previsões de escala:</p>
@@ -527,6 +578,9 @@
                         <li>Fazer ajustes manuais se necessário</li>
                         <li>Exportar para PDF</li>
                     </ul>
+                    <div class="warning-box">
+                     	<strong>Importante:</strong> A geração de escalas não pode ser executada com início no dia atual. Deve ser pelo menos o dia seguinte.
+                    </div>
                 </li>
             </ol>
         </div>
@@ -547,7 +601,7 @@
                     <h4>Geração de Escalas</h4>
                     <ul>
                         <li>Planear as escalas com antecedência</li>
-                        <li>Considerar as qualificações dos militares</li>
+                        <li>Gerar as previsões com frequência para evitar dias vazios</li>
                         <li>Manter um histórico das escalas geradas</li>
                     </ul>
                 </div>
@@ -571,8 +625,29 @@
             </div>
 
             <div class="faq-item">
+                <p class="faq-question">Posso recuperar dados apagados?</p>
+                <p>Sim. Os dados mais críticos como militares, serviços e escalas tem a possiibilidade de ser repostos na página respetiva no ícone localizado no canto superior direito.</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-question">A minha password está segura?</p>
+                <p>Sim. A passsords são guardadas num base de dados encriptada que não é visivel para qualquer utilizador. Se for perdida, terá que ser redefinida pelo administrador.</p>
+            </div>
+
+
+            <div class="faq-item">
+                <p class="faq-question">Em caso de falha do programa. Perco os dados das escalas?</p>
+                <p>Não. Todos os dados são guardados numa base de dados indepentende do sistema para preservação da sua integridade.</p>
+            </div>
+
+            <div class="faq-item">
                 <p class="faq-question">Como gerar uma nova escala?</p>
                 <p>Aceder a "Previsões de Nomeação", selecionar o serviço e o período desejado, e clicar em "Gerar Previsões".</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-question">Como vejo o histórico de nomeações?</p>
+                <p>Por defeito, a apresentação das previsões mostra o dia atual no topo da tabela. No entanto, é possivel rolar a tabela para visualizar as nomeações anteriores até à data em que foi criada o serviço.</p>
             </div>
 
             <div class="faq-item">
@@ -594,7 +669,7 @@
 
             <div class="tip-box">
                 <h3>Contato para Suporte</h3>
-                <p>Em caso de problemas não resolvidos, entre em contato com o administrador do sistema.</p>
+                <p>Em caso de problemas não resolvidos ou dúvidas na nomeação, entre em contato com o administrador do sistema.</p>
             </div>
         </div>
     </main>
