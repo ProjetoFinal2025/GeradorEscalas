@@ -11,7 +11,7 @@ from django.urls import reverse, path
 from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
 from .services.pdf_exports import gerar_pdf_escala
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from collections import defaultdict
 from django.contrib import admin, messages
 from datetime import date, datetime, timedelta
@@ -23,6 +23,7 @@ from django.contrib.admin.models import LogEntry
 from django.contrib.admin.views.decorators import staff_member_required
 from .views import ERRO_PREVISAO_DIA_ATUAL
 from django.db.models import Max
+from django.utils.translation import gettext_lazy as _
 
 @register.filter
 def get_item(dictionary, key):
@@ -159,38 +160,43 @@ class EscalaAdmin(VersionAdmin):
     tipo_de_escala.admin_order_field = 'e_escala_b'
 
     def get_urls(self):
-
         urls = super().get_urls()
-        custom = [
+        custom_urls = [
             path(
                 "<path:object_id>/export-pdf/",
                 self.admin_site.admin_view(self.export_militares_pdf),
                 name="core_escala_export_pdf",
             ),
         ]
-        return custom + urls
+        return custom_urls + urls
 
-    #
     def export_militares_pdf(self, request, object_id, *args, **kwargs):
-        escala = self.get_object(request, object_id)
-        if not escala:
-            raise Http404
-        pdf_buffer = gerar_pdf_escala(escala)
-        filename = f"escala_{escala.pk}_militares.pdf"
-        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
+        try:
+            escala = self.get_object(request, object_id)
+            if not escala:
+                raise Http404("Escala não encontrada")
+            
+            pdf_buffer = gerar_pdf_escala(escala)
+            if not pdf_buffer:
+                raise ValueError("Erro ao gerar o PDF")
+            
+            filename = f"escala_{escala.pk}_militares.pdf"
+            response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        except Exception as e:
+            messages.error(request, f"Erro ao gerar PDF: {str(e)}")
+            return redirect('admin:core_escala_change', object_id)
 
-    ## Changes the order of Militares by NIm
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
-        # supply both variables to the template
         extra_context = extra_context or {}
-        extra_context["custom_reset_button"] = True
         if object_id:
             extra_context["export_pdf_url"] = reverse(
-                "admin:core_escala_export_pdf", args=[object_id]
+                "admin:core_escala_export_pdf",
+                args=[object_id],
+                current_app=self.admin_site.name
             )
-
-        return super().changeform_view(request, object_id, form_url,
-                                       extra_context)
+        return super().changeform_view(request, object_id, form_url, extra_context)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
