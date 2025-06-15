@@ -6,6 +6,9 @@ from django.dispatch import receiver
 from .models import Militar, Servico, Dispensa, Escala, Log, Role, EscalaMilitar, Nomeacao
 from decouple import config
 from django.db.models import Max
+from django.contrib.auth.models import Permission
+
+
 
 def criar_log(nim_admin, acao, modelo, tipo_acao):
     """Função auxiliar para criar logs"""
@@ -145,6 +148,49 @@ def apagar_user_com_militar(sender, instance, **kwargs):
         print(f"User{instance.user.username} ligado ao Militar {instance.nim} será eliminado")
         instance.user.delete()
 
+
+ADMIN_PERMS = [
+    # EscalaMilitar
+    "add_escalamilitar", "change_escalamilitar",
+    "view_escalamilitar",
+
+    # Configuração da Unidade
+    "add_configuracaounidade", "change_configuracaounidade",
+    "view_configuracaounidade",
+
+    # dispensa
+    "add_dispensa", "change_dispensa",
+     "view_dispensa",
+
+    # militar
+    "add_militar", "change_militar",
+    "view_militar",
+
+    # escala
+    "add_escala", "change_escala",
+    "view_escala",
+
+    # feriado
+    "add_feriado", "change_feriado",
+    "view_feriado",
+
+    # Histórico de Nomeações
+    "add_historicoescalasproxy", "change_historicoescalasproxy",
+    "view_historicoescalasproxy",
+
+    # Previsões de Nomeação
+    "add_previsaonomeacao", "change_previsaonomeacao",
+    "view_previsaonomeacao",
+
+    # nomeacao
+    "add_nomeacao", "change_nomeacao",
+    "view_nomeacao",
+
+    # servico
+    "add_servico", "change_servico",
+    "view_servico",
+]
+
 # Torna o Muilitar em administrador consoante a respetiva bool
 @receiver(post_save, sender=Militar)
 def atualizar_user_com_base_em_administrador(sender, instance, **kwargs):
@@ -152,25 +198,23 @@ def atualizar_user_com_base_em_administrador(sender, instance, **kwargs):
     if not user:
         return
 
-    try:
-        # Pegamos o Role 'Administrador'
-        role_admin = Role.objects.get(nome__iexact='Administrador')
-    except Role.DoesNotExist:
-        role_admin = None
+    # cria o Role se não existir
+    role_admin, _ = Role.objects.get_or_create(nome="Administrador")
 
-    if instance.e_administrador and role_admin:
-        # Caso o militar seja admin e exista esse Role
+    perms = Permission.objects.filter(codename__in=ADMIN_PERMS)
+    role_admin.permissions.set(perms)
+
+    if instance.e_administrador:
         user.is_staff = True
         user.is_superuser = False
-        # Aplica as permissões definidas no Role
         user.user_permissions.set(role_admin.permissions.all())
     else:
-        # Não é administrador
         user.is_staff = False
         user.is_superuser = False
         user.user_permissions.clear()
 
-    user.save()
+    # grava só os campos alterados; evita sobrescritas concorrentes
+    user.save(update_fields=["is_staff", "is_superuser"])
 
 # Syncs the militares in a Escala When Serviço is updated
 @receiver(m2m_changed, sender=Servico.militares.through)
