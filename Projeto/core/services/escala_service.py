@@ -130,12 +130,16 @@ class EscalaService:
             servico: Servico,
             data: date) -> List[Militar]:
         """Obtém uma lista de militares disponíveis para um serviço numa data específica."""
-        # Obter todos os militares do serviço
-        militares = servico.militares.all()
+        # Obter todos os militares do serviço que estão ativos na escala relevante
+        militares_ativos = Militar.objects.filter(
+            servicos=servico, 
+            escalamilitar__ativo=True,
+            escalamilitar__escala__servico=servico
+        ).distinct()
 
         # Filtrar apenas os disponíveis
         militares_disponiveis = [
-            m for m in militares
+            m for m in militares_ativos
             if EscalaService.verificar_disponibilidade_militar(m, data)[0]
         ]
 
@@ -349,6 +353,12 @@ class EscalaService:
         
         dias_ordenados = sorted(dias_para_processar)
         
+        # Filtra militares que estão ativos nesta escala específica
+        militares_ativos_nims = list(EscalaMilitar.objects.filter(
+            escala=escala, 
+            ativo=True
+        ).values_list('militar__nim', flat=True))
+
         for dia in dias_ordenados:
             def get_ordem(nim):
                 militar = militares_dict[nim]
@@ -359,7 +369,7 @@ class EscalaService:
                     return 9999
 
             rotacao_nim = sorted(
-                [m.nim for m in militares_dict.values()],
+                [nim for nim in militares_ativos_nims if nim in militares_dict],
                 key=lambda nim: (ultima_nomeacao_dict.get(nim) or date.min, get_ordem(nim))
             )
 

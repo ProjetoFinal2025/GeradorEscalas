@@ -130,7 +130,7 @@ class EscalaMilitarInline(admin.TabularInline):
     extra = 0
     can_delete = False
     readonly_fields = ("display_militar",)
-    fields = ("display_militar", "ordem")
+    fields = ("display_militar", "ordem", "ativo")
     ordering = ("ordem",)
     sortable_by = ("ordem",)
     max_num = 0
@@ -138,7 +138,8 @@ class EscalaMilitarInline(admin.TabularInline):
     def display_militar(self, obj):
         if not obj.pk:
             return "Selecione acima e salve."
-        return f"{obj.militar.posto} {obj.militar.nome} ({str(obj.militar.nim).zfill(8)})"
+        status = "✅" if obj.ativo else "❌"
+        return f"{status} {obj.militar.posto} {obj.militar.nome} ({str(obj.militar.nim).zfill(8)})"
 
     display_militar.short_description = "Militar"
 

@@ -258,6 +258,7 @@ class EscalaMilitar(models.Model):
     escala = models.ForeignKey(Escala, on_delete=models.CASCADE, related_name='roster')
     militar = models.ForeignKey('Militar', on_delete=models.CASCADE)
     ordem = models.IntegerField(null=True, blank=True, verbose_name="Ordem")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo", help_text="Desmarque para desativar este militar desta escala específica.")
 
     class Meta:
         unique_together = ('escala', 'militar')

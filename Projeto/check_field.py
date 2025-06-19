@@ -1,0 +1,1 @@
+import os; import sys; sys.path.append("."); os.environ.setdefault("DJANGO_SETTINGS_MODULE", "geradorEscalas.settings"); import django; django.setup(); from core.models import EscalaMilitar; print("Campo ativo existe:", hasattr(EscalaMilitar, "ativo"))
