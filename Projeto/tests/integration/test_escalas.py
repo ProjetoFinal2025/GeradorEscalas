@@ -2,7 +2,7 @@ from django.test import TestCase
 from datetime import date, timedelta
 from core.models import (
     Militar, Servico, Escala, EscalaMilitar, 
-    Nomeacao, RegraNomeacao
+    Nomeacao
 )
 
 class EscalaIntegrationTest(TestCase):
@@ -32,16 +32,6 @@ class EscalaIntegrationTest(TestCase):
             hora_fim='17:00',
             n_elementos=1,
             n_reservas=1
-        )
-
-        # Criar regra de nomeação
-        self.regra = RegraNomeacao.objects.create(
-            servico=self.servico,
-            tipo_folga='mesma_escala',
-            horas_minimas=24,
-            prioridade_modernos=True,
-            considerar_ultimo_servico=True,
-            permitir_trocas=True
         )
 
     def test_fluxo_completo_escala(self):
