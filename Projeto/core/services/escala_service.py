@@ -130,11 +130,10 @@ class EscalaService:
             servico: Servico,
             data: date) -> List[Militar]:
         """Obtém uma lista de militares disponíveis para um serviço numa data específica."""
-        # Obter todos os militares do serviço que estão ativos na escala relevante
+        # Obter todos os militares do serviço que estão ativos
         militares_ativos = Militar.objects.filter(
-            servicos=servico, 
-            escalamilitar__ativo=True,
-            escalamilitar__escala__servico=servico
+            servicos=servico,
+            ativo=True  # Assumindo que o modelo Militar tem um campo 'ativo'
         ).distinct()
 
         # Filtrar apenas os disponíveis
@@ -381,13 +380,13 @@ class EscalaService:
                 if i < len(disponiveis_nim):
                     nim_efetivo = disponiveis_nim[i]
                     militar_efetivo = militares_dict[nim_efetivo]
-                
-                if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
-                    ultima_nomeacao_dict[nim_efetivo] = dia
-                    militar_efetivo.ultima_nomeacao_a = dia if not e_escala_b else militar_efetivo.ultima_nomeacao_a
-                    militar_efetivo.ultima_nomeacao_b = dia if e_escala_b else militar_efetivo.ultima_nomeacao_b
-                    militar_efetivo.save()
-                    efetivos_por_dia[dia].append(militar_efetivo)
+                    
+                    if EscalaService.nomear_efetivo(escala, militar_efetivo, dia):
+                        ultima_nomeacao_dict[nim_efetivo] = dia
+                        militar_efetivo.ultima_nomeacao_a = dia if not e_escala_b else militar_efetivo.ultima_nomeacao_a
+                        militar_efetivo.ultima_nomeacao_b = dia if e_escala_b else militar_efetivo.ultima_nomeacao_b
+                        militar_efetivo.save()
+                        efetivos_por_dia[dia].append(militar_efetivo)
 
         return efetivos_por_dia
 
